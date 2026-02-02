@@ -1,4 +1,4 @@
-import Topbar from './components/Topbar/Topbar'
+import Topbar from './components/topbar/topbar'
 import Content from './components/content/content'
 import Footer from './components/footer/footer'
 import { LanguageProvider } from './context/LanguageContext'
