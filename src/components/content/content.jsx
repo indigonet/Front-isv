@@ -1,6 +1,7 @@
 import React from 'react'
 import AboutSection from './sections/AboutSection/AboutSection'
 import DownloadSection from './sections/DownloadSection/DownloadSection'
+import logo from "../../assets/logo.png";
 import { useLanguage } from '../../context/LanguageContext'
 import './content.css'
 
@@ -29,7 +30,7 @@ export default function Content() {
             <div className="logo-wrapper">
               <img 
                 className="hero-logo" 
-                src="src/assets/logo.png" 
+                src={logo} 
                 alt="ISV Toolkit Logo" 
               />
             </div>
