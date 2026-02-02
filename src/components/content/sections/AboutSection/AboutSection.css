@@ -1,0 +1,694 @@
+/* AboutSection.css - Versión sin sombra en imágenes y animaciones rápidas con tema oscuro/claro */
+
+.about-section {
+  padding: 6rem 2rem;
+  background: linear-gradient(135deg, var(--color-bg-gradient-start, #f8fafc) 0%, var(--color-bg-gradient-end, #ffffff) 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.about-title {
+  text-align: center;
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  color: var(--color-text-heading, #1e293b);
+  font-weight: 800;
+  opacity: 0;
+}
+
+.about-description {
+  text-align: center;
+  font-size: 1.2rem;
+  color: var(--color-text-primary, #000000);
+  max-width: 700px;
+  margin: 0 auto 4rem;
+  line-height: 1.7;
+  opacity: 0;
+}
+
+/* Sección de características principales - ANIMACIÓN MÁS RÁPIDA */
+.about-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.feature-card {
+  background: var(--card-bg, white);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: var(--card-shadow-light, 0 10px 30px rgba(0, 0, 0, 0.05));
+  border: 1px solid var(--color-border-light, #e2e8f0);
+  transition: all 0.2s ease; /* Más rápido */
+  opacity: 0;
+  transform: scale(0.8);
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.feature-card:hover {
+  box-shadow: var(--card-shadow-hover, 0 20px 40px rgba(102, 126, 234, 0.15));
+  border-color: var(--color-primary-light, #c7d2fe);
+  transform: translateY(-8px); /* Animación más rápida */
+}
+
+.feature-icon {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  display: inline-block;
+  background: linear-gradient(135deg, var(--color-primary-light, rgba(102, 126, 234, 0.2)) 0%, var(--color-secondary-light, rgba(118, 75, 162, 0.2)) 100%);
+  width: 70px;
+  height: 70px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease; /* Más rápido */
+}
+
+.feature-card:hover .feature-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.feature-content h3 {
+  font-size: 1.4rem;
+  margin-bottom: 1rem;
+  color: var(--color-text-heading, #000000);
+  transition: color 0.2s ease; /* Más rápido */
+}
+
+.feature-card:hover .feature-content h3 {
+  color: var(--color-primary, #667eea);
+}
+
+.feature-content p {
+  color: var(--color-text-primary, #000000);
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+/* SECCIÓN DE IMÁGENES ALTERNADAS - SIN SOMBRA */
+.image-sections {
+  max-width: 1200px;
+  margin: 8rem auto 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5rem;
+}
+
+/* Contenedor de cada sección con imagen - ANIMACIÓN MÁS RÁPIDA */
+.image-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3.5rem;
+  align-items: center;
+  min-height: 380px;
+  opacity: 0;
+  transform: translateY(40px); /* Menos desplazamiento */
+}
+
+/* Contenedor de imagen - SIN SOMBRA */
+.image-container {
+  position: relative;
+  border-radius: 12px;
+  overflow: visible; /* Cambiado de hidden a visible */
+  height: 400px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Imagen limpia sin efectos */
+.feature-image {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  object-fit: contain;
+  display: block;
+  border-radius: 8px;
+  /* Sin sombras, bordes ni transiciones */
+}
+
+/* Contenedor de texto */
+.text-container {
+  padding: 0 1rem;
+}
+
+.text-container h3 {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  color: var(--color-text-heading, #1e293b);
+  font-weight: 700;
+  position: relative;
+  padding-bottom: 1rem;
+  transition: transform 0.3s ease;
+}
+
+.image-section:hover .text-container h3 {
+  transform: translateX(5px);
+}
+
+.text-container h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 70px;
+  height: 3px;
+  background: linear-gradient(135deg, var(--color-primary, #667eea) 0%, var(--color-secondary, #764ba2) 100%);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.image-section:hover .text-container h3::after {
+  width: 100px;
+}
+
+.text-container p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: var(--color-text-secondary, #475569);
+  margin-bottom: 1.8rem;
+}
+
+/* Lista de características con animación rápida */
+.feature-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 1.5rem;
+}
+
+.feature-list li {
+  padding: 0.6rem 0;
+  padding-left: 2rem;
+  position: relative;
+  color: var(--color-text-list, #334155);
+  font-size: 1.05rem;
+  line-height: 1.5;
+  cursor: default;
+  transition: all 0.2s ease; /* Más rápido */
+  opacity: 0.9;
+}
+
+.feature-list li:hover {
+  transform: translateX(8px); /* Más rápido */
+  color: var(--color-primary, #667eea);
+  opacity: 1;
+}
+
+.feature-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  top: 0.6rem;
+  color: var(--color-primary, #667eea);
+  font-weight: bold;
+  font-size: 1.1rem;
+  background: linear-gradient(135deg, var(--color-primary-light, rgba(102, 126, 234, 0.2)) 0%, var(--color-secondary-light, rgba(118, 75, 162, 0.2)) 100%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease; /* Más rápido */
+}
+
+.feature-list li:hover::before {
+  transform: scale(1.1);
+  background: linear-gradient(135deg, var(--color-primary, #667eea) 0%, var(--color-secondary, #764ba2) 100%);
+  color: white;
+}
+
+/* Alternar imagen derecha/izquierda */
+.image-section.left-image .image-container {
+  order: 1;
+}
+
+.image-section.left-image .text-container {
+  order: 2;
+}
+
+.image-section.right-image .image-container {
+  order: 2;
+}
+
+.image-section.right-image .text-container {
+  order: 1;
+  text-align: right;
+}
+
+.image-section.right-image .text-container h3::after {
+  left: auto;
+  right: 0;
+}
+
+.image-section.right-image .feature-list li {
+  padding-left: 0;
+  padding-right: 2rem;
+}
+
+.image-section.right-image .feature-list li::before {
+  left: auto;
+  right: 0;
+}
+
+/* Efecto sutil al hacer hover en la sección */
+.image-section:hover {
+  transform: translateY(-5px); /* Efecto sutil en toda la sección */
+}
+
+/* RESPONSIVE PARA TABLETS */
+@media (max-width: 1024px) {
+  .image-sections {
+    gap: 4rem;
+    margin-top: 6rem;
+  }
+  
+  .image-section {
+    gap: 3rem;
+    min-height: 350px;
+  }
+  
+  .image-container {
+    height: 350px;
+  }
+  
+  .text-container h3 {
+    font-size: 1.8rem;
+  }
+}
+
+/* RESPONSIVE PARA MÓVILES */
+@media (max-width: 768px) {
+  .image-sections {
+    gap: 3.5rem;
+    margin-top: 4rem;
+  }
+  
+  .image-section {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+    min-height: auto;
+  }
+  
+  .image-container {
+    height: 280px;
+    order: 1 !important;
+  }
+  
+  .text-container {
+    order: 2 !important;
+    text-align: left !important;
+    padding: 0;
+  }
+  
+  .text-container h3 {
+    font-size: 1.6rem;
+    padding-bottom: 0.8rem;
+    text-align: left;
+  }
+  
+  .text-container h3::after {
+    left: 0 !important;
+    right: auto !important;
+  }
+  
+  .image-section.right-image .feature-list li {
+    padding-left: 2rem;
+    padding-right: 0;
+  }
+  
+  .image-section.right-image .feature-list li::before {
+    left: 0;
+    right: auto;
+  }
+  
+  /* Horizontal scroll para características principales en móvil */
+  .about-features {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 1.5rem;
+    padding: 1rem 0 3rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+
+  .about-features::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .about-features::-webkit-scrollbar-track {
+    background: var(--color-bg-tertiary, #f1f1f1);
+    border-radius: 3px;
+  }
+
+  .about-features::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, var(--color-primary, #667eea) 0%, var(--color-secondary, #764ba2) 100%);
+    border-radius: 3px;
+  }
+
+  .feature-card {
+    flex: 0 0 85%;
+    scroll-snap-align: start;
+    margin: 0 0.5rem;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  
+  .about-title {
+    font-size: 2.2rem;
+  }
+  
+  .about-description {
+    font-size: 1.1rem;
+    margin-bottom: 3rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .about-section {
+    padding: 4rem 1rem;
+  }
+  
+  .image-sections {
+    gap: 3rem;
+  }
+  
+  .image-container {
+    height: 240px;
+  }
+  
+  .text-container h3 {
+    font-size: 1.5rem;
+  }
+  
+  .text-container p {
+    font-size: 1rem;
+  }
+  
+  .feature-list li {
+    font-size: 0.95rem;
+  }
+  
+  .feature-card {
+    flex: 0 0 90%;
+    padding: 1.5rem;
+  }
+  
+  .feature-icon {
+    font-size: 2.5rem;
+    width: 60px;
+    height: 60px;
+  }
+}
+
+/* ANIMACIONES MÁS RÁPIDAS PARA SCROLL */
+@keyframes slideInUpFast {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.image-section.animated {
+  animation: slideInUpFast 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* Optimización para scroll rápido */
+@media (prefers-reduced-motion: no-preference) {
+  .image-section {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+}
+
+/* MODAL PARA IMÁGENES EN PANTALLA COMPLETA */
+.image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--modal-overlay, rgba(255, 255, 255, 0.92));
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+}
+
+.modal-content {
+  position: relative;
+  max-width: 90%;
+  max-height: 90%;
+  width: auto;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Botón de cerrar con MUI */
+.modal-close-btn {
+  position: absolute;
+  top: -45px;
+  right: -10px;
+  background: var(--color-modal-btn-bg, rgba(30, 41, 59, 0.1));
+  border: none;
+  color: var(--color-modal-btn-text, #1e293b);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 1001;
+  padding: 0;
+}
+
+.modal-close-btn:hover {
+  background: var(--color-modal-btn-hover, rgba(102, 126, 234, 0.2));
+  color: var(--color-primary, #667eea);
+  transform: scale(1.1);
+}
+
+/* Contenedor de la imagen */
+.modal-image-container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--modal-bg, rgba(255, 255, 255, 0.95));
+  border-radius: 12px;
+  overflow: hidden;
+  padding: 25px;
+  box-shadow: var(--modal-shadow, 0 20px 60px rgba(0, 0, 0, 0.1));
+  border: 1px solid var(--modal-border, rgba(226, 232, 240, 0.8));
+}
+
+/* Imagen en el modal */
+.modal-image {
+  max-width: 100%;
+  max-height: 70vh;
+  height: auto;
+  width: auto;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+/* Pie de foto */
+.image-caption {
+  margin-top: 20px;
+  text-align: center;
+  color: var(--color-modal-caption, #1e293b);
+  font-size: 1.1rem;
+  font-weight: 600;
+  max-width: 600px;
+  padding: 0 20px;
+}
+
+/* Estilo para el cursor de las imágenes normales */
+.feature-image {
+  cursor: zoom-in;
+  transition: transform 0.2s ease;
+}
+
+.feature-image:hover {
+  transform: scale(1.02);
+}
+
+/* Responsive para el modal */
+@media (max-width: 768px) {
+  .modal-content {
+    max-width: 95%;
+    max-height: 85%;
+  }
+  
+  .modal-image {
+    max-height: 60vh;
+  }
+  
+  .modal-close-btn {
+    top: -40px;
+    right: -5px;
+    width: 35px;
+    height: 35px;
+  }
+  
+  .image-caption {
+    font-size: 1rem;
+    margin-top: 15px;
+  }
+  
+  .modal-image-container {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-image {
+    max-height: 50vh;
+  }
+  
+  .image-caption {
+    font-size: 0.9rem;
+    padding: 0 10px;
+  }
+  
+  .modal-close-btn {
+    top: -35px;
+    width: 30px;
+    height: 30px;
+  }
+  
+  .modal-close-btn svg {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .modal-image-container {
+    padding: 15px;
+  }
+}
+
+/* Añadir esto para el cursor en imágenes */
+.image-container {
+  cursor: zoom-in;
+}
+
+/* Efecto hover sutil en imágenes normales */
+.feature-image {
+  transition: all 0.3s ease;
+}
+
+.feature-image:hover {
+  transform: scale(1.02);
+  box-shadow: var(--image-hover-shadow, 0 5px 20px rgba(102, 126, 234, 0.15));
+}
+
+/* Variables CSS para tema oscuro/claro */
+:root {
+  /* Modo Claro (default) */
+  --color-bg-gradient-start: #f8fafc;
+  --color-bg-gradient-end: #ffffff;
+  --color-text-heading: #1e293b;
+  --color-text-primary: #000000;
+  --color-text-secondary: #475569;
+  --color-text-list: #334155;
+  
+  --card-bg: #ffffff;
+  --card-border-light: #e2e8f0;
+  --card-shadow-light: 0 10px 30px rgba(0, 0, 0, 0.05);
+  --card-shadow-hover: 0 20px 40px rgba(102, 126, 234, 0.15);
+  
+  --color-primary: #667eea;
+  --color-primary-light: #c7d2fe;
+  --color-secondary: #764ba2;
+  --color-secondary-light: #764ba220;
+  
+  --color-bg-tertiary: #f1f1f1;
+  
+  /* Modal light */
+  --modal-overlay: rgba(255, 255, 255, 0.92);
+  --modal-bg: rgba(255, 255, 255, 0.95);
+  --modal-border: rgba(226, 232, 240, 0.8);
+  --modal-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  --color-modal-btn-bg: rgba(30, 41, 59, 0.1);
+  --color-modal-btn-text: #1e293b;
+  --color-modal-btn-hover: rgba(102, 126, 234, 0.2);
+  --color-modal-caption: #1e293b;
+  
+  --image-hover-shadow: 0 5px 20px rgba(102, 126, 234, 0.15);
+}
+
+[data-theme="dark"] {
+  /* Modo Oscuro */
+  --color-bg-gradient-start: #0f172a;
+  --color-bg-gradient-end: #1e293b;
+  --color-text-heading: #f8fafc;
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #cbd5e1;
+  --color-text-list: #94a3b8;
+  
+  --card-bg: #1e293b;
+  --card-border-light: #334155;
+  --card-shadow-light: 0 10px 30px rgba(0, 0, 0, 0.2);
+  --card-shadow-hover: 0 20px 40px rgba(102, 126, 234, 0.25);
+  
+  --color-primary: #818cf8;
+  --color-primary-light: rgba(129, 140, 248, 0.3);
+  --color-secondary: #a78bfa;
+  --color-secondary-light: rgba(167, 139, 250, 0.3);
+  
+  --color-bg-tertiary: #334155;
+  
+  /* Modal dark */
+  --modal-overlay: rgba(15, 23, 42, 0.92);
+  --modal-bg: rgba(30, 41, 59, 0.95);
+  --modal-border: rgba(51, 65, 85, 0.8);
+  --modal-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+  --color-modal-btn-bg: rgba(248, 250, 252, 0.1);
+  --color-modal-btn-text: #f8fafc;
+  --color-modal-btn-hover: rgba(129, 140, 248, 0.3);
+  --color-modal-caption: #f8fafc;
+  
+  --image-hover-shadow: 0 5px 20px rgba(129, 140, 248, 0.25);
+}
+
+/* Transiciones suaves para cambio de tema */
+.about-section,
+.about-title,
+.about-description,
+.feature-card,
+.feature-icon,
+.feature-content h3,
+.feature-content p,
+.image-section,
+.text-container h3,
+.text-container p,
+.feature-list li,
+.modal-close-btn,
+.modal-image-container,
+.image-caption {
+  transition: background-color 0.3s ease,
+              border-color 0.3s ease,
+              color 0.3s ease,
+              box-shadow 0.3s ease,
+              background 0.3s ease;
+}
