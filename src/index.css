@@ -12,6 +12,16 @@ body {
   width: 100%;
 }
 
+.main-content {
+  flex: 1;
+}
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+
 /* ===== Variables globales ===== */
 :root {
   --bg-main: #020617;

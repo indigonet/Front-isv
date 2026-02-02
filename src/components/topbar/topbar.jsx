@@ -7,15 +7,30 @@ import { LightMode, DarkMode } from "@mui/icons-material";
 import { useLanguage } from "../../context/LanguageContext";
 import iconDark from "../../assets/icono.png";
 import iconLight from "../../assets/iconoblanco.png";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export default function Topbar() {
   const [open, setOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
 
   // Referencia al menú para detectar clics fuera
   const menuRef = useRef(null);
   const burgerRef = useRef(null);
+  const goToNotes = () => {
+    navigate("/release-notes");
+    setOpen(false);
+    setShowLanguageDropdown(false);
+  };
+
+  const scrollToSection = (id) => {
+    const section = document.getElementById(id);
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    }
+  };
 
   // Usa el contexto
   const { language, changeLanguage, t } = useLanguage();
@@ -85,25 +100,17 @@ export default function Topbar() {
   };
 
   const goToHome = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    setOpen(false);
-    setShowLanguageDropdown(false);
+    navigate("/", { state: { scrollTo: "top" } });
   };
 
   const goToFeatures = () => {
-    const featuresSection = document.getElementById("about");
-    if (featuresSection) {
-      featuresSection.scrollIntoView({ behavior: "smooth" });
-    }
+    navigate("/", { state: { scrollTo: "about" } });
     setOpen(false);
     setShowLanguageDropdown(false);
   };
 
   const goToDownload = () => {
-    const downloadSection = document.getElementById("download");
-    if (downloadSection) {
-      downloadSection.scrollIntoView({ behavior: "smooth" });
-    }
+    navigate("/", { state: { scrollTo: "download" } });
     setOpen(false);
     setShowLanguageDropdown(false);
   };
@@ -115,7 +122,6 @@ export default function Topbar() {
   };
 
   const handleLanguageChange = (lang) => {
-    console.log("🔤 Topbar: Cambiando idioma a", lang);
     changeLanguage(lang);
     setShowLanguageDropdown(false);
     setOpen(false);
@@ -158,6 +164,17 @@ export default function Topbar() {
           }
         }}
       >
+        
+        <a
+          href="/notes"
+          onClick={(e) => {
+            e.preventDefault();
+            goToNotes();
+          }}
+          className="menu-link"
+        >
+          Release notes
+        </a>
         <a
           href="#about"
           onClick={(e) => {
@@ -266,7 +283,7 @@ export default function Topbar() {
               "& .MuiSwitch-track": {
                 borderRadius: 999,
                 backgroundColor: darkMode ? "#334155" : "#e5e7eb",
-                border: darkMode ? "1px solid #475569" : "1px solid #cbd5e1",
+                border: darkMode ? "2px solid #7dd3fc" : "2px solid #a9b3c0",
                 opacity: 1,
                 transition: "background-color 0.3s, border-color 0.3s",
               },

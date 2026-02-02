@@ -7,7 +7,7 @@ export default function DownloadSection() {
   const [isDownloading, setIsDownloading] = useState(false);
 
   const DOWNLOAD_URL =
-    "https://github.com/indigonet/Front-isv/releases/download/v1.2.4/ISV.Toolkit.exe";
+    "https://github.com/indigonet/Front-isv/releases/download/v1.2.4/ISV_Toolkit.exe";
   const RELEASES_PAGE = "https://github.com/indigonet/ISV_Toolkit";
 
   const downloadOptions = [
@@ -17,7 +17,7 @@ export default function DownloadSection() {
       icon: "🪟",
       version: "v1.2.4",
       fileSize: "103 MB",
-      fileName: "ISVToolkit.exe", 
+      fileName: "ISV_Toolkit.exe", 
       requirements: t("ADB PlatformTools"),
     },
   ];

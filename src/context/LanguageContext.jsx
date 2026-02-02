@@ -1,6 +1,46 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 
-// Traducciones completas
+export const releaseNotes = {
+  es: [
+    {
+      version: "v1.2.4",
+      changes: [
+        "Mejoras en Logcat",
+        "Optimización de conexión ADB",
+        "Mejoras en análisis de APK",
+        "Mejora general de rendimiento",
+        "La consola CMD ya no se muestra al ejecutar herramientas",
+      ],
+    },
+  ],
+
+  en: [
+    {
+      version: "v1.2.4",
+      changes: [
+        "Logcat improvements",
+        "ADB connection optimization",
+        "APK analysis improvements",
+        "Overall performance improvement",
+        "CMD console no longer appears when running tools",
+      ],
+    },
+  ],
+
+  pt: [
+    {
+      version: "v1.2.4",
+      changes: [
+        "Melhorias no Logcat",
+        "Otimização da conexão ADB",
+        "Melhorias na análise de APK",
+        "Melhoria geral de desempenho",
+        "O console CMD não aparece mais ao executar ferramentas",
+      ],
+    },
+  ],
+};
+
 const translations = {
   es: {
     // Header
@@ -109,7 +149,7 @@ const translations = {
     os: "Sistema Operativo",
     osDesc: "Windows 7/8/10/11 (64-bit)",
     ram: "Memoria RAM",
-    ramDesc: "Mínimo 4GB, recomendado 8GB",
+    ramDesc: "Mínimo 2GB, recomendado 4GB",
     disk: "Espacio en Disco",
     diskDesc: "500MB mínimo, 1GB recomendado",
     internet: "Conexión a Internet",

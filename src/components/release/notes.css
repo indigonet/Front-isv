@@ -1,0 +1,48 @@
+.notes-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  color: var(--text-color);
+}
+
+.notes-container h1 {
+  font-size: 2.2rem;
+  margin-bottom: 2rem;
+}
+
+.note {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: var(--card-bg);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.note h2 {
+  margin-bottom: 0.75rem;
+  font-size: 1.4rem;
+}
+
+.note ul {
+  padding-left: 1.2rem;
+}
+
+.note li {
+  margin-bottom: 0.4rem;
+  line-height: 1.5;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .notes-container h1 {
+    font-size: 1.7rem;
+  }
+
+  .note {
+    padding: 1rem;
+  }
+
+  .note h2 {
+    font-size: 1.2rem;
+  }
+}
