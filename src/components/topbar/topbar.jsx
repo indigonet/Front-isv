@@ -8,10 +8,12 @@ import { useLanguage } from "../../context/LanguageContext";
 import iconDark from "../../assets/icono.png";
 import iconLight from "../../assets/iconoblanco.png";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useTheme } from "../../context/ThemeContext";
+import { Cloud } from "lucide-react";
 
 export default function Topbar() {
   const [open, setOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(true);
+  const { darkMode, toggleDarkMode } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -19,31 +21,6 @@ export default function Topbar() {
   // Referencia al menú para detectar clics fuera
   const menuRef = useRef(null);
   const burgerRef = useRef(null);
-  const goToNotes = () => {
-    navigate("/release-notes");
-    setOpen(false);
-    setShowLanguageDropdown(false);
-  };
-
-  const scrollToSection = (id) => {
-    const section = document.getElementById(id);
-    if (section) {
-      section.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
-  // Usa el contexto
-  const { language, changeLanguage, t } = useLanguage();
-
-  // Cargar preferencias del usuario
-  useEffect(() => {
-    // Verificar preferencia de modo oscuro del sistema
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-    setDarkMode(prefersDark);
-    applyTheme(prefersDark);
-  }, []);
 
   // Detectar clics fuera del menú para cerrarlo
   useEffect(() => {
@@ -86,19 +63,6 @@ export default function Topbar() {
     };
   }, [open, showLanguageDropdown]);
 
-  // Aplicar tema
-  const applyTheme = (isDark) => {
-    if (isDark) {
-      document.documentElement.setAttribute("data-theme", "dark");
-      document.body.classList.add("dark-mode");
-      document.body.classList.remove("light-mode");
-    } else {
-      document.documentElement.setAttribute("data-theme", "light");
-      document.body.classList.add("light-mode");
-      document.body.classList.remove("dark-mode");
-    }
-  };
-
   const goToHome = () => {
     navigate("/", { state: { scrollTo: "top" } });
   };
@@ -121,17 +85,25 @@ export default function Topbar() {
     setShowLanguageDropdown(false);
   };
 
+  const { language, changeLanguage, t } = useLanguage();
+
   const handleLanguageChange = (lang) => {
     changeLanguage(lang);
     setShowLanguageDropdown(false);
     setOpen(false);
   };
 
-  const toggleDarkMode = () => {
-    const newDarkMode = !darkMode;
-    setDarkMode(newDarkMode);
-    applyTheme(newDarkMode);
-    localStorage.setItem("theme", newDarkMode ? "dark" : "light");
+  const goToNotes = () => {
+    navigate("/release-notes");
+    setOpen(false);
+    setShowLanguageDropdown(false);
+  };
+
+  const scrollToSection = (id) => {
+    const section = document.getElementById(id);
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   const getIconImage = () => {
@@ -165,6 +137,19 @@ export default function Topbar() {
         }}
       >
         
+    <a
+  href="/simulator"
+  onClick={(e) => {
+    e.preventDefault();
+    navigate("/simulator");
+    setOpen(false);
+    setShowLanguageDropdown(false);
+  }}
+  className="menu-link"
+>
+  <Cloud size={16} style={{ marginRight: 6 }} />
+  <span>C2C</span>
+</a>
         <a
           href="/notes"
           onClick={(e) => {

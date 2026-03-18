@@ -3,7 +3,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [darkMode, setDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(false);
   
   // Cargar tema guardado
   useEffect(() => {
@@ -11,9 +11,7 @@ export const ThemeProvider = ({ children }) => {
     if (savedTheme) {
       setDarkMode(savedTheme === 'dark');
     } else {
-      // Detectar preferencia del sistema
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      setDarkMode(prefersDark);
+      setDarkMode(false);
     }
   }, []);
   

@@ -3,14 +3,14 @@
   --bg-primary: rgba(15, 23, 42, 0.95);
   --text-primary: rgba(255, 255, 255, 0.9);
   --border-color: rgba(255, 255, 255, 0.1);
-  --accent-gradient: linear-gradient(90deg, #38bdf8, #7c3aed);
+  --accent-gradient: linear-gradient(90deg, #38bdf8, #3b82f6);
 }
 
 [data-theme="light"] {
   --bg-primary: rgba(255, 255, 255, 0.95);
   --text-primary: rgba(0, 0, 0, 0.9);
   --border-color: rgba(0, 0, 0, 0.1);
-  --accent-gradient: linear-gradient(90deg, #0ea5e9, #6366f1);
+  --accent-gradient: linear-gradient(90deg, #0ea5e9, #2563eb);
 }
 
 .topbar {
@@ -45,7 +45,7 @@
 .logo-text {
   font-size: 1.8rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #38bdf8 0%, #7c3aed 100%);
+  background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

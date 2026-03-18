@@ -2,16 +2,17 @@
 
 .about-section {
   padding: 6rem 2rem;
-  background: linear-gradient(135deg, var(--color-bg-gradient-start, #f8fafc) 0%, var(--color-bg-gradient-end, #ffffff) 100%);
+  background-color: var(--color-bg-primary);
   position: relative;
   overflow: hidden;
+  transition: background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .about-title {
   text-align: center;
   font-size: 3rem;
   margin-bottom: 1.5rem;
-  color: var(--color-text-heading, #1e293b);
+  color: var(--color-text-primary);
   font-weight: 800;
   opacity: 0;
 }

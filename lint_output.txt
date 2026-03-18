@@ -1,0 +1,80 @@
+
+> isv_tookit@1.0.0 lint
+> eslint .
+
+
+C:\Users\Matias iOne\source\repost_vscode\ISV_Toolkit_FrontR\src\components\content\sections\AboutSection\AboutSection.jsx
+   14:9   error    'sectionRef' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                       no-unused-vars
+  181:16  warning  The ref value 'cardsRef.current' will likely have changed by the time this effect cleanup function runs. If this ref points to a node rendered by React, copy 'cardsRef.current' to a variable inside the effect, and use that variable in the cleanup function  react-hooks/exhaustive-deps
+
+C:\Users\Matias iOne\source\repost_vscode\ISV_Toolkit_FrontR\src\components\topbar\topbar.jsx
+  16:9  error  'location' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    no-unused-vars
+  28:9  error  'scrollToSection' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             no-unused-vars
+  45:5  error  Error: Cannot access variable before it is declared
+
+`applyTheme` is accessed before it is declared, which prevents the earlier access from updating when this value changes over time.
+
+  43 |     ).matches;
+  44 |     setDarkMode(prefersDark);
+> 45 |     applyTheme(prefersDark);
+     |     ^^^^^^^^^^ `applyTheme` accessed before it is declared
+  46 |   }, []);
+  47 |
+  48 |   // Detectar clics fuera del menú para cerrarlo
+
+   88 |
+   89 |   // Aplicar tema
+>  90 |   const applyTheme = (isDark) => {
+      |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  91 |     if (isDark) {
+      | ^^^^^^^^^^^^^^^^^
+>  92 |       document.documentElement.setAttribute("data-theme", "dark");
+      …
+      | ^^^^^^^^^^^^^^^^^
+>  99 |     }
+      | ^^^^^^^^^^^^^^^^^
+> 100 |   };
+      | ^^^^^ `applyTheme` is declared here
+  101 |
+  102 |   const goToHome = () => {
+  103 |     navigate("/", { state: { scrollTo: "top" } });  react-hooks/immutability
+
+C:\Users\Matias iOne\source\repost_vscode\ISV_Toolkit_FrontR\src\context\LanguageContext.jsx
+    3:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-refresh/only-export-components
+  421:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  419 |     const savedLanguage = localStorage.getItem("language");
+  420 |     if (savedLanguage && translations[savedLanguage]) {
+> 421 |       setLanguage(savedLanguage);
+      |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  422 |     } else {
+  423 |       // Detectar idioma del navegador
+  424 |       const browserLang = navigator.language.slice(0, 2);  react-hooks/set-state-in-effect
+  457:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-refresh/only-export-components
+
+C:\Users\Matias iOne\source\repost_vscode\ISV_Toolkit_FrontR\src\context\ThemeContext.jsx
+  12:7   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  10 |     const savedTheme = localStorage.getItem('theme');
+  11 |     if (savedTheme) {
+> 12 |       setDarkMode(savedTheme === 'dark');
+     |       ^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  13 |     } else {
+  14 |       // Detectar preferencia del sistema
+  15 |       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;  react-hooks/set-state-in-effect
+  45:14  error  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              react-refresh/only-export-components
+
+✖ 10 problems (9 errors, 1 warning)
+
