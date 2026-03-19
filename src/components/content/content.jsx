@@ -119,7 +119,13 @@ export default function Content() {
             aria-label="Descargar ISV Toolkit"
             style={{ cursor: "pointer" }}
           >
-            <img className="hero-logo" src={logo} alt="ISV Toolkit Logo" />
+            <img 
+              className="hero-logo" 
+              src={logo} 
+              alt="ISV Toolkit Logo" 
+              loading="eager"
+              style={{ fetchPriority: 'high' }}
+            />
           </div>
 
           {/* Título y descripción */}

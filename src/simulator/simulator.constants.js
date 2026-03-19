@@ -35,6 +35,11 @@ export const FIELD_CONFIG = {
 
 // ─── Templates ─────────────────────────────────────────────────────────────────
 
+const BODY_POLL = {
+  idTerminal: '', idSucursal: '', serialNumber: '',
+  command: 106, customId: '5ABC',
+};
+
 const BODY_C2C_SALE = {
   idTerminal: '', idSucursal: '', serialNumber: '',
   command: 100, amount: 5200, ticketNumber: '12',
@@ -109,13 +114,19 @@ const BODY_LAST = { command: 400 };
 
 export const COMMAND_METHODS = [
   {
+    id: 'poll', label: 'cmd.poll', icon: Zap, color: 'text-rose-500', bg: 'bg-rose-500/10',
+    endpoint: 'poll',
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'customId'],
+    template: BODY_POLL,
+  },
+  {
     id: 'c2c_sale', label: 'cmd.c2c_sale', icon: Cloud, color: 'text-accent', bg: 'bg-accent/10',
     endpoint: 'sale',
     fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'ticketNumber', 'customId', 'printOnPos'],
     template: BODY_C2C_SALE,
   },
   {
-    id: 'sale_promo', label: 'cmd.sale_promo', icon: Tag, color: 'text-violet-500', bg: 'bg-violet-500/10',
+    id: 'sale_promo', label: 'cmd.sale_promo', icon: Tag, color: 'text-sky-500', bg: 'bg-sky-500/10',
     endpoint: 'salepromo',
     fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'ticketNumber', 'idPromo', 'printOnPos'],
     template: BODY_SALE_PROMO,
@@ -157,7 +168,7 @@ export const COMMAND_METHODS = [
     template: BODY_BIOAUTH,
   },
   {
-    id: 'print_service', label: 'cmd.print', icon: Printer, color: 'text-indigo-400', bg: 'bg-indigo-400/10',
+    id: 'print_service', label: 'cmd.print', icon: Printer, color: 'text-blue-500', bg: 'bg-blue-500/10',
     endpoint: 'printservice',
     fields: ['idTerminal', 'idSucursal', 'serialNumber', 'customId'],
     template: BODY_PRINT_SERVICE,

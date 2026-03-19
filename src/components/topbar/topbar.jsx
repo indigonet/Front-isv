@@ -122,7 +122,9 @@ export default function Topbar() {
           src={getIconImage()}
           alt="ISV Toolkit Logo"
           className="logo-image"
-          key={darkMode ? "dark-icon" : "light-icon"} // Forzar recarga de imagen
+          loading="eager"
+          style={{ fetchPriority: 'high' }}
+          key={darkMode ? "dark-icon" : "light-icon"}
         />
       </div>
 

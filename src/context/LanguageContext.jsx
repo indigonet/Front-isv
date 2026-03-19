@@ -207,6 +207,7 @@ const translations = {
     fetchingToken: "Obteniendo...",
     
     // Commands
+    "cmd.poll": "Conexión (106)",
     "cmd.c2c_sale": "Venta C2C (100)",
     "cmd.sale_promo": "Venta Promo (126)",
     "cmd.refund": "Anulación (102)",
@@ -401,6 +402,7 @@ const translations = {
     fetchingToken: "Fetching...",
     
     // Commands
+    "cmd.poll": "Connection (106)",
     "cmd.c2c_sale": "C2C Sale (100)",
     "cmd.sale_promo": "Promo Sale (126)",
     "cmd.refund": "Abortion (102)",
@@ -573,6 +575,7 @@ const translations = {
     fetchingToken: "Obtendo...",
     
     // Commands
+    "cmd.poll": "Conexão (106)",
     "cmd.c2c_sale": "Venda C2C (100)",
     "cmd.sale_promo": "Venda Promo (126)",
     "cmd.refund": "Reembolso (102)",
@@ -617,6 +620,7 @@ const translations = {
     tokenGuide: "Insira suas credenciais e pressione o botão obter.",
     
     // Commands
+    "cmd.poll": "Conexão (106)",
     "cmd.c2c_sale": "Venda C2C (100)",
     "cmd.sale_promo": "Venda Promo (126)",
     "cmd.refund": "Anulação (102)",

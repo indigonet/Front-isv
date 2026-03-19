@@ -16,6 +16,7 @@ export default function SimulatorSidebar({
   history,
   onClearResponse,
   params,
+  onOpenAuth,
 }) {
   const { t } = useLanguage();
   const [selectedId, setSelectedId] = useState(COMMAND_METHODS[0].id);
@@ -121,16 +122,18 @@ export default function SimulatorSidebar({
           <div className="flex p-1.5 gap-2 bg-accent/5 rounded-2xl border border-accent/10">
             <button
               onClick={() => onEnvChange('uat')}
+              title="Ambiente de pruebas"
               className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all cursor-pointer ${
-                env === 'uat' ? 'bg-accent text-white shadow-lg' : 'text-text-secondary hover:bg-accent/5'
+                env === 'uat' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'text-text-secondary hover:bg-accent/5'
               }`}
             >
               UAT
             </button>
             <button
               onClick={() => onEnvChange('prod')}
+              title="Ambiente de producción (REAL)"
               className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all cursor-pointer ${
-                env === 'prod' ? 'bg-rose-600 text-white shadow-lg' : 'text-text-secondary hover:bg-accent/5'
+                env === 'prod' ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/20' : 'text-text-secondary hover:bg-rose-500/5'
               }`}
             >
               {t('simProdEnv')}
@@ -191,13 +194,6 @@ export default function SimulatorSidebar({
               <div className="grid grid-cols-2 gap-3">
                 {selected.fields.map(renderField)}
               </div>
-              <button
-                onClick={onClearResponse}
-                className="w-full mt-4 py-2.5 rounded-xl border border-accent/10 text-text-secondary hover:bg-accent/5 hover:text-accent transition-all font-black uppercase tracking-widest text-[9px] flex items-center justify-center gap-2 cursor-pointer active:scale-95 group"
-              >
-                <Trash2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-                {t('simClearResponse')}
-              </button>
             </div>
           </>
         )}
@@ -210,12 +206,12 @@ export default function SimulatorSidebar({
         )}
 
         {/* Token status */}
-        <div className="border-t border-accent/5 pt-2">
+        <div className="border-t border-accent/5 pt-4 flex items-center gap-2">
           {accessToken ? (
-            <div className="p-3 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl flex items-center justify-between animate-in zoom-in-95 duration-300">
+            <div className="flex-1 p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl flex items-center justify-between group transition-all duration-300 hover:bg-rose-500/[0.02] hover:border-rose-500/20">
               <div className="flex items-center gap-2 overflow-hidden">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-tighter truncate">Token Activo</span>
+                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-tighter truncate group-hover:text-rose-500 transition-colors">Token Activo</span>
               </div>
               <button 
                 onClick={() => {
@@ -223,18 +219,32 @@ export default function SimulatorSidebar({
                     onClearToken();
                   }
                 }} 
-                className="p-1 hover:bg-rose-500/10 rounded-full text-rose-500 transition-colors cursor-pointer group"
+                className="p-1.5 bg-rose-500/10 rounded-full text-rose-500 transition-all cursor-pointer opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-110 active:scale-95"
                 title={t('simClearBtn')}
               >
-                <X className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
           ) : (
-            <div className="p-3 bg-text-secondary/5 border border-text-secondary/10 rounded-2xl flex items-center gap-2 opacity-50">
-              <div className="w-2 h-2 rounded-full bg-text-secondary/30 shrink-0" />
-              <span className="text-[10px] font-black text-text-secondary uppercase tracking-tighter">{t('simNoToken')}</span>
-            </div>
+            <button
+              onClick={onOpenAuth}
+              className="flex-1 p-3 bg-accent/[0.03] border border-accent/30 rounded-2xl flex items-center gap-2 hover:bg-accent/10 hover:border-accent transition-all cursor-pointer group active:scale-95 shadow-sm"
+              title="Configurar llaves de autenticación"
+            >
+              <div className="w-2.5 h-2.5 rounded-full bg-accent/40 shrink-0 group-hover:bg-accent group-hover:animate-pulse ring-2 ring-accent/10" />
+              <span className="text-[10px] font-black text-accent uppercase tracking-tighter group-hover:font-black transition-all">
+                {t('simNoToken')}
+              </span>
+            </button>
           )}
+
+          <button
+            onClick={onClearResponse}
+            className="p-3 rounded-2xl border border-accent/20 text-text-secondary hover:bg-accent hover:text-white hover:border-accent transition-all cursor-pointer active:scale-90 shadow-sm"
+            title="Limpiar ventana de respuesta"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         </div>
       </div>
 

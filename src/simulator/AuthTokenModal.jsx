@@ -96,8 +96,8 @@ export default function AuthTokenModal({
           <div
             className="rounded-3xl p-6 border space-y-4 flex flex-col justify-between h-full transition-all duration-500"
             style={{
-              borderColor: accessToken ? 'rgba(16,185,129,0.3)' : 'rgba(99,102,241,0.1)',
-              background:  accessToken ? 'rgba(16,185,129,0.05)' : 'rgba(99,102,241,0.03)',
+              borderColor: accessToken ? 'rgba(5, 150, 105, 0.3)' : 'rgba(2, 132, 199, 0.2)',
+              background:  accessToken ? 'rgba(5, 150, 105, 0.05)' : 'rgba(2, 132, 199, 0.05)',
             }}
           >
             <div className="space-y-3">

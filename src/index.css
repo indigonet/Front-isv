@@ -5,7 +5,6 @@
   --color-card: var(--bg-surface);
   --color-accent: var(--accent-color);
   --color-accent-warm: var(--primary);
-  --color-emerald: #10B981;
   --color-text-primary: var(--text-main);
   --color-text-secondary: var(--text-muted);
   --blur-xs: 2px;
@@ -46,8 +45,8 @@ body {
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
   
-  --primary: #6366f1;
-  --accent-color: #38bdf8;
+  --primary: #0284c7;
+  --accent-color: #0ea5e9;
   
   --border-color: rgba(255, 255, 255, 0.08);
 

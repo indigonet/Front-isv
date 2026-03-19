@@ -302,6 +302,7 @@ export default function SimulatorView({ onLog }) {
           history={history}
           onClearResponse={handleClearResponse}
           params={params}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
         />
       </div>
 
