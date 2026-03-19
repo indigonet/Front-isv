@@ -165,7 +165,7 @@ const translations = {
     
     // Simulator
     simulatorTitle: "Simulador GETNET POS",
-    simulatorDesc: "Consola de transacciones C2C/C2S. Valida tokens, envía comandos directamente al servidor POS Integrado y examina el log de eventos.",
+    simulatorDesc: "Consola de transacciones C2C. Valida tokens, envía comandos directamente al servidor POS Integrado y examina el log de eventos.",
     simSendBtn: "Enviar Petición",
     simAtendido: "Atendido",
     simDesatendido: "Desatendido",
@@ -359,7 +359,7 @@ const translations = {
     
     // Simulator
     simulatorTitle: "GETNET POS Simulator",
-    simulatorDesc: "C2C/C2S transaction console. Validate tokens, send commands directly to the Integrated POS server and examine event logs.",
+    simulatorDesc: "C2C transaction console. Validate tokens, send commands directly to the Integrated POS server and examine event logs.",
     simSendBtn: "Send Request",
     simAtendido: "Attended",
     simDesatendido: "Unattended",
@@ -553,7 +553,7 @@ const translations = {
     
     // Simulator
     simulatorTitle: "Simulador GETNET POS",
-    simulatorDesc: "Console de transações C2C/C2S. Valide tokens, envie comandos diretamente ao servidor POS Integrado e examine os logs de eventos.",
+    simulatorDesc: "Console de transações C2C. Valide tokens, envie comandos diretamente ao servidor POS Integrado e examine os logs de eventos.",
     simSendBtn: "Enviar Requisição",
     simEnv: "AMBIENTE",
     simCommand: "COMANDO",

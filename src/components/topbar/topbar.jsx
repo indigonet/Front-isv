@@ -145,9 +145,9 @@ export default function Topbar() {
     setOpen(false);
     setShowLanguageDropdown(false);
   }}
-  className="menu-link"
+  className="menu-link c2c-cloud"
 >
-  <Cloud size={16} style={{ marginRight: 6 }} />
+  <Cloud size={18} />
   <span>C2C</span>
 </a>
         <a
@@ -268,7 +268,7 @@ export default function Topbar() {
               "& .MuiSwitch-track": {
                 borderRadius: 999,
                 backgroundColor: darkMode ? "#334155" : "#e5e7eb",
-                border: darkMode ? "2px solid #7dd3fc" : "2px solid #a9b3c0",
+                border: darkMode ? "2px solid #7dd3fc" : "2px solid #94a3b8",
                 opacity: 1,
                 transition: "background-color 0.3s, border-color 0.3s",
               },

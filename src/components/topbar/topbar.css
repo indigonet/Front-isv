@@ -20,7 +20,8 @@
   right: 0;
   height: 80px;
   background: var(--bg-primary);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
@@ -28,7 +29,10 @@
   padding: 0 2rem;
   z-index: 1000;
   box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  /* Optimization: specific properties instead of 'all' */
+  transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .logo-container {
@@ -43,13 +47,29 @@
 }
 
 .logo-text {
-  font-size: 1.8rem;
+  font-size: 1.55rem;
   font-weight: 800;
-  background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 100%);
+  background: linear-gradient(135deg, #38bdf8 0%, #6366f1 50%, #d946ef 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  letter-spacing: -1.5px;
+  text-transform: uppercase;
+  font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+  filter: drop-shadow(0 0 12px rgba(99, 102, 241, 0.3));
+  position: relative;
+  transition: letter-spacing 0.3s ease;
+}
+
+.logo-container:hover .logo-text {
   letter-spacing: -0.5px;
+}
+
+[data-theme="light"] .logo-text {
+  background: linear-gradient(135deg, #0284c7 0%, #4f46e5 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  filter: none;
 }
 
 .logo-image {
@@ -103,6 +123,67 @@
 
 .menu a:hover::after {
   width: 80%;
+}
+
+/* Novedad: C2C Cloud Contour */
+.menu-link.c2c-cloud {
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 20px 20px 20px 20px !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.6rem 1.2rem !important;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.1);
+  animation: cloud-float 3s ease-in-out infinite;
+}
+
+.menu-link.c2c-cloud::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.menu-link.c2c-cloud:hover {
+  background: rgba(56, 189, 248, 0.2) !important;
+  border-color: rgba(56, 189, 248, 0.4);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.2);
+  transform: translateY(-2px);
+}
+
+.menu-link.c2c-cloud:hover::before {
+  opacity: 1;
+}
+
+@keyframes cloud-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+[data-theme="dark"] .menu-link.c2c-cloud {
+  background: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+/* Professional touch for logo image */
+.logo-image {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.logo-container:hover .logo-image {
+  transform: rotate(15deg) scale(1.1);
 }
 
 /* Botón de GitHub */

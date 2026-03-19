@@ -416,22 +416,25 @@
 }
 
 /* Transiciones suaves para cambio de tema */
+/* Optimized transitions for theme switching */
 .content,
 .hero-section,
 .hero-title,
 .hero-description,
 .hero-feature-card,
+.logo-card {
+  transition:
+    background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 .hero-feature-icon,
 .hero-feature-content h3,
 .hero-feature-content p,
-.logo-card,
-.logo-wrapper,
-.mobile-scroll-hint {
-  transition:
-    background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-    color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+.logo-wrapper {
+  transition: color 0.4s ease, background-color 0.4s ease, transform 0.4s ease;
 }
 
 /* RESPONSIVE PARA TABLET */

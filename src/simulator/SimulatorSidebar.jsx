@@ -67,17 +67,21 @@ export default function SimulatorSidebar({
             role="switch"
             aria-checked={Boolean(value)}
             onClick={() => handleParamChange(field, !value)}
-            className={`relative w-10 h-5 rounded-full transition-all duration-300 focus:outline-none border-2 ${
+            className={`relative w-11 h-6 rounded-full transition-all duration-300 focus:outline-none border-2 ${
               value 
-                ? 'bg-accent border-accent shadow-lg shadow-accent/30' 
-                : 'bg-transparent border-text-secondary/30'
+                ? 'border-accent/60 shadow-lg shadow-accent/10' 
+                : 'border-text-secondary/20'
             }`}
+             style={{ 
+              backgroundColor: value ? 'rgb(51, 65, 85)' : 'rgb(229, 231, 235)',
+              transition: 'background-color 0.3s ease'
+             }}
           >
             <span
-              className={`absolute top-0.5 left-0.5 w-3 h-3 rounded-full shadow transition-all duration-300 ${
+              className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full transition-all duration-300 shadow-sm ${
                 value 
-                  ? 'translate-x-5 bg-white scale-110' 
-                  : 'translate-x-0 bg-text-secondary/40'
+                  ? 'translate-x-5 bg-white scale-110 shadow-accent/40' 
+                  : 'translate-x-0 bg-white'
               }`}
             />
           </button>

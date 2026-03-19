@@ -445,18 +445,26 @@
   --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
 }
 
-/* Transiciones suaves para cambio de tema */
+/* Optimized transitions for theme switching */
 .download-section,
 .download-container,
-.download-title,
-.download-subtitle,
 .requirements-card,
 .dependencies-card,
 .download-card,
 .requirement-item,
-.dependency-item,
-.card-header,
-.card-body > div,
+.dependency-item {
+  transition: 
+    background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.download-title,
+.download-subtitle,
+.requirement-content h4,
+.dependency-content h4,
+.requirement-content p,
+.dependency-content p,
 .version-label,
 .version-value,
 .file-label,
@@ -464,14 +472,6 @@
 .size-label,
 .size-value,
 .req-label,
-.req-value,
-.requirement-content h4,
-.dependency-content h4,
-.requirement-content p,
-.dependency-content p {
-  transition: 
-    background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-    border-color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-    color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-    box-shadow 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+.req-value {
+  transition: color 0.35s ease;
 }

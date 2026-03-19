@@ -1,5 +1,5 @@
 import React from 'react';
-import { Zap, ShieldCheck, UserCheck, Key, Eye, EyeOff, RefreshCw } from 'lucide-react';
+import { Braces, ShieldCheck, UserCheck, Key, Eye, EyeOff } from 'lucide-react';
 import Modal from '../components/modal/Modal';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -42,8 +42,8 @@ export default function AuthTokenModal({
                   type="text"
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
-                  className="w-full bg-background border border-accent/10 rounded-xl py-3 pl-12 pr-4 text-sm font-bold text-text-primary focus:border-accent outline-none transition-all shadow-sm"
-                  placeholder="client_id_..."
+                  className="w-full bg-background border border-accent/10 rounded-xl py-3 pl-12 pr-6 text-sm font-bold text-text-primary focus:border-accent outline-none transition-all shadow-sm truncate"
+                  placeholder="Client ID"
                 />
               </div>
             </div>
@@ -58,15 +58,15 @@ export default function AuthTokenModal({
                 <button
                   type="button"
                   onClick={() => setShowSecret(!showSecret)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-secondary hover:text-accent cursor-pointer transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 text-text-secondary hover:text-accent cursor-pointer transition-colors p-2 rounded-lg bg-background/50 backdrop-blur-sm"
                 >
-                  {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4 ml-1" />}
                 </button>
                 <input
                   type={showSecret ? 'text' : 'password'}
                   value={clientSecret}
                   onChange={(e) => setClientSecret(e.target.value)}
-                  className="w-full bg-background border border-accent/10 rounded-xl py-3 pl-12 pr-14 text-sm font-bold text-text-primary focus:border-accent outline-none transition-all shadow-sm"
+                  className="w-full bg-background border border-accent/10 rounded-xl py-3 pl-12 pr-20 text-sm font-bold text-text-primary focus:border-accent outline-none transition-all shadow-sm"
                   placeholder="••••••••"
                 />
               </div>
@@ -75,8 +75,8 @@ export default function AuthTokenModal({
             {/* Get token button */}
             <button
               onClick={fetchToken}
-              disabled={fetching}
-              className="w-full py-5 rounded-2xl bg-accent text-white hover:bg-accent-warm transition-all font-black uppercase tracking-widest flex items-center justify-center gap-3 cursor-pointer active:scale-95 text-xs shadow-xl shadow-accent/20 disabled:opacity-60"
+              disabled={fetching || !clientId?.trim() || !clientSecret?.trim()}
+              className="w-full py-5 rounded-2xl bg-accent text-white hover:bg-accent-warm transition-all font-black uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 text-xs shadow-xl shadow-accent/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale disabled:pointer-events-none"
             >
               {fetching ? (
                 <div className="flex items-center gap-2">
@@ -85,7 +85,7 @@ export default function AuthTokenModal({
                 </div>
               ) : (
                 <>
-                  <Zap className="w-5 h-5 text-white" />
+                  <Braces className="w-5 h-5 text-white" />
                   {t('fetchTokenBtn')}
                 </>
               )}
