@@ -8,16 +8,18 @@ import { API_BASE, DEFAULT_CREDENTIALS } from './simulator.constants';
 export function useSimulatorAuth({ env, onLog = () => {} }) {
   const [clientId,     setClientId]     = useState(() => localStorage.getItem('isv_auth_clientId')     || DEFAULT_CREDENTIALS.clientId);
   const [clientSecret, setClientSecret] = useState(() => localStorage.getItem('isv_auth_clientSecret') || DEFAULT_CREDENTIALS.clientSecret);
-  const [accessToken,  setAccessToken]  = useState(() => localStorage.getItem('isv_auth_token') || '');
+  const [accessToken,  setAccessToken]  = useState('');
   const [showSecret,   setShowSecret]   = useState(false);
   const [fetching,     setFetching]     = useState(false);
 
-  // Auto-save credentials & token
+  // Auto-save credentials & token (Token only if explicitly needed, but for security we'll skip auto-save now)
   useEffect(() => { localStorage.setItem('isv_auth_clientId',     clientId); },     [clientId]);
   useEffect(() => { localStorage.setItem('isv_auth_clientSecret', clientSecret); }, [clientSecret]);
   useEffect(() => {
-    if (accessToken) localStorage.setItem('isv_auth_token', accessToken);
-    else localStorage.removeItem('isv_auth_token');
+    if (accessToken) {
+      // For security, we won't persist the token anymore, but we'll clear it from storage if it's already there
+      localStorage.removeItem('isv_auth_token');
+    }
   }, [accessToken]);
 
   const clearToken = () => {

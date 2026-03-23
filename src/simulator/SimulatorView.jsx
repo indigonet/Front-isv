@@ -191,120 +191,121 @@ export default function SimulatorView({ onLog }) {
         </div>
       </div>
 
-      {/* Main grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* Main content - Conditional visibility based on token */}
+      {auth.accessToken ? (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
+          {/* ── Left: request builder ── */}
+          <div className="lg:col-span-8 space-y-6">
+            <div className="bg-card rounded-[2.5rem] border border-accent/10 shadow-xl overflow-hidden flex flex-col transition-all hover:shadow-2xl hover:border-accent/20">
 
-        {/* ── Left: request builder ── */}
-        <div className="lg:col-span-8 space-y-6">
-          <div className="bg-card rounded-[2.5rem] border border-accent/10 shadow-xl overflow-hidden flex flex-col transition-all hover:shadow-2xl hover:border-accent/20">
-
-            {/* URL bar */}
-            <div className="p-6 bg-accent/[0.02] border-b border-accent/5 flex flex-col sm:flex-row items-center gap-4">
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <select
-                  value={method}
-                  onChange={(e) => setMethod(e.target.value)}
-                  className="bg-card border border-accent/10 rounded-xl px-4 py-3 font-black text-accent outline-none focus:ring-4 focus:ring-accent/5 transition-all cursor-pointer text-xs uppercase tracking-widest shadow-sm"
-                >
-                  <option>POST</option>
-                  <option>GET</option>
-                  <option>PUT</option>
-                  <option>DELETE</option>
-                </select>
-              </div>
-              <div className="flex-1 relative group w-full">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent transition-colors">
-                  <Code2 className="w-4 h-4" />
-                </div>
-                <input
-                  type="text"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  className="w-full bg-card border border-accent/10 rounded-2xl py-3 pl-10 pr-4 text-sm text-text-primary font-bold outline-none focus:ring-4 focus:ring-accent/5 transition-all shadow-sm"
-                />
-              </div>
-              <button
-                onClick={handleSend}
-                disabled={loading}
-                className="bg-accent hover:bg-accent-warm px-8 py-3 rounded-2xl text-white font-black flex items-center justify-center gap-3 transition-all glow active:scale-95 cursor-pointer disabled:opacity-50 shadow-xl shadow-accent/20 text-xs uppercase tracking-widest w-full sm:w-auto"
-              >
-                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
-                {t('simSendBtn')}
-              </button>
-            </div>
-
-            {/* Body / Response panels */}
-            <div className="grid grid-cols-1 md:grid-cols-2 flex-1 divide-y md:divide-y-0 md:divide-x divide-accent/5">
-              {/* Request JSON */}
-              <div className="flex flex-col">
-                <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
-                  <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2">
-                    <Cpu className="w-3.5 h-3.5 text-accent" /> REQUEST JSON
-                  </span>
-                  <button
-                    onClick={() => copyToClipboard(body)}
-                    className="p-1.5 hover:bg-accent/5 rounded-lg text-text-secondary hover:text-accent transition-all cursor-pointer"
-                    title="Copiar body"
+              {/* URL bar */}
+              <div className="p-6 bg-accent/[0.02] border-b border-accent/5 flex flex-col sm:flex-row items-center gap-4">
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <select
+                    value={method}
+                    onChange={(e) => setMethod(e.target.value)}
+                    className="bg-card border border-accent/10 rounded-xl px-4 py-3 font-black text-accent outline-none focus:ring-4 focus:ring-accent/5 transition-all cursor-pointer text-xs uppercase tracking-widest shadow-sm"
                   >
-                    <Copy className="w-3.5 h-3.5" />
-                  </button>
+                    <option>POST</option>
+                    <option>GET</option>
+                    <option>PUT</option>
+                    <option>DELETE</option>
+                  </select>
                 </div>
-                <div className="flex-1 p-6">
-                  <textarea
-                    className="w-full h-full min-h-[400px] bg-transparent outline-none resize-none text-emerald-500 font-mono text-[13px] font-bold leading-relaxed custom-scrollbar selection:bg-accent selection:text-white"
-                    value={body}
-                    onChange={(e) => setBody(e.target.value)}
-                    spellCheck="false"
+                <div className="flex-1 relative group w-full">
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent transition-colors">
+                    <Code2 className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="text"
+                    value={url}
+                    onChange={(e) => setUrl(e.target.value)}
+                    className="w-full bg-card border border-accent/10 rounded-2xl py-3 pl-10 pr-4 text-sm text-text-primary font-bold outline-none focus:ring-4 focus:ring-accent/5 transition-all shadow-sm"
                   />
                 </div>
+                <button
+                  onClick={handleSend}
+                  disabled={loading}
+                  className="bg-accent hover:bg-accent-warm px-8 py-3 rounded-2xl text-white font-black flex items-center justify-center gap-3 transition-all glow active:scale-95 cursor-pointer disabled:opacity-50 shadow-xl shadow-accent/20 text-xs uppercase tracking-widest w-full sm:w-auto"
+                >
+                  {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
+                  {t('simSendBtn')}
+                </button>
               </div>
 
-              {/* Response */}
-              <div className="flex flex-col bg-accent/[0.01]">
-                <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
-                  <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2">
-                    <Terminal className="w-3.5 h-3.5 text-sky-400" /> RESPONSE VIEW
-                  </span>
-                  {response && (
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-[9px] font-black text-emerald-500">OK</span>
-                    </div>
-                  )}
+              {/* Body / Response panels */}
+              <div className="grid grid-cols-1 md:grid-cols-2 flex-1 divide-y md:divide-y-0 md:divide-x divide-accent/5">
+                {/* Request JSON */}
+                <div className="flex flex-col">
+                  <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
+                    <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2">
+                      <Cpu className="w-3.5 h-3.5 text-accent" /> REQUEST JSON
+                    </span>
+                    <button
+                      onClick={() => copyToClipboard(body)}
+                      className="p-1.5 hover:bg-accent/5 rounded-lg text-text-secondary hover:text-accent transition-all cursor-pointer"
+                      title="Copiar body"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <div className="flex-1 p-6">
+                    <textarea
+                      className="w-full h-full min-h-[400px] bg-transparent outline-none resize-none text-emerald-500 font-mono text-[13px] font-bold leading-relaxed custom-scrollbar selection:bg-accent selection:text-white"
+                      value={body}
+                      onChange={(e) => setBody(e.target.value)}
+                      spellCheck="false"
+                    />
+                  </div>
                 </div>
-                <div className="flex-1 p-6">
-                  {response ? (
-                    <div className="h-full overflow-y-auto custom-scrollbar pr-2">
-                      <pre className="font-mono text-[13px] text-sky-400 font-bold leading-relaxed animate-in fade-in duration-500 whitespace-pre-wrap break-all">
-                        {JSON.stringify(response, null, 2)}
-                      </pre>
-                    </div>
-                  ) : (
-                    <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-text-secondary/20 italic gap-4 grayscale opacity-40">
-                      <Activity className="w-16 h-16" />
-                      <p className="text-xs font-black uppercase tracking-widest">{t('simWaiting')}</p>
-                    </div>
-                  )}
+
+                {/* Response */}
+                <div className="flex flex-col bg-accent/[0.01]">
+                  <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
+                    <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2">
+                      <Terminal className="w-3.5 h-3.5 text-sky-400" /> RESPONSE VIEW
+                    </span>
+                    {response && (
+                      <div className="flex items-center gap-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        <span className="text-[9px] font-black text-emerald-500">OK</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex-1 p-6">
+                    {response ? (
+                      <div className="h-full overflow-y-auto custom-scrollbar pr-2">
+                        <pre className="font-mono text-[13px] text-sky-400 font-bold leading-relaxed animate-in fade-in duration-500 whitespace-pre-wrap break-all">
+                          {JSON.stringify(response, null, 2)}
+                        </pre>
+                      </div>
+                    ) : (
+                      <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-text-secondary/20 italic gap-4 grayscale opacity-40">
+                        <Activity className="w-16 h-16" />
+                        <p className="text-xs font-black uppercase tracking-widest">{t('simWaiting')}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* ── Right sidebar ── */}
-        <SimulatorSidebar
-          env={env}
-          onEnvChange={handleEnvChange}
-          onLoadTemplate={handleLoadTemplate}
-          onSyncParam={handleSyncParam}
-          accessToken={auth.accessToken}
-          onClearToken={auth.clearToken}
-          history={history}
-          onClearResponse={handleClearResponse}
-          params={params}
-          onOpenAuth={() => setIsAuthModalOpen(true)}
-        />
-      </div>
+          {/* ── Right sidebar ── */}
+          <SimulatorSidebar
+            env={env}
+            onEnvChange={handleEnvChange}
+            onLoadTemplate={handleLoadTemplate}
+            onSyncParam={handleSyncParam}
+            accessToken={auth.accessToken}
+            onClearToken={auth.clearToken}
+            history={history}
+            onClearResponse={handleClearResponse}
+            params={params}
+            onOpenAuth={() => setIsAuthModalOpen(true)}
+          />
+        </div>
+      ) : null}
 
       {/* Auth modal */}
       <AuthTokenModal

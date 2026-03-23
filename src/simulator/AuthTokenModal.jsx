@@ -1,5 +1,5 @@
 import React from 'react';
-import { Braces, ShieldCheck, UserCheck, Key, Eye, EyeOff } from 'lucide-react';
+import { Braces, ShieldCheck, UserCheck, Key, Eye, EyeOff, Lock } from 'lucide-react';
 import Modal from '../components/modal/Modal';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -148,7 +148,15 @@ export default function AuthTokenModal({
               </button>
             )}
           </div>
+        </div>
 
+        {/* Privacy Note */}
+        <div className="pt-4 border-t border-accent/5 flex items-center gap-3 opacity-60">
+          <div className="p-2 bg-emerald-500/10 rounded-lg">
+            <Lock className="w-4 h-4 text-emerald-500" />
+          </div>
+          <div className="space-y-0.5">
+          </div>
         </div>
       </div>
     </Modal>
