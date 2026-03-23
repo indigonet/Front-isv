@@ -221,7 +221,7 @@ export default function Topbar() {
                 onClick={() => handleLanguageChange("pt")}
                 onMouseDown={(e) => e.preventDefault()}
               >
-                <span className="flag">PT</span>
+                <span className="flag">🇵🇹</span>
                 <span>Português</span>
               </button>
             </div>

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronRight, Layers, History, X, Trash2, Play, RefreshCw, Lock, ShieldCheck, Wand2 } from 'lucide-react';
+import { ChevronRight, Layers, History, X, Trash2, Play, RefreshCw, Lock, ShieldCheck, Wand2, HelpCircle } from 'lucide-react';
 
 import { COMMAND_METHODS, FIELD_CONFIG } from './simulator.constants';
 import { useLanguage } from '../context/LanguageContext';
@@ -7,7 +7,7 @@ import { useLanguage } from '../context/LanguageContext';
 
 
 export default function SimulatorSidebar({
-  selectedId, // from view
+  selectedId, 
   env,
   onEnvChange,
   onLoadTemplate,
@@ -15,6 +15,8 @@ export default function SimulatorSidebar({
   accessToken,
   onClearToken,
   history,
+  onSelectHistory,
+  onClearHistory,
   onClearResponse,
   params,
   onOpenAuth,
@@ -58,6 +60,8 @@ export default function SimulatorSidebar({
     let finalValue = rawValue;
     if (field === 'amount') {
       finalValue = parseCLP(String(rawValue));
+    } else if (field === 'idPromo') {
+      finalValue = String(rawValue).toUpperCase();
     } else if (typeof rawValue !== 'boolean' && FIELD_CONFIG[field]?.type === 'number') {
       finalValue = rawValue === '' ? '' : Number(rawValue);
     }
@@ -171,6 +175,26 @@ export default function SimulatorSidebar({
                 /{selected.endpoint.toUpperCase()} · CMD {selected.template.command ?? '—'}
               </p>
             </div>
+            {(selected.id === 'sale_promo' || selected.id === 'c2c_mode' || selected.id === 'bioauth') && (
+              <div className="relative">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const el = e.currentTarget.nextElementSibling;
+                    if (el) el.classList.toggle('opacity-100');
+                    if (el) el.classList.toggle('pointer-events-none');
+                  }}
+                  className="p-1 transition-colors hover:text-accent text-accent/40 cursor-help"
+                >
+                  <HelpCircle className="w-4 h-4" />
+                </button>
+                <div className="absolute right-0 bottom-full mb-2 w-48 p-3 bg-card border border-accent/20 rounded-xl shadow-2xl opacity-0 md:group-hover:opacity-100 pointer-events-none transition-all duration-300 z-50 text-[9px] font-bold text-text-secondary leading-relaxed backdrop-blur-md translate-y-2 group-hover:translate-y-0">
+                  {t('simVersionNotice') && t('simVersionNotice') !== 'simVersionNotice' 
+                    ? t('simVersionNotice') 
+                    : 'Este comando al igual que el de c2cmode son solo para las versiones 1.0.1 de iOnetech'}
+                </div>
+              </div>
+            )}
             {selected.fields.length > 0 && (
               <span className={`text-[9px] font-bold px-2 py-1 rounded-lg bg-white/10 ${selected.color} uppercase tracking-widest shrink-0 hidden md:flex items-center gap-1.5`}>
                 <span className="opacity-50">{selected.fields.length}</span>
@@ -196,14 +220,25 @@ export default function SimulatorSidebar({
             onClick={onSend}
             disabled={loading || !accessToken}
             className={`w-full py-4 rounded-2xl font-black flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl text-xs uppercase tracking-widest ${
-              !accessToken 
-                ? 'bg-text-secondary/10 text-text-secondary/40 cursor-not-allowed border border-dashed border-text-secondary/20' 
-                : 'bg-accent hover:bg-accent-warm text-white glow shadow-accent/20 cursor-pointer'
+              loading
+                ? 'bg-text-secondary/20 cursor-wait'
+                : !accessToken 
+                  ? 'bg-text-secondary/10 text-text-secondary/40 cursor-not-allowed border border-dashed border-text-secondary/20 grayscale shadow-none' 
+                  : 'bg-accent hover:bg-accent-warm text-white glow shadow-accent/20 cursor-pointer'
             }`}
           >
-            {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
-            {t('simSendBtn')}
-            {!accessToken && <Lock className="w-3.5 h-3.5 opacity-50 ml-1" />}
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Enviando...</span>
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4 fill-current outline-none" />
+                <span>{t('simSendBtn')}</span>
+                {!accessToken && <Lock className="w-3.5 h-3.5 opacity-50 ml-1" />}
+              </>
+            )}
           </button>
         </div>
 
@@ -264,37 +299,6 @@ export default function SimulatorSidebar({
         </div>
       </div>
 
-      {/* ── History card ── */}
-      <div className="bg-card rounded-[2.5rem] border border-accent/10 p-4 sm:p-6 lg:p-8 shadow-xl overflow-hidden relative">
-        <div className="absolute top-0 right-0 p-8 opacity-5">
-          <History className="w-24 h-24" />
-        </div>
-        <h3 className="text-[10px] font-black text-text-secondary uppercase tracking-widest mb-6 relative z-10">
-          {t('simHistory')}
-        </h3>
-        <div className="space-y-3 relative z-10">
-          {history.length === 0 ? (
-            <p className="text-[10px] text-text-secondary/40 font-bold uppercase tracking-widest text-center py-6">
-              {t('simNoHistory')}
-            </p>
-          ) : (
-            history.map((h) => (
-              <div key={h.id} className="flex items-center justify-between hover:bg-accent/5 p-2 rounded-xl transition-all">
-                <div className="flex items-center gap-3">
-                  <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${h.status < 400 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500'}`} />
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black text-text-primary uppercase tracking-tight">{h.endpoint}</span>
-                    <span className="text-[9px] font-bold text-text-secondary/60">{h.method} · {h.time}</span>
-                  </div>
-                </div>
-                <span className={`text-[10px] font-black tracking-widest ${h.status < 400 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {h.status}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
     </div>
   );
 }

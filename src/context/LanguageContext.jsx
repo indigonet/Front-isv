@@ -166,7 +166,7 @@ const translations = {
     // Simulator
     simulatorTitle: "Simulador Cloud to Cloud",
     simulatorDesc: "Consola de transacciones C2C. Valida tokens, envía comandos directamente al servidor POS Integrado y examina el log de eventos.",
-    simSendBtn: "Enviar Petición",
+    simSendBtn: "Enviar Comando",
     simAtendido: "Atendido",
     simDesatendido: "Desatendido",
     countryChile: "🇨🇱 Chile",
@@ -237,6 +237,8 @@ const translations = {
     "field.authType": "Tipo Auth",
     simClearResponse: "Limpiar Response",
     confirmClearToken: "¿Estás seguro de que deseas borrar el Token guardado?",
+    simVersionNotice: "Este comando al igual que el de Venta Promo, c2cmode y Bio Auth son solo para las versiones 1.0.1 de iOnetech",
+    confirmClearHistory: "¿Estás seguro de que deseas borrar el historial de transacciones?",
   },
 
   en: {
@@ -432,6 +434,8 @@ const translations = {
     "field.authType": "Auth Type",
     simClearResponse: "Clear Response",
     confirmClearToken: "Are you sure you want to clear the saved Token?",
+    simVersionNotice: "This command as well as Venta Promo, c2c_mode and Bio Auth are only for iOnetech version 1.0.1",
+    confirmClearHistory: "Are you sure you want to clear the transaction history?",
   },
 
   pt: {
@@ -650,6 +654,8 @@ const translations = {
     "field.authType": "Tipo Auth",
     simClearResponse: "Limpar Response",
     confirmClearToken: "Tem certeza de que deseja apagar o Token salvo?",
+    simVersionNotice: "Este comando, assim como Venta Promo, c2cmode e Bio Auth, é apenas para iOnetech versão 1.0.1",
+    confirmClearHistory: "Tem certeza de que deseja apagar o histórico de transações?",
     simAtendido: "Atendido",
     simDesatendido: "Desatendido",
     countryChile: "🇨🇱 Chile",

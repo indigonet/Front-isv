@@ -5,6 +5,7 @@ import { EXAMPLE_BODY_C2C_SALE, API_BASE, COMMAND_METHODS } from './simulator.co
 import { useSimulatorAuth }                from './useSimulatorAuth';
 import AuthTokenModal                      from './AuthTokenModal';
 import SimulatorSidebar                    from './SimulatorSidebar';
+import SimulatorHistory                    from './SimulatorHistory';
 import Modal                               from '../components/modal/Modal';
 import { useLanguage }                     from '../context/LanguageContext';
 
@@ -29,6 +30,7 @@ export default function SimulatorView({ onLog }) {
 
   // ── Request history ─────────────────────────────────────────────
   const [history, setHistory] = useState([]);
+  const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
 
   // ── Auth modal ──────────────────────────────────────────────────
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -101,6 +103,8 @@ export default function SimulatorView({ onLog }) {
 
     const currentBodyStr = JSON.stringify(currentParams, null, 2);
 
+    if (loading) return;
+
     // ── Validation ──────────────────────────────────────────────
     if (!currentParams.idTerminal || !currentParams.idSucursal || !currentParams.serialNumber) {
       if (!window.confirm(t('simTriadWarn'))) return;
@@ -109,10 +113,12 @@ export default function SimulatorView({ onLog }) {
     if (selectedId === 'c2c_sale' || selectedId === 'sale_promo') {
       if (!currentParams.amount || currentParams.amount <= 0) {
         if (onLog) onLog('❌ Error: El monto es inválido', 'error');
+        setLoading(false);
         return;
       }
       if (!currentParams.ticketNumber) {
         if (onLog) onLog('❌ Error: El número de ticket es requerido', 'error');
+        setLoading(false);
         return;
       }
     }
@@ -151,6 +157,8 @@ export default function SimulatorView({ onLog }) {
         method,
         endpoint: url.split('/').pop() || '/sale',
         status:   res.status,
+        request:  currentBodyStr,
+        response: data,
         time:     new Date().toLocaleTimeString('es-CL', { hour12: false }),
       }, ...prev]);
 
@@ -185,75 +193,87 @@ export default function SimulatorView({ onLog }) {
   };
 
   const handleClearResponse = () => setResponse(null);
+  
+  const handleClearHistory = () => {
+    if (window.confirm(t('confirmClearHistory') || '¿Estás seguro de que deseas borrar el historial de transacciones?')) {
+      setHistory([]);
+    }
+  };
 
   return (
     <div className="min-h-[calc(100vh-80px)] w-full py-8 px-4 sm:px-6 lg:px-8 bg-background relative overflow-hidden transition-colors duration-500">
-      {/* Background Effects - Optimized for performance */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_var(--tw-gradient-stops))] from-accent/10 via-transparent to-transparent pointer-events-none opacity-40" />
       
       <div className="max-w-[1700px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-12 relative z-10">
 
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-10 bg-card rounded-[2.5rem] border border-accent/10 relative overflow-hidden shadow-2xl transition-colors duration-500">
-        <div className="absolute inset-0 bg-grid-white/[0.02] dark:bg-grid-white/[0.02] bg-grid-black/[0.02] pointer-events-none" />
-        <div className="absolute -top-24 -left-24 w-96 h-96 bg-accent/10 rounded-full blur-[80px] pointer-events-none" />
-        
-        <div className="relative z-10 space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-accent to-blue-600 rounded-2xl shadow-xl shadow-accent/20">
-              <Cloud className="w-6 h-6 text-white" />
+        {/* Header Content */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-10 bg-card rounded-[2.5rem] border border-accent/10 relative overflow-hidden shadow-2xl transition-colors duration-500">
+          <div className="absolute inset-0 bg-grid-white/[0.02] dark:bg-grid-white/[0.02] bg-grid-black/[0.02] pointer-events-none" />
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-accent/10 rounded-full blur-[80px] pointer-events-none" />
+          
+          <div className="relative z-10 space-y-2">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-gradient-to-br from-accent to-blue-600 rounded-2xl shadow-xl shadow-accent/20">
+                <Cloud className="w-6 h-6 text-white" />
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-black text-text-primary tracking-tighter uppercase transition-colors">
+                {t('simulatorTitle')}
+              </h2>
             </div>
-            <h2 className="text-3xl sm:text-4xl font-black text-text-primary tracking-tighter uppercase transition-colors">
-              {t('simulatorTitle')}
-            </h2>
+            <p className="text-text-secondary font-medium pl-1 text-sm sm:text-base transition-colors">{t('simulatorDesc')}</p>
           </div>
-          <p className="text-text-secondary font-medium pl-1 text-sm sm:text-base transition-colors">{t('simulatorDesc')}</p>
+
+          <div className="flex flex-wrap items-center gap-3 relative z-10">
+            <button
+              onClick={() => setIsAuthModalOpen(true)}
+              className="px-4 py-2 bg-accent text-white hover:bg-accent-warm rounded-xl transition-all font-black uppercase tracking-widest text-[9px] flex items-center gap-2.5 active:scale-95 shadow-lg shadow-accent/20 cursor-pointer glow"
+            >
+              <ShieldCheck className="w-4 h-4" /> TOKEN
+            </button>
+
+            {auth.accessToken && (
+              <div 
+                onClick={() => copyToClipboard(`Bearer ${auth.accessToken}`)}
+                className="flex items-center gap-2.5 px-4 py-3 bg-emerald-500/[0.03] border border-emerald-500/20 rounded-2xl group cursor-pointer hover:bg-emerald-500/[0.08] hover:border-emerald-500/40 transition-all duration-300 active:scale-95"
+              >
+                <div className="relative flex items-center justify-center">
+                  <div className="absolute inset-0 bg-emerald-500 blur-md opacity-20 animate-pulse" />
+                  <Lock className="w-3.5 h-3.5 text-emerald-500 relative z-10" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-[7px] font-black text-emerald-500/60 uppercase tracking-[0.25em] leading-none">Status</span>
+                  <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-none mt-1">Token Activo</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 relative z-10">
-          {/* Country selector hidden for now */}
-          {/* <div className="flex items-center gap-2 p-1.5 bg-background border border-accent/10 rounded-2xl shadow-sm">
-            <select
-              value={country}
-              onChange={(e) => setCountry(e.target.value)}
-              className="bg-transparent border-none outline-none font-bold text-xs cursor-pointer px-2"
-            >
-              <option value="cl">{t('countryChile')}</option>
-              <option value="ar">{t('countryArgentina')}</option>
-            </select>
-          </div> */}
-          <button
-            onClick={() => setIsAuthModalOpen(true)}
-            className="px-4 py-2 bg-accent text-white hover:bg-accent-warm rounded-xl transition-all font-black uppercase tracking-widest text-[9px] flex items-center gap-2.5 active:scale-95 shadow-lg shadow-accent/20 cursor-pointer glow"
-          >
-            <ShieldCheck className="w-4 h-4" /> TOKEN
-          </button>
+        {/* Main interactive grid */}
+        <div id="simulator-main" className={`grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-top-4 duration-700 ${!auth.accessToken ? 'hidden' : ''}`}>
+          
+          {/* MOBILE ONLY: Selector appears first */}
+          <div className="lg:hidden">
+            <SimulatorSidebar
+              selectedId={selectedId}
+              env={env}
+              onEnvChange={handleEnvChange}
+              onLoadTemplate={handleLoadTemplate}
+              onSyncParam={handleSyncParam}
+              accessToken={auth.accessToken}
+              onClearToken={auth.clearToken}
+              onClearResponse={handleClearResponse}
+              params={params}
+              onOpenAuth={() => setIsAuthModalOpen(true)}
+              onSend={handleSend}
+              loading={loading}
+            />
+          </div>
 
-          {auth.accessToken && (
-            <div 
-              onClick={() => copyToClipboard(`Bearer ${auth.accessToken}`)}
-              className="flex items-center gap-2.5 px-4 py-3 bg-emerald-500/[0.03] border border-emerald-500/20 rounded-2xl group cursor-pointer hover:bg-emerald-500/[0.08] hover:border-emerald-500/40 transition-all duration-300 active:scale-95"
-              title="Click para copiar Bearer Token"
-            >
-              <div className="relative flex items-center justify-center">
-                <div className="absolute inset-0 bg-emerald-500 blur-md opacity-20 animate-pulse" />
-                <Lock className="w-3.5 h-3.5 text-emerald-500 relative z-10" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-[7px] font-black text-emerald-500/60 uppercase tracking-[0.25em] leading-none">Status</span>
-                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-none mt-1">Token Activo</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Main content - Using hidden class instead of conditional null to keep DOM structure */}
-      <div className={`grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-top-4 duration-700 ${!auth.accessToken ? 'hidden' : ''}`}>
-        {/* ── Left: request builder ── */}
-        <div className="lg:col-span-8 space-y-6">
+          {/* Builder Section (Middle on mobile, Left on desktop) */}
+          <div id="simulator-main-builder" className="lg:col-span-8 space-y-6 scroll-mt-24">
             <div className="bg-card rounded-[2.5rem] border border-accent/10 shadow-xl overflow-hidden flex flex-col transition-all hover:shadow-2xl hover:border-accent/20">
-
+              
               {/* URL bar */}
               <div className="p-6 bg-accent/[0.02] border-b border-accent/5 flex flex-col sm:flex-row items-center gap-4">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -272,33 +292,51 @@ export default function SimulatorView({ onLog }) {
                   <input
                     type="text"
                     value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    className="w-full bg-card border border-accent/10 rounded-2xl py-3.5 pl-10 pr-4 text-[11px] sm:text-sm text-text-primary font-mono font-bold outline-none focus:ring-4 focus:ring-accent/5 transition-all shadow-sm overflow-x-auto"
-                    title={url}
+                    readOnly
+                    className="w-full bg-background border border-accent/10 rounded-xl px-12 py-3 text-[11px] font-black tracking-wider text-text-primary outline-none focus:border-accent transition-all shadow-sm"
                   />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/5 rounded-lg border border-accent/10">
+                      <div className="w-1 h-1 rounded-full bg-accent animate-ping" />
+                      <span className="text-[9px] font-black text-accent uppercase tracking-widest">{method}</span>
+                    </div>
+                  </div>
                 </div>
                 <button
                   onClick={handleSend}
-                  disabled={loading}
-                  className="hidden sm:flex bg-accent hover:bg-accent-warm px-8 py-3 rounded-2xl text-white font-black items-center justify-center gap-3 transition-all glow active:scale-95 cursor-pointer disabled:opacity-50 shadow-xl shadow-accent/20 text-xs uppercase tracking-widest w-full sm:w-auto"
+                  disabled={loading || !auth.accessToken}
+                  className={`hidden sm:flex px-8 py-3.5 rounded-2xl text-white font-black items-center justify-center gap-3 transition-all active:scale-95 cursor-pointer shadow-xl text-xs uppercase tracking-widest w-full sm:w-auto ${
+                    loading 
+                      ? 'bg-text-secondary/20 cursor-wait' 
+                      : !auth.accessToken 
+                        ? 'bg-text-secondary/10 text-text-secondary/40 cursor-not-allowed border border-dashed border-text-secondary/20 grayscale shadow-none'
+                        : 'bg-accent hover:bg-accent-warm glow shadow-accent/20'
+                  }`}
                 >
-                  {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
-                  {t('simSendBtn')}
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Enviando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Play className="w-4 h-4 fill-current outline-none" />
+                      <span>{t('simSendBtn')}</span>
+                    </>
+                  )}
                 </button>
               </div>
 
-              {/* Body / Response panels */}
-              <div className="grid grid-cols-1 md:grid-cols-2 flex-1 divide-y md:divide-y-0 md:divide-x divide-accent/5">
-                {/* Request JSON */}
-                <div className="flex flex-col">
+              {/* Editor + Response view */}
+              <div className="grid grid-cols-1 xl:grid-cols-2 divide-y xl:divide-y-0 xl:divide-x divide-accent/5 flex-1 min-h-0">
+                <div className="flex flex-col bg-accent/[0.01]">
                   <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
                     <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2">
-                      <Cpu className="w-3.5 h-3.5 text-accent" /> REQUEST JSON
+                      <Cpu className="w-3.5 h-3.5 text-accent" /> REQUEST BODY (JSON)
                     </span>
-                    <button
+                    <button 
                       onClick={() => copyToClipboard(body)}
                       className="p-1.5 hover:bg-accent/5 rounded-lg text-text-secondary hover:text-accent transition-all cursor-pointer"
-                      title="Copiar body"
                     >
                       <Copy className="w-3.5 h-3.5" />
                     </button>
@@ -313,7 +351,6 @@ export default function SimulatorView({ onLog }) {
                   </div>
                 </div>
 
-                {/* Response */}
                 <div id="response-view" className="flex flex-col bg-accent/[0.01] scroll-mt-20">
                   <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
                     <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2">
@@ -345,26 +382,37 @@ export default function SimulatorView({ onLog }) {
             </div>
           </div>
 
-          {/* ── Right sidebar ── */}
-          <SimulatorSidebar
-            selectedId={selectedId}
-            env={env}
-            onEnvChange={handleEnvChange}
-            onLoadTemplate={handleLoadTemplate}
-            onSyncParam={handleSyncParam}
-            accessToken={auth.accessToken}
-            onClearToken={auth.clearToken}
-            history={history}
-            onClearResponse={handleClearResponse}
-            params={params}
-            onOpenAuth={() => setIsAuthModalOpen(true)}
-            onSend={handleSend}
-            loading={loading}
-          />
+          {/* SIDEBAR Column: (Desktop Side / Mobile Bottom) */}
+          <div className="lg:col-span-4 space-y-6 flex flex-col">
+            {/* DESKTOP ONLY: Side Selector */}
+            <div className="hidden lg:block">
+              <SimulatorSidebar
+                selectedId={selectedId}
+                env={env}
+                onEnvChange={handleEnvChange}
+                onLoadTemplate={handleLoadTemplate}
+                onSyncParam={handleSyncParam}
+                accessToken={auth.accessToken}
+                onClearToken={auth.clearToken}
+                onClearResponse={handleClearResponse}
+                params={params}
+                onOpenAuth={() => setIsAuthModalOpen(true)}
+                onSend={handleSend}
+                loading={loading}
+              />
+            </div>
+
+            {/* ALWAYS: History Panel */}
+            <SimulatorHistory
+              history={history}
+              onSelectHistory={(item) => setSelectedHistoryItem(item)}
+              onClearHistory={handleClearHistory}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Auth modal */}
+      {/* Modals and Overlays */}
       <AuthTokenModal
         isOpen={isAuthModalOpen}
         onClose={() => {
@@ -382,24 +430,46 @@ export default function SimulatorView({ onLog }) {
         clearToken={auth.clearToken}
       />
 
-      {/* 401 Token Missing Prompt */}
+      <Modal 
+        isOpen={!!selectedHistoryItem} 
+        onClose={() => setSelectedHistoryItem(null)} 
+        title={`Detalle de Transacción: ${selectedHistoryItem?.endpoint?.toUpperCase()}`}
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh]">
+          <div className="space-y-3 flex flex-col min-h-0">
+            <h4 className="text-[10px] font-black text-accent uppercase tracking-widest flex items-center gap-2 px-1">
+              <Code2 className="w-3.5 h-3.5" /> Request Body
+            </h4>
+            <div className="flex-1 overflow-auto bg-slate-50/80 rounded-2xl p-5 border border-slate-200 custom-scrollbar">
+              <pre className="font-mono text-[11px] text-slate-800 font-bold leading-relaxed whitespace-pre-wrap selection:bg-accent/20">
+                {selectedHistoryItem?.request}
+              </pre>
+            </div>
+          </div>
+          <div className="space-y-3 flex flex-col min-h-0">
+            <h4 className="text-[10px] font-black text-sky-500 uppercase tracking-widest flex items-center gap-2 px-1">
+              <Terminal className="w-3.5 h-3.5" /> Response Data
+            </h4>
+            <div className="flex-1 overflow-auto bg-slate-50/80 rounded-2xl p-5 border border-slate-200 custom-scrollbar">
+              <pre className="font-mono text-[11px] text-slate-800 font-bold leading-relaxed whitespace-pre-wrap selection:bg-sky-500/20">
+                {selectedHistoryItem?.response ? JSON.stringify(selectedHistoryItem.response, null, 2) : '{}'}
+              </pre>
+            </div>
+          </div>
+        </div>
+      </Modal>
+
       <Modal isOpen={show401Prompt} onClose={() => setShow401Prompt(false)} title={t('unauthorizedTitle')}>
         <div className="space-y-6">
           <div className="flex gap-4 p-5 bg-rose-500/5 border border-rose-500/10 rounded-2xl">
             <ShieldAlert className="w-8 h-8 text-rose-500 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <h4 className="text-sm font-black text-rose-500 uppercase tracking-widest">Unauthorized</h4>
-              <p className="text-xs font-bold text-text-secondary leading-relaxed">
-                {t('unauthorizedDesc')}
-              </p>
+              <p className="text-xs font-bold text-text-secondary leading-relaxed">{t('unauthorizedDesc')}</p>
             </div>
           </div>
-          
           <div className="flex gap-3 pt-2">
-            <button
-              onClick={() => setShow401Prompt(false)}
-              className="flex-1 py-3 rounded-xl border border-accent/10 hover:bg-accent/5 transition-all text-[11px] font-black uppercase tracking-widest text-text-secondary cursor-pointer"
-            >
+            <button onClick={() => setShow401Prompt(false)} className="flex-1 py-3 rounded-xl border border-accent/10 hover:bg-accent/5 transition-all text-[11px] font-black uppercase tracking-widest text-text-secondary cursor-pointer">
               {t('ignoreBtn')}
             </button>
             <button
