@@ -239,6 +239,14 @@ const translations = {
     confirmClearToken: "¿Estás seguro de que deseas borrar el Token guardado?",
     simVersionNotice: "Este comando al igual que el de Venta Promo, c2cmode y Bio Auth son solo para las versiones 1.0.1 de iOnetech",
     confirmClearHistory: "¿Estás seguro de que deseas borrar el historial de transacciones?",
+    cancelConfirm: "La transacción seguirá por el servicio pero si cancelas no podrás ver la respuesta en esta pantalla.",
+    simCancelBtn: "Cancelar",
+    simStatus: "Status",
+    simRequestBody: "Request Body",
+    simResponseData: "Response Data",
+    simTransactionDetail: "Detalle de Transacción",
+    simCopied: "Copiado al portapapeles",
+    simSending: "Enviando...",
   },
 
   en: {
@@ -436,6 +444,14 @@ const translations = {
     confirmClearToken: "Are you sure you want to clear the saved Token?",
     simVersionNotice: "This command as well as Venta Promo, c2c_mode and Bio Auth are only for iOnetech version 1.0.1",
     confirmClearHistory: "Are you sure you want to clear the transaction history?",
+    cancelConfirm: "The transaction will continue on the service but if you cancel you won't be able to see the response on this screen.",
+    simCancelBtn: "Cancel",
+    simStatus: "Status",
+    simRequestBody: "Request Body",
+    simResponseData: "Response Data",
+    simTransactionDetail: "Transaction Detail",
+    simCopied: "Copied to clipboard",
+    simSending: "Sending...",
   },
 
   pt: {
@@ -660,6 +676,14 @@ const translations = {
     simDesatendido: "Desatendido",
     countryChile: "🇨🇱 Chile",
     countryArgentina: "🇦🇷 Argentina",
+    cancelConfirm: "A transação continuará no serviço, mas se você cancelar, não poderá ver a resposta nesta tela.",
+    simCancelBtn: "Cancelar",
+    simStatus: "Status",
+    simRequestBody: "Corpo da Requisição",
+    simResponseData: "Dados da Resposta",
+    simTransactionDetail: "Detalhes da Transação",
+    simCopied: "Copiado para a área de transferência",
+    simSending: "Enviando...",
   },
 };
 

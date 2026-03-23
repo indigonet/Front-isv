@@ -212,3 +212,12 @@ img {
   background-image: linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
 }
+
+@keyframes pulse-gentle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(0.98); }
+}
+
+.animate-pulse-gentle {
+  animation: pulse-gentle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

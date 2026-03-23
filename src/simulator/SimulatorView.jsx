@@ -12,6 +12,7 @@ import { useLanguage }                     from '../context/LanguageContext';
 export default function SimulatorView({ onLog }) {
   const { t } = useLanguage();
   // ── Request state ──────────────────────────────────────────────
+  // ── Request state ──────────────────────────────────────────────
   const [method,   setMethod]   = useState('POST');
   const [env,      setEnv]      = useState('uat');
   const [selectedId, setSelectedId] = useState(COMMAND_METHODS[0].id);
@@ -22,11 +23,22 @@ export default function SimulatorView({ onLog }) {
   const [abortController, setAbortController] = useState(null);
   
   // Initialize with localStorage if available for the triad
-  const [params,   setParams]   = useState({
-    ...COMMAND_METHODS[0].template,
-    idTerminal:   localStorage.getItem('isv_pos_idTerminal')   || COMMAND_METHODS[0].template.idTerminal,
-    idSucursal:   localStorage.getItem('isv_pos_idSucursal')   || COMMAND_METHODS[0].template.idSucursal,
-    serialNumber: localStorage.getItem('isv_pos_serialNumber') || COMMAND_METHODS[0].template.serialNumber,
+  const [params,   setParams]   = useState(() => {
+    const template = { ...COMMAND_METHODS[0].template };
+    
+    // Auto-randomize if initial command is a sale
+    if (COMMAND_METHODS[0].id === 'c2c_sale' || COMMAND_METHODS[0].id === 'sale_promo') {
+      const base = Math.floor(Math.random() * 99) + 1;
+      template.amount = (base * 1000) + 990;
+      template.ticketNumber = String(Math.floor(Math.random() * 89999) + 10000);
+    }
+
+    return {
+      ...template,
+      idTerminal:   localStorage.getItem('isv_pos_idTerminal')   || template.idTerminal,
+      idSucursal:   localStorage.getItem('isv_pos_idSucursal')   || template.idSucursal,
+      serialNumber: localStorage.getItem('isv_pos_serialNumber') || template.serialNumber,
+    };
   });
 
   // ── Request history ─────────────────────────────────────────────
@@ -87,21 +99,6 @@ export default function SimulatorView({ onLog }) {
 
   const handleSend = async () => {
     let currentParams = { ...params };
-
-    // Auto-randomize for Sale and Sale Promo
-    if (selectedId === 'c2c_sale' || selectedId === 'sale_promo') {
-      const base = Math.floor(Math.random() * 99) + 1; // 1-99
-      const randomAmt = (base * 1000) + 990; // e.g., 5990, 10990...
-      const randomTk = Math.floor(Math.random() * 89999) + 10000; // 5 digits
-      
-      currentParams = { 
-        ...params, 
-        amount: randomAmt, 
-        ticketNumber: String(randomTk) 
-      };
-      setParams(currentParams);
-    }
-
     const currentBodyStr = JSON.stringify(currentParams, null, 2);
 
     if (loading) return;
@@ -199,14 +196,17 @@ export default function SimulatorView({ onLog }) {
 
   const handleCancel = () => {
     if (abortController) {
-      abortController.abort();
-      setAbortController(null);
+      const confirmMsg = t('cancelConfirm') || 'La transacción seguirá por el servicio pero si cancelas no podrás ver la respuesta en esta pantalla.';
+      if (window.confirm(confirmMsg)) {
+        abortController.abort();
+        setAbortController(null);
+      }
     }
   };
 
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
-    if (onLog) onLog('Copiado al portapapeles', 'success');
+    if (onLog) onLog(t('simCopied'), 'success');
   };
 
   const handleClearResponse = () => setResponse(null);
@@ -258,8 +258,8 @@ export default function SimulatorView({ onLog }) {
                   <Lock className="w-3.5 h-3.5 text-emerald-500 relative z-10" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-[7px] font-black text-emerald-500/60 uppercase tracking-[0.25em] leading-none">Status</span>
-                  <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-none mt-1">Token Activo</span>
+                  <span className="text-[7px] font-black text-emerald-500/60 uppercase tracking-[0.25em] leading-none">{t('simStatus')}</span>
+                  <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-none mt-1">{t('simTokenActive')}</span>
                 </div>
               </div>
             )}
@@ -319,7 +319,7 @@ export default function SimulatorView({ onLog }) {
                   disabled={!loading && !auth.accessToken}
                   className={`hidden sm:flex px-8 py-3.5 rounded-2xl text-white font-black items-center justify-center gap-3 transition-all active:scale-95 cursor-pointer shadow-xl text-xs uppercase tracking-widest w-full sm:w-auto ${
                     loading 
-                      ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/20' 
+                      ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/40 animate-pulse-gentle' 
                       : !auth.accessToken 
                         ? 'bg-text-secondary/10 text-text-secondary/40 cursor-not-allowed border border-dashed border-text-secondary/20 grayscale shadow-none'
                         : 'bg-accent hover:bg-accent-warm glow shadow-accent/20'
@@ -327,8 +327,8 @@ export default function SimulatorView({ onLog }) {
                 >
                   {loading ? (
                     <>
-                      <XCircle className="w-4 h-4" />
-                      <span>Cancelar</span>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>{t('simCancelBtn')}</span>
                     </>
                   ) : (
                     <>
@@ -446,12 +446,12 @@ export default function SimulatorView({ onLog }) {
       <Modal 
         isOpen={!!selectedHistoryItem} 
         onClose={() => setSelectedHistoryItem(null)} 
-        title={`Detalle de Transacción: ${selectedHistoryItem?.endpoint?.toUpperCase()}`}
+        title={`${t('simTransactionDetail')}: ${selectedHistoryItem?.endpoint?.toUpperCase()}`}
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh]">
           <div className="space-y-3 flex flex-col min-h-0">
             <h4 className="text-[10px] font-black text-accent uppercase tracking-widest flex items-center gap-2 px-1">
-              <Code2 className="w-3.5 h-3.5" /> Request Body
+              <Code2 className="w-3.5 h-3.5" /> {t('simRequestBody')}
             </h4>
             <div className="flex-1 overflow-auto bg-slate-50/80 rounded-2xl p-5 border border-slate-200 custom-scrollbar">
               <pre className="font-mono text-[11px] text-slate-800 font-bold leading-relaxed whitespace-pre-wrap selection:bg-accent/20">
@@ -461,7 +461,7 @@ export default function SimulatorView({ onLog }) {
           </div>
           <div className="space-y-3 flex flex-col min-h-0">
             <h4 className="text-[10px] font-black text-sky-500 uppercase tracking-widest flex items-center gap-2 px-1">
-              <Terminal className="w-3.5 h-3.5" /> Response Data
+              <Terminal className="w-3.5 h-3.5" /> {t('simResponseData')}
             </h4>
             <div className="flex-1 overflow-auto bg-slate-50/80 rounded-2xl p-5 border border-slate-200 custom-scrollbar">
               <pre className="font-mono text-[11px] text-slate-800 font-bold leading-relaxed whitespace-pre-wrap selection:bg-sky-500/20">

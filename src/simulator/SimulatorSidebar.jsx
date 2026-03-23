@@ -223,7 +223,7 @@ export default function SimulatorSidebar({
             disabled={!loading && !accessToken}
             className={`w-full py-4 rounded-2xl font-black flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl text-xs uppercase tracking-widest ${
               loading
-                ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20 cursor-pointer'
+                ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/40 cursor-pointer animate-pulse-gentle'
                 : !accessToken 
                   ? 'bg-text-secondary/10 text-text-secondary/40 cursor-not-allowed border border-dashed border-text-secondary/20 grayscale shadow-none' 
                   : 'bg-accent hover:bg-accent-warm text-white glow shadow-accent/20 cursor-pointer'
@@ -231,8 +231,8 @@ export default function SimulatorSidebar({
           >
             {loading ? (
               <>
-                <XCircle className="w-4 h-4" />
-                <span>Cancelar</span>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>{t('simCancelBtn')}</span>
               </>
             ) : (
               <>
@@ -265,7 +265,7 @@ export default function SimulatorSidebar({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_4px_rgba(16,185,129,0.5)]" />
-                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{t('tokenActive')}</span>
+                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{t('simTokenActive')}</span>
                 </div>
                 <div className="p-1.5 bg-rose-500 group-hover:bg-rose-600 rounded-lg text-white transition-all shadow-lg shadow-rose-500/10">
                   <Trash2 className="w-3 h-3" />
