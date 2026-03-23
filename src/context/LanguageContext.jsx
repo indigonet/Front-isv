@@ -247,6 +247,7 @@ const translations = {
     simTransactionDetail: "Detalle de Transacción",
     simCopied: "Copiado al portapapeles",
     simSending: "Enviando...",
+    simBackToCommands: "Volver a comandos",
   },
 
   en: {
@@ -452,6 +453,7 @@ const translations = {
     simTransactionDetail: "Transaction Detail",
     simCopied: "Copied to clipboard",
     simSending: "Sending...",
+    simBackToCommands: "Back to commands",
   },
 
   pt: {
@@ -684,6 +686,7 @@ const translations = {
     simTransactionDetail: "Detalhes da Transação",
     simCopied: "Copiado para a área de transferência",
     simSending: "Enviando...",
+    simBackToCommands: "Voltar aos comandos",
   },
 };
 

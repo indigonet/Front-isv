@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle } from 'lucide-react';
+import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle, ChevronUp } from 'lucide-react';
 
 import { EXAMPLE_BODY_C2C_SALE, API_BASE, COMMAND_METHODS } from './simulator.constants';
 import { useSimulatorAuth }                from './useSimulatorAuth';
@@ -49,6 +49,8 @@ export default function SimulatorView({ onLog }) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [show401Prompt,   setShow401Prompt]   = useState(false);
   const [country,         setCountry]         = useState('cl'); // cl | ar
+  const [showJumpBtn,     setShowJumpBtn]     = useState(false);
+  const [lastScrollY,     setLastScrollY]     = useState(0);
 
   // ── Auth hook (token logic lives here) ─────────────────────────
   const auth = useSimulatorAuth({ env, onLog });
@@ -70,6 +72,31 @@ export default function SimulatorView({ onLog }) {
     if (params.idSucursal)   localStorage.setItem('isv_pos_idSucursal',   params.idSucursal);
     if (params.serialNumber) localStorage.setItem('isv_pos_serialNumber', params.serialNumber);
   }, [params]);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Show only on mobile, after 400px, and ONLY when scrolling DOWN
+      if (window.innerWidth < 1024) {
+        const isScrollingDown = currentScrollY > lastScrollY;
+        const isPastThreshold = currentScrollY > 400;
+        
+        setShowJumpBtn(isScrollingDown && isPastThreshold);
+      } else {
+        setShowJumpBtn(false);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+    
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [lastScrollY]);
+
+  const scrollToCommands = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Called by SimulatorSidebar when a command is selected
   const handleLoadTemplate = (bodyStr, endpoint, cmdId) => {
@@ -497,6 +524,19 @@ export default function SimulatorView({ onLog }) {
           </div>
         </div>
       </Modal>
+
+      {/* Floating Scroll-to-Top Button (Mobile Only) */}
+      <div className={`fixed bottom-8 right-6 z-[100] transition-all duration-500 transform lg:hidden ${
+        showJumpBtn ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-50 pointer-events-none'
+      }`}>
+        <button
+          onClick={scrollToCommands}
+          className="flex items-center justify-center w-12 h-12 bg-accent text-white rounded-full shadow-[0_10px_25px_-5px_rgba(14,165,233,0.5)] active:scale-90 transition-all border border-white/20 backdrop-blur-sm group"
+          title={t('simBackToCommands')}
+        >
+          <ChevronUp className="w-5 h-5 group-hover:-translate-y-1 transition-transform" />
+        </button>
+      </div>
     </div>
   );
 }
