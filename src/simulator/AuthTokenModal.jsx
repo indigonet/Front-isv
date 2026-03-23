@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Braces, ShieldCheck, UserCheck, Key, Eye, EyeOff, Lock } from 'lucide-react';
 import Modal from '../components/modal/Modal';
 import { useLanguage } from '../context/LanguageContext';
@@ -23,6 +23,17 @@ export default function AuthTokenModal({
   clearToken,
 }) {
   const { t } = useLanguage();
+  const prevFetching = useRef(fetching);
+
+  // Auto-close on successful token fetch
+  useEffect(() => {
+    // If it WAS fetching and now it's NOT fetching, AND we have a token
+    if (prevFetching.current && !fetching && accessToken && isOpen) {
+      const timer = setTimeout(() => onClose(), 800);
+      return () => clearTimeout(timer);
+    }
+    prevFetching.current = fetching;
+  }, [accessToken, fetching, isOpen, onClose]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={t('tokenConfigBtn')}>

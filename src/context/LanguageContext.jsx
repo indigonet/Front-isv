@@ -164,7 +164,7 @@ const translations = {
     freeDesc: "ISV Toolkit es 100% gratuito",
     
     // Simulator
-    simulatorTitle: "Simulador GETNET POS",
+    simulatorTitle: "Simulador Cloud to Cloud",
     simulatorDesc: "Consola de transacciones C2C. Valida tokens, envía comandos directamente al servidor POS Integrado y examina el log de eventos.",
     simSendBtn: "Enviar Petición",
     simAtendido: "Atendido",
@@ -180,6 +180,7 @@ const translations = {
     simParams: "PARÁMETROS",
     simHistory: "HISTORIAL",
     simNoHistory: "Sin historial",
+    simClearResponse: "Limpiar Ventana",
     simTriadWarn: "Faltan campos de la tríada (ID Terminal, ID Sucursal o Serial Number). ¿Ejecutar el comando de todas formas?",
     simTokenActive: "Bearer Token Activo",
     simNoToken: "Sin Token — abrir configuración",
@@ -208,7 +209,7 @@ const translations = {
     
     // Commands
     "cmd.poll": "Conexión (106)",
-    "cmd.c2c_sale": "Venta C2C (100)",
+    "cmd.c2c_sale": "Venta (100)",
     "cmd.sale_promo": "Venta Promo (126)",
     "cmd.refund": "Anulación (102)",
     "cmd.close": "Cierre (103)",
@@ -359,7 +360,7 @@ const translations = {
     freeDesc: "ISV Toolkit is 100% free",
     
     // Simulator
-    simulatorTitle: "GETNET POS Simulator",
+    simulatorTitle: "Cloud to Cloud Simulator",
     simulatorDesc: "C2C transaction console. Validate tokens, send commands directly to the Integrated POS server and examine event logs.",
     simSendBtn: "Send Request",
     simAtendido: "Attended",
@@ -403,7 +404,7 @@ const translations = {
     
     // Commands
     "cmd.poll": "Connection (106)",
-    "cmd.c2c_sale": "C2C Sale (100)",
+    "cmd.c2c_sale": "Sale (100)",
     "cmd.sale_promo": "Promo Sale (126)",
     "cmd.refund": "Abortion (102)",
     "cmd.close": "Settlement (103)",
@@ -554,7 +555,7 @@ const translations = {
     freeDesc: "ISV Toolkit é 100% gratuito",
     
     // Simulator
-    simulatorTitle: "Simulador GETNET POS",
+    simulatorTitle: "Simulador Cloud to Cloud",
     simulatorDesc: "Console de transações C2C. Valide tokens, envie comandos diretamente ao servidor POS Integrado e examine os logs de eventos.",
     simSendBtn: "Enviar Requisição",
     simEnv: "AMBIENTE",
@@ -576,7 +577,7 @@ const translations = {
     
     // Commands
     "cmd.poll": "Conexão (106)",
-    "cmd.c2c_sale": "Venda C2C (100)",
+    "cmd.c2c_sale": "Venda (100)",
     "cmd.sale_promo": "Venda Promo (126)",
     "cmd.refund": "Reembolso (102)",
     "cmd.close": "Fechamento (103)",
@@ -621,7 +622,7 @@ const translations = {
     
     // Commands
     "cmd.poll": "Conexão (106)",
-    "cmd.c2c_sale": "Venda C2C (100)",
+    "cmd.c2c_sale": "Venda (100)",
     "cmd.sale_promo": "Venda Promo (126)",
     "cmd.refund": "Anulação (102)",
     "cmd.close": "Fechamento (103)",

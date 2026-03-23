@@ -8,7 +8,7 @@ import { API_BASE, DEFAULT_CREDENTIALS } from './simulator.constants';
 export function useSimulatorAuth({ env, onLog = () => {} }) {
   const [clientId,     setClientId]     = useState(() => localStorage.getItem('isv_auth_clientId')     || DEFAULT_CREDENTIALS.clientId);
   const [clientSecret, setClientSecret] = useState(() => localStorage.getItem('isv_auth_clientSecret') || DEFAULT_CREDENTIALS.clientSecret);
-  const [accessToken,  setAccessToken]  = useState('');
+  const [accessToken,  setAccessToken]  = useState(() => localStorage.getItem('isv_auth_token')        || '');
   const [showSecret,   setShowSecret]   = useState(false);
   const [fetching,     setFetching]     = useState(false);
 
@@ -17,13 +17,15 @@ export function useSimulatorAuth({ env, onLog = () => {} }) {
   useEffect(() => { localStorage.setItem('isv_auth_clientSecret', clientSecret); }, [clientSecret]);
   useEffect(() => {
     if (accessToken) {
-      // For security, we won't persist the token anymore, but we'll clear it from storage if it's already there
+      localStorage.setItem('isv_auth_token', accessToken);
+    } else {
       localStorage.removeItem('isv_auth_token');
     }
   }, [accessToken]);
 
   const clearToken = () => {
     setAccessToken('');
+    localStorage.removeItem('isv_auth_token');
     onLog('Token borrado', 'info');
   };
 

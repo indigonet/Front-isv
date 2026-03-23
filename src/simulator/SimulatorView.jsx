@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap } from 'lucide-react';
+import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock } from 'lucide-react';
 
-import { EXAMPLE_BODY_C2C_SALE, API_BASE } from './simulator.constants';
+import { EXAMPLE_BODY_C2C_SALE, API_BASE, COMMAND_METHODS } from './simulator.constants';
 import { useSimulatorAuth }                from './useSimulatorAuth';
 import AuthTokenModal                      from './AuthTokenModal';
 import SimulatorSidebar                    from './SimulatorSidebar';
@@ -13,17 +13,18 @@ export default function SimulatorView({ onLog }) {
   // ── Request state ──────────────────────────────────────────────
   const [method,   setMethod]   = useState('POST');
   const [env,      setEnv]      = useState('uat');
-  const [url,      setUrl]      = useState(API_BASE.uat + 'sale');
-  const [body,     setBody]     = useState(JSON.stringify(EXAMPLE_BODY_C2C_SALE, null, 2));
+  const [selectedId, setSelectedId] = useState(COMMAND_METHODS[0].id);
+  const [url,      setUrl]      = useState(API_BASE.uat + 'poll');
+  const [body,     setBody]     = useState(JSON.stringify(COMMAND_METHODS[0].template, null, 2));
   const [loading,  setLoading]  = useState(false);
   const [response, setResponse] = useState(null);
   
   // Initialize with localStorage if available for the triad
   const [params,   setParams]   = useState({
-    ...EXAMPLE_BODY_C2C_SALE,
-    idTerminal:   localStorage.getItem('isv_pos_idTerminal')   || EXAMPLE_BODY_C2C_SALE.idTerminal,
-    idSucursal:   localStorage.getItem('isv_pos_idSucursal')   || EXAMPLE_BODY_C2C_SALE.idSucursal,
-    serialNumber: localStorage.getItem('isv_pos_serialNumber') || EXAMPLE_BODY_C2C_SALE.serialNumber,
+    ...COMMAND_METHODS[0].template,
+    idTerminal:   localStorage.getItem('isv_pos_idTerminal')   || COMMAND_METHODS[0].template.idTerminal,
+    idSucursal:   localStorage.getItem('isv_pos_idSucursal')   || COMMAND_METHODS[0].template.idSucursal,
+    serialNumber: localStorage.getItem('isv_pos_serialNumber') || COMMAND_METHODS[0].template.serialNumber,
   });
 
   // ── Request history ─────────────────────────────────────────────
@@ -56,7 +57,8 @@ export default function SimulatorView({ onLog }) {
   }, [params]);
 
   // Called by SimulatorSidebar when a command is selected
-  const handleLoadTemplate = (bodyStr, endpoint) => {
+  const handleLoadTemplate = (bodyStr, endpoint, cmdId) => {
+    setSelectedId(cmdId);
     try {
       const template = JSON.parse(bodyStr);
       // Preserve current triad when switching templates
@@ -81,15 +83,40 @@ export default function SimulatorView({ onLog }) {
   };
 
   const handleSend = async () => {
-    try {
-      const parsedBody = JSON.parse(body);
-      if (!parsedBody.idTerminal || !parsedBody.idSucursal || !parsedBody.serialNumber) {
-        const warn = window.confirm(t('simTriadWarn'));
-        if (!warn) return;
-      }
-    } catch {
-      // Ignorar si el JSON está mal formado hasta que empiece la petición
+    let currentParams = { ...params };
+
+    // Auto-randomize for Sale and Sale Promo
+    if (selectedId === 'c2c_sale' || selectedId === 'sale_promo') {
+      const base = Math.floor(Math.random() * 99) + 1; // 1-99
+      const randomAmt = (base * 1000) + 990; // e.g., 5990, 10990...
+      const randomTk = Math.floor(Math.random() * 89999) + 10000; // 5 digits
+      
+      currentParams = { 
+        ...params, 
+        amount: randomAmt, 
+        ticketNumber: String(randomTk) 
+      };
+      setParams(currentParams);
     }
+
+    const currentBodyStr = JSON.stringify(currentParams, null, 2);
+
+    // ── Validation ──────────────────────────────────────────────
+    if (!currentParams.idTerminal || !currentParams.idSucursal || !currentParams.serialNumber) {
+      if (!window.confirm(t('simTriadWarn'))) return;
+    }
+
+    if (selectedId === 'c2c_sale' || selectedId === 'sale_promo') {
+      if (!currentParams.amount || currentParams.amount <= 0) {
+        if (onLog) onLog('❌ Error: El monto es inválido', 'error');
+        return;
+      }
+      if (!currentParams.ticketNumber) {
+        if (onLog) onLog('❌ Error: El número de ticket es requerido', 'error');
+        return;
+      }
+    }
+    // ────────────────────────────────────────────────────────────
 
     setLoading(true);
 
@@ -104,8 +131,11 @@ export default function SimulatorView({ onLog }) {
       const headers = { 'Content-Type': 'application/json' };
       if (auth.accessToken) headers['Authorization'] = `Bearer ${auth.accessToken}`;
 
-      const options = { method, headers };
-      if (method !== 'GET' && method !== 'HEAD' && body) options.body = body;
+      const options = { 
+        method, 
+        headers,
+        body: method !== 'GET' && method !== 'HEAD' ? currentBodyStr : undefined
+      };
 
       const startTime = Date.now();
       const res       = await fetch(url, options);
@@ -126,6 +156,16 @@ export default function SimulatorView({ onLog }) {
 
       if (res.ok) {
         if (onLog) onLog(`✅ ${res.status} OK (${endTime - startTime}ms)`, 'success');
+        
+        // Auto-scroll to response on mobile
+        if (window.innerWidth < 1024) {
+          setTimeout(() => {
+            const responseEl = document.getElementById('response-view');
+            if (responseEl) {
+              responseEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, 100);
+        }
       } else {
         if (onLog) onLog(`❌ ${res.status} — ${JSON.stringify(data).substring(0, 120)}`, 'error');
         if (res.status === 401) setShow401Prompt(true);
@@ -184,32 +224,49 @@ export default function SimulatorView({ onLog }) {
           </div> */}
           <button
             onClick={() => setIsAuthModalOpen(true)}
-            className="px-6 py-3 bg-accent text-white hover:bg-accent-warm rounded-2xl transition-all font-black uppercase tracking-widest text-[10px] flex items-center gap-2 active:scale-95 shadow-lg shadow-accent/20 cursor-pointer glow"
+            className="px-4 py-2 bg-accent text-white hover:bg-accent-warm rounded-xl transition-all font-black uppercase tracking-widest text-[9px] flex items-center gap-2.5 active:scale-95 shadow-lg shadow-accent/20 cursor-pointer glow"
           >
-            <ShieldCheck className="w-5 h-5 transition-transform" /> {t('tokenConfigBtn')}
+            <ShieldCheck className="w-4 h-4" /> TOKEN
           </button>
+
+          {auth.accessToken && (
+            <div 
+              onClick={() => copyToClipboard(`Bearer ${auth.accessToken}`)}
+              className="flex items-center gap-2.5 px-4 py-3 bg-emerald-500/[0.03] border border-emerald-500/20 rounded-2xl group cursor-pointer hover:bg-emerald-500/[0.08] hover:border-emerald-500/40 transition-all duration-300 active:scale-95"
+              title="Click para copiar Bearer Token"
+            >
+              <div className="relative flex items-center justify-center">
+                <div className="absolute inset-0 bg-emerald-500 blur-md opacity-20 animate-pulse" />
+                <Lock className="w-3.5 h-3.5 text-emerald-500 relative z-10" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[7px] font-black text-emerald-500/60 uppercase tracking-[0.25em] leading-none">Status</span>
+                <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-none mt-1">Token Activo</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Main content - Conditional visibility based on token */}
-      {auth.accessToken ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-top-4 duration-700">
-          {/* ── Left: request builder ── */}
-          <div className="lg:col-span-8 space-y-6">
+      {/* Main content - Using hidden class instead of conditional null to keep DOM structure */}
+      <div className={`grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-top-4 duration-700 ${!auth.accessToken ? 'hidden' : ''}`}>
+        {/* ── Left: request builder ── */}
+        <div className="lg:col-span-8 space-y-6">
             <div className="bg-card rounded-[2.5rem] border border-accent/10 shadow-xl overflow-hidden flex flex-col transition-all hover:shadow-2xl hover:border-accent/20">
 
               {/* URL bar */}
               <div className="p-6 bg-accent/[0.02] border-b border-accent/5 flex flex-col sm:flex-row items-center gap-4">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <select
-                    value={method}
-                    onChange={(e) => setMethod(e.target.value)}
-                    className="bg-card border border-accent/10 rounded-xl px-4 py-3 font-black text-accent outline-none focus:ring-4 focus:ring-accent/5 transition-all cursor-pointer text-xs uppercase tracking-widest shadow-sm"
+                    value={env}
+                    onChange={(e) => handleEnvChange(e.target.value)}
+                    className={`bg-card border border-accent/10 rounded-xl px-4 py-3 font-black outline-none focus:ring-4 focus:ring-accent/5 transition-all cursor-pointer text-xs uppercase tracking-widest shadow-sm ${
+                      env === 'prod' ? 'text-rose-500' : env === 'uat' ? 'text-accent' : 'text-emerald-500'
+                    }`}
                   >
-                    <option>POST</option>
-                    <option>GET</option>
-                    <option>PUT</option>
-                    <option>DELETE</option>
+                    <option value="dev">DEV</option>
+                    <option value="uat">UAT</option>
+                    <option value="prod">PROD</option>
                   </select>
                 </div>
                 <div className="flex-1 relative group w-full">
@@ -220,13 +277,14 @@ export default function SimulatorView({ onLog }) {
                     type="text"
                     value={url}
                     onChange={(e) => setUrl(e.target.value)}
-                    className="w-full bg-card border border-accent/10 rounded-2xl py-3 pl-10 pr-4 text-sm text-text-primary font-bold outline-none focus:ring-4 focus:ring-accent/5 transition-all shadow-sm"
+                    className="w-full bg-card border border-accent/10 rounded-2xl py-3.5 pl-10 pr-4 text-[11px] sm:text-sm text-text-primary font-mono font-bold outline-none focus:ring-4 focus:ring-accent/5 transition-all shadow-sm overflow-x-auto"
+                    title={url}
                   />
                 </div>
                 <button
                   onClick={handleSend}
                   disabled={loading}
-                  className="bg-accent hover:bg-accent-warm px-8 py-3 rounded-2xl text-white font-black flex items-center justify-center gap-3 transition-all glow active:scale-95 cursor-pointer disabled:opacity-50 shadow-xl shadow-accent/20 text-xs uppercase tracking-widest w-full sm:w-auto"
+                  className="hidden sm:flex bg-accent hover:bg-accent-warm px-8 py-3 rounded-2xl text-white font-black items-center justify-center gap-3 transition-all glow active:scale-95 cursor-pointer disabled:opacity-50 shadow-xl shadow-accent/20 text-xs uppercase tracking-widest w-full sm:w-auto"
                 >
                   {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
                   {t('simSendBtn')}
@@ -260,7 +318,7 @@ export default function SimulatorView({ onLog }) {
                 </div>
 
                 {/* Response */}
-                <div className="flex flex-col bg-accent/[0.01]">
+                <div id="response-view" className="flex flex-col bg-accent/[0.01] scroll-mt-20">
                   <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
                     <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2">
                       <Terminal className="w-3.5 h-3.5 text-sky-400" /> RESPONSE VIEW
@@ -293,6 +351,7 @@ export default function SimulatorView({ onLog }) {
 
           {/* ── Right sidebar ── */}
           <SimulatorSidebar
+            selectedId={selectedId}
             env={env}
             onEnvChange={handleEnvChange}
             onLoadTemplate={handleLoadTemplate}
@@ -303,9 +362,11 @@ export default function SimulatorView({ onLog }) {
             onClearResponse={handleClearResponse}
             params={params}
             onOpenAuth={() => setIsAuthModalOpen(true)}
+            onSend={handleSend}
+            loading={loading}
           />
         </div>
-      ) : null}
+      </div>
 
       {/* Auth modal */}
       <AuthTokenModal
@@ -355,7 +416,6 @@ export default function SimulatorView({ onLog }) {
           </div>
         </div>
       </Modal>
-    </div>
     </div>
   );
 }

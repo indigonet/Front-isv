@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronRight, Layers, History, X, Trash2 } from 'lucide-react';
+import { ChevronRight, Layers, History, X, Trash2, Play, RefreshCw, Lock, ShieldCheck, Wand2 } from 'lucide-react';
 
 import { COMMAND_METHODS, FIELD_CONFIG } from './simulator.constants';
 import { useLanguage } from '../context/LanguageContext';
@@ -7,35 +7,58 @@ import { useLanguage } from '../context/LanguageContext';
 
 
 export default function SimulatorSidebar({
+  selectedId, // from view
   env,
   onEnvChange,
-  onLoadTemplate,   // (bodyStr, endpoint) => void
-  onSyncParam,      // (field, value) => void
+  onLoadTemplate,
+  onSyncParam,
   accessToken,
   onClearToken,
   history,
   onClearResponse,
   params,
   onOpenAuth,
+  onSend,
+  loading,
 }) {
   const { t } = useLanguage();
-  const [selectedId, setSelectedId] = useState(COMMAND_METHODS[0].id);
 
   const selected = COMMAND_METHODS.find((m) => m.id === selectedId) ?? COMMAND_METHODS[0];
   const Icon = selected.icon;
 
   const handleCommandChange = useCallback((id) => {
-    setSelectedId(id);
     const method = COMMAND_METHODS.find((m) => m.id === id);
     if (method) {
-      // Use the template from the selected method
-      onLoadTemplate(JSON.stringify(method.template, null, 2), method.endpoint);
+      let finalTemplate = { ...method.template };
+
+      // Auto-randomize on LOAD for Sale and Sale Promo
+      if (id === 'c2c_sale' || id === 'sale_promo') {
+        const base = Math.floor(Math.random() * 99) + 1;
+        const randomAmt = (base * 1000) + 990;
+        const randomTk = Math.floor(Math.random() * 89999) + 10000;
+        
+        finalTemplate.amount = randomAmt;
+        finalTemplate.ticketNumber = String(randomTk);
+      }
+
+      onLoadTemplate(JSON.stringify(finalTemplate, null, 2), method.endpoint, id);
     }
   }, [onLoadTemplate]);
 
+  const formatCLP = (num) => {
+    if (!num && num !== 0) return '';
+    return `$ ${Number(num).toLocaleString('es-CL')}`;
+  };
+
+  const parseCLP = (str) => {
+    return Number(str.replace(/[^0-9]/g, ''));
+  };
+
   const handleParamChange = useCallback((field, rawValue) => {
     let finalValue = rawValue;
-    if (typeof rawValue !== 'boolean' && FIELD_CONFIG[field]?.type === 'number') {
+    if (field === 'amount') {
+      finalValue = parseCLP(String(rawValue));
+    } else if (typeof rawValue !== 'boolean' && FIELD_CONFIG[field]?.type === 'number') {
       finalValue = rawValue === '' ? '' : Number(rawValue);
     }
     onSyncParam(field, finalValue);
@@ -95,12 +118,14 @@ export default function SimulatorSidebar({
         key={field}
         className={`block space-y-1.5 ${cfg.span === 2 ? 'col-span-2' : ''}`}
       >
-        <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1">
-          {t(cfg.label)}
-        </span>
+        <div className="flex items-center justify-between px-1">
+          <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest leading-none">
+            {t(cfg.label)}
+          </span>
+        </div>
         <input
-          type={cfg.type}
-          value={value}
+          type={field === 'amount' ? 'text' : cfg.type}
+          value={field === 'amount' ? formatCLP(value) : value}
           onChange={(e) => handleParamChange(field, e.target.value)}
           className="w-full bg-background border border-accent/10 rounded-xl px-3 py-2.5 outline-none focus:border-accent transition-all font-black text-text-primary text-sm shadow-sm"
         />
@@ -112,36 +137,7 @@ export default function SimulatorSidebar({
     <div className="lg:col-span-4 space-y-6">
 
       {/* ── Main card ── */}
-      <div className="bg-card rounded-[2.5rem] border border-accent/10 p-8 shadow-xl space-y-6">
-
-        {/* Environment toggle */}
-        <div className="space-y-3">
-          <h3 className="text-[10px] font-black text-text-secondary uppercase tracking-widest flex items-center gap-2">
-            <Layers className="w-4 h-4 text-accent" /> {t('simEnv')}
-          </h3>
-          <div className="flex p-1.5 gap-2 bg-accent/5 rounded-2xl border border-accent/10">
-            <button
-              onClick={() => onEnvChange('uat')}
-              title="Ambiente de pruebas"
-              className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all cursor-pointer ${
-                env === 'uat' ? 'bg-accent text-white shadow-lg shadow-accent/20' : 'text-text-secondary hover:bg-accent/5'
-              }`}
-            >
-              UAT
-            </button>
-            <button
-              onClick={() => onEnvChange('prod')}
-              title="Ambiente de producción (REAL)"
-              className={`flex-1 py-3 rounded-xl text-[10px] font-black tracking-widest transition-all cursor-pointer ${
-                env === 'prod' ? 'bg-rose-600 text-white shadow-lg shadow-rose-600/20' : 'text-text-secondary hover:bg-rose-500/5'
-              }`}
-            >
-              {t('simProdEnv')}
-            </button>
-          </div>
-        </div>
-
-        <div className="border-t border-accent/5" />
+      <div className="bg-card rounded-[2.5rem] border border-accent/10 p-4 sm:p-6 lg:p-8 shadow-xl space-y-6">
 
         {/* Command selector */}
         <div className="space-y-4">
@@ -153,7 +149,7 @@ export default function SimulatorSidebar({
             <select
               value={selectedId}
               onChange={(e) => handleCommandChange(e.target.value)}
-              className="w-full appearance-none bg-background border border-accent/10 rounded-2xl px-5 py-4 pr-10 font-black text-text-primary text-sm outline-none focus:border-accent transition-all cursor-pointer shadow-sm"
+              className="w-full appearance-none bg-background border border-accent/10 rounded-2xl px-5 py-3.5 pr-10 font-black text-text-primary text-sm outline-none focus:border-accent transition-all cursor-pointer shadow-sm"
             >
               {COMMAND_METHODS.map((m) => (
                 <option key={m.id} value={m.id}>{t(m.label)}</option>
@@ -176,8 +172,9 @@ export default function SimulatorSidebar({
               </p>
             </div>
             {selected.fields.length > 0 && (
-              <span className={`text-[9px] font-black px-2 py-1 rounded-lg bg-white/10 ${selected.color} uppercase tracking-widest shrink-0`}>
-                {selected.fields.length} {t('simParamsCount')}
+              <span className={`text-[9px] font-bold px-2 py-1 rounded-lg bg-white/10 ${selected.color} uppercase tracking-widest shrink-0 hidden md:flex items-center gap-1.5`}>
+                <span className="opacity-50">{selected.fields.length}</span>
+                <span>{t('simParamsCount')}</span>
               </span>
             )}
           </div>
@@ -187,16 +184,28 @@ export default function SimulatorSidebar({
         {selected.fields.length > 0 && (
           <>
             <div className="border-t border-accent/5" />
-            <div className="space-y-4">
-              <h3 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">
-                {t('simParams')}
-              </h3>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 {selected.fields.map(renderField)}
               </div>
-            </div>
           </>
         )}
+
+        {/* Send Button (Visible ONLY on small screens for mobile UX) */}
+        <div className="sm:hidden pt-2">
+           <button
+            onClick={onSend}
+            disabled={loading || !accessToken}
+            className={`w-full py-4 rounded-2xl font-black flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl text-xs uppercase tracking-widest ${
+              !accessToken 
+                ? 'bg-text-secondary/10 text-text-secondary/40 cursor-not-allowed border border-dashed border-text-secondary/20' 
+                : 'bg-accent hover:bg-accent-warm text-white glow shadow-accent/20 cursor-pointer'
+            }`}
+          >
+            {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4 fill-current" />}
+            {t('simSendBtn')}
+            {!accessToken && <Lock className="w-3.5 h-3.5 opacity-50 ml-1" />}
+          </button>
+        </div>
 
         {/* Print service note */}
         {selectedId === 'print_service' && (
@@ -205,51 +214,58 @@ export default function SimulatorSidebar({
           </p>
         )}
 
-        {/* Token status */}
-        <div className="border-t border-accent/5 pt-4 flex items-center gap-2">
+        {/* Token status & Actions */}
+        <div className="border-t border-accent/5 pt-6 space-y-3">
           {accessToken ? (
-            <div className="flex-1 p-3 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl flex items-center justify-between group transition-all duration-300 hover:bg-rose-500/[0.02] hover:border-rose-500/20">
-              <div className="flex items-center gap-2 overflow-hidden">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span className="text-[10px] font-black text-emerald-500 uppercase tracking-tighter truncate group-hover:text-rose-500 transition-colors">Token Activo</span>
+            <div 
+              onClick={() => {
+                if (window.confirm(t('confirmClearToken'))) {
+                  onClearToken();
+                }
+              }} 
+              className="group relative overflow-hidden bg-gradient-to-r from-emerald-500/[0.03] to-emerald-500/[0.08] border border-emerald-500/20 rounded-2xl p-4 transition-all duration-500 hover:shadow-lg hover:shadow-emerald-500/5 hover:border-emerald-500/40 cursor-pointer active:scale-95"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_4px_rgba(16,185,129,0.5)]" />
+                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{t('tokenActive')}</span>
+                </div>
+                <div className="p-1.5 bg-rose-500 group-hover:bg-rose-600 rounded-lg text-white transition-all shadow-lg shadow-rose-500/10">
+                  <Trash2 className="w-3 h-3" />
+                </div>
               </div>
-              <button 
-                onClick={() => {
-                  if (window.confirm(t('confirmClearToken'))) {
-                    onClearToken();
-                  }
-                }} 
-                className="p-1.5 bg-rose-500/10 rounded-full text-rose-500 transition-all cursor-pointer opacity-0 group-hover:opacity-100 scale-90 group-hover:scale-110 active:scale-95"
-                title={t('simClearBtn')}
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
             </div>
           ) : (
             <button
               onClick={onOpenAuth}
-              className="flex-1 p-3 bg-accent/[0.03] border border-accent/30 rounded-2xl flex items-center gap-2 hover:bg-accent/10 hover:border-accent transition-all cursor-pointer group active:scale-95 shadow-sm"
-              title="Configurar llaves de autenticación"
+              className="w-full p-4 bg-accent/[0.03] border border-accent/20 rounded-2xl flex items-center justify-between hover:bg-accent/[0.08] hover:border-accent transition-all cursor-pointer group active:scale-95 shadow-sm"
             >
-              <div className="w-2.5 h-2.5 rounded-full bg-accent/40 shrink-0 group-hover:bg-accent group-hover:animate-pulse ring-2 ring-accent/10" />
-              <span className="text-[10px] font-black text-accent uppercase tracking-tighter group-hover:font-black transition-all">
-                {t('simNoToken')}
-              </span>
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-accent/10 text-accent group-hover:scale-110 transition-transform">
+                  <ShieldCheck className="w-4 h-4" />
+                </div>
+                <span className="text-[10px] font-black text-accent uppercase tracking-widest">
+                  {t('simNoToken')}
+                </span>
+              </div>
+              <ChevronRight className="w-4 h-4 text-accent/40 group-hover:translate-x-1 transition-transform" />
             </button>
           )}
 
           <button
             onClick={onClearResponse}
-            className="p-3 rounded-2xl border border-accent/20 text-text-secondary hover:bg-accent hover:text-white hover:border-accent transition-all cursor-pointer active:scale-90 shadow-sm"
-            title="Limpiar ventana de respuesta"
+            className="w-full flex items-center justify-center gap-3 p-3.5 rounded-2xl border border-accent/20 bg-accent/[0.03] text-text-primary hover:bg-accent hover:text-white hover:border-accent hover:shadow-lg hover:shadow-accent/10 transition-all cursor-pointer active:scale-95 group shadow-sm"
           >
-            <Trash2 className="w-4 h-4" />
+            <div className="p-1.5 rounded-lg bg-accent/10 group-hover:bg-white/20 transition-colors">
+              <Trash2 className="w-3.5 h-3.5 text-accent group-hover:text-white" />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-widest">{t('simClearResponse')}</span>
           </button>
         </div>
       </div>
 
       {/* ── History card ── */}
-      <div className="bg-card rounded-[2.5rem] border border-accent/10 p-8 shadow-xl overflow-hidden relative">
+      <div className="bg-card rounded-[2.5rem] border border-accent/10 p-4 sm:p-6 lg:p-8 shadow-xl overflow-hidden relative">
         <div className="absolute top-0 right-0 p-8 opacity-5">
           <History className="w-24 h-24" />
         </div>

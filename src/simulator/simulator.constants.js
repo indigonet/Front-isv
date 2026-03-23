@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 
 export const API_BASE = {
+  dev: 'https://api-dev-getnet-posintegrado.ione.cl/api/postxs/',
   uat: 'https://api-uat-getnet-posintegrado.ione.cl/api/postxs/',
   prod: 'https://api-getnet-posintegrado.ione.cl/api/postxs/',
 };
@@ -43,39 +44,39 @@ const BODY_POLL = {
 const BODY_C2C_SALE = {
   idTerminal: '', idSucursal: '', serialNumber: '',
   command: 100, amount: 5200, ticketNumber: '12',
-  printOnPos: false, saleType: 1, employeeId: 1, customId: '1234',
+  printOnPos: true, saleType: 1, employeeId: 1, customId: '1234',
 };
 
 const BODY_SALE_PROMO = {
   idTerminal: '', idSucursal: '', serialNumber: '',
   command: 126, amount: 0, ticketNumber: '',
-  printOnPos: false, saleType: 1, employeeId: 1, idPromo: '',
+  printOnPos: true, saleType: 1, employeeId: 1, idPromo: '',
 };
 
 const BODY_REFUND_V2 = {
   idTerminal: '', idSucursal: '', serialNumber: '',
-  command: 102, operationId: 12, printOnPos: false, customId: '1234',
+  command: 102, operationId: 12, printOnPos: true, customId: '1234',
 };
 
 const BODY_CLOSE = {
   idTerminal: '', idSucursal: '', serialNumber: '',
-  command: 103, printOnPos: false, customId: '1234',
+  command: 103, printOnPos: true, customId: '1234',
 };
 
 const BODY_DETAILS = {
   idTerminal: '', idSucursal: '', serialNumber: '',
-  command: 105, printOnPos: false, customId: '1234',
+  command: 105, printOnPos: true, customId: '1234',
 };
 
 const BODY_RETURN = {
   idTerminal: '', idSucursal: '', serialNumber: '',
   command: 108, authorizationCode: '', amount: 0,
-  printOnPos: false, customId: '',
+  printOnPos: true, customId: '',
 };
 
 const BODY_DUPLICATE = {
   idTerminal: '', idSucursal: '', serialNumber: '',
-  command: 109, operationId: 12, printOnPos: false, customId: '1234',
+  command: 109, operationId: 12, printOnPos: true, customId: '1234',
 };
 
 const BODY_BIOAUTH = {
