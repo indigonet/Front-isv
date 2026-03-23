@@ -38,12 +38,12 @@ export const FIELD_CONFIG = {
 
 const BODY_POLL = {
   idTerminal: '', idSucursal: '', serialNumber: '',
-  command: 106, customId: '5ABC',
+  command: 106, customId: '1234',
 };
 
 const BODY_C2C_SALE = {
   idTerminal: '', idSucursal: '', serialNumber: '',
-  command: 100, amount: 5200, ticketNumber: '12',
+  command: 100, amount: 5990, ticketNumber: '12',
   printOnPos: true, saleType: 1, employeeId: 1, customId: '1234',
 };
 

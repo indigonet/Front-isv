@@ -257,17 +257,13 @@ export default function SimulatorView({ onLog }) {
               {/* URL bar */}
               <div className="p-6 bg-accent/[0.02] border-b border-accent/5 flex flex-col sm:flex-row items-center gap-4">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                  <select
-                    value={env}
-                    onChange={(e) => handleEnvChange(e.target.value)}
-                    className={`bg-card border border-accent/10 rounded-xl px-4 py-3 font-black outline-none focus:ring-4 focus:ring-accent/5 transition-all cursor-pointer text-xs uppercase tracking-widest shadow-sm ${
+                  <div className="flex items-center gap-2 p-2 px-3 bg-accent/5 rounded-xl border border-accent/10">
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${
                       env === 'prod' ? 'text-rose-500' : env === 'uat' ? 'text-accent' : 'text-emerald-500'
-                    }`}
-                  >
-                    <option value="dev">DEV</option>
-                    <option value="uat">UAT</option>
-                    <option value="prod">PROD</option>
-                  </select>
+                    }`}>
+                      {env}
+                    </span>
+                  </div>
                 </div>
                 <div className="flex-1 relative group w-full">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent transition-colors">
@@ -375,6 +371,8 @@ export default function SimulatorView({ onLog }) {
           setIsAuthModalOpen(false);
           auth.setFetching(false);
         }}
+        env={env}
+        onEnvChange={handleEnvChange}
         clientId={auth.clientId}         setClientId={auth.setClientId}
         clientSecret={auth.clientSecret} setClientSecret={auth.setClientSecret}
         accessToken={auth.accessToken}

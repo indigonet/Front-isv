@@ -28,9 +28,10 @@ export default function Modal({ isOpen, onClose, title, children }) {
           <h3 className="text-xl font-black text-text-primary tracking-tight uppercase tracking-widest">{title}</h3>
           <button 
             onClick={onClose}
-            className="p-2 hover:bg-accent/5 rounded-xl transition-colors text-text-secondary hover:text-accent cursor-pointer active:scale-95"
+            className="p-3 text-text-secondary/40 hover:text-accent transition-all duration-300 cursor-pointer group active:scale-95"
+            aria-label="Cerrar modal"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
           </button>
         </div>
         

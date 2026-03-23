@@ -10,6 +10,8 @@ import { useLanguage } from '../context/LanguageContext';
 export default function AuthTokenModal({
   isOpen,
   onClose,
+  env,
+  onEnvChange,
   // from useSimulatorAuth
   clientId,
   setClientId,
@@ -40,8 +42,39 @@ export default function AuthTokenModal({
       <div className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-          {/* ── Left: credentials form ── */}
-          <div className="space-y-4">
+          {/* ── Environment & Credentials ── */}
+          <div className="space-y-6">
+            {/* Environment selection (NEW) */}
+            <div className="space-y-3">
+              <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] ml-1">
+                {t('simEnv')}
+              </label>
+              <div className="relative group">
+                <select
+                  value={env}
+                  onChange={(e) => {
+                    const newEnv = e.target.value;
+                    if (accessToken && !window.confirm(t('confirmClearToken'))) return;
+                    if (accessToken) clearToken();
+                    onEnvChange(newEnv);
+                  }}
+                  className={`w-full appearance-none bg-background border border-accent/10 rounded-xl py-3.5 px-5 text-xs font-black uppercase tracking-widest outline-none transition-all shadow-sm cursor-pointer pr-10 ${
+                    env === 'prod' ? 'text-rose-500 border-rose-500/20' : env === 'uat' ? 'text-accent border-accent/20' : 'text-emerald-500 border-emerald-500/20'
+                  } focus:ring-4 focus:ring-accent/5`}
+                >
+                  <option value="dev">DEV - Ambiente Desarrollo</option>
+                  <option value="uat">UAT - Ambiente Pruebas</option>
+                  <option value="prod">PROD - Ambiente Producción</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
             {/* Client ID */}
             <div className="space-y-2">
               <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1">
@@ -101,6 +134,7 @@ export default function AuthTokenModal({
                 </>
               )}
             </button>
+            </div>
           </div>
 
           {/* ── Right: token status panel ── */}
