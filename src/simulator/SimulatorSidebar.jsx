@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronRight, Layers, History, X, Trash2, Play, RefreshCw, Lock, ShieldCheck, Wand2, HelpCircle } from 'lucide-react';
+import { ChevronRight, Layers, History, X, Trash2, Play, RefreshCw, Lock, ShieldCheck, Wand2, HelpCircle, XCircle } from 'lucide-react';
 
 import { COMMAND_METHODS, FIELD_CONFIG } from './simulator.constants';
 import { useLanguage } from '../context/LanguageContext';
@@ -21,6 +21,7 @@ export default function SimulatorSidebar({
   params,
   onOpenAuth,
   onSend,
+  onCancel,
   loading,
 }) {
   const { t } = useLanguage();
@@ -60,7 +61,7 @@ export default function SimulatorSidebar({
     let finalValue = rawValue;
     if (field === 'amount') {
       finalValue = parseCLP(String(rawValue));
-    } else if (field === 'idPromo') {
+    } else if (field === 'idPromo' || field === 'serialNumber') {
       finalValue = String(rawValue).toUpperCase();
     } else if (typeof rawValue !== 'boolean' && FIELD_CONFIG[field]?.type === 'number') {
       finalValue = rawValue === '' ? '' : Number(rawValue);
@@ -131,6 +132,7 @@ export default function SimulatorSidebar({
           type={field === 'amount' ? 'text' : cfg.type}
           value={field === 'amount' ? formatCLP(value) : value}
           onChange={(e) => handleParamChange(field, e.target.value)}
+          maxLength={field === 'serialNumber' ? 20 : undefined}
           className="w-full bg-background border border-accent/10 rounded-xl px-3 py-2.5 outline-none focus:border-accent transition-all font-black text-text-primary text-sm shadow-sm"
         />
       </label>
@@ -217,11 +219,11 @@ export default function SimulatorSidebar({
         {/* Send Button (Visible ONLY on small screens for mobile UX) */}
         <div className="sm:hidden pt-2">
            <button
-            onClick={onSend}
-            disabled={loading || !accessToken}
+            onClick={loading ? onCancel : onSend}
+            disabled={!loading && !accessToken}
             className={`w-full py-4 rounded-2xl font-black flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl text-xs uppercase tracking-widest ${
               loading
-                ? 'bg-text-secondary/20 cursor-wait'
+                ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20 cursor-pointer'
                 : !accessToken 
                   ? 'bg-text-secondary/10 text-text-secondary/40 cursor-not-allowed border border-dashed border-text-secondary/20 grayscale shadow-none' 
                   : 'bg-accent hover:bg-accent-warm text-white glow shadow-accent/20 cursor-pointer'
@@ -229,8 +231,8 @@ export default function SimulatorSidebar({
           >
             {loading ? (
               <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Enviando...</span>
+                <XCircle className="w-4 h-4" />
+                <span>Cancelar</span>
               </>
             ) : (
               <>
@@ -287,15 +289,6 @@ export default function SimulatorSidebar({
             </button>
           )}
 
-          <button
-            onClick={onClearResponse}
-            className="w-full flex items-center justify-center gap-3 p-3.5 rounded-2xl border border-accent/20 bg-accent/[0.03] text-text-primary hover:bg-accent hover:text-white hover:border-accent hover:shadow-lg hover:shadow-accent/10 transition-all cursor-pointer active:scale-95 group shadow-sm"
-          >
-            <div className="p-1.5 rounded-lg bg-accent/10 group-hover:bg-white/20 transition-colors">
-              <Trash2 className="w-3.5 h-3.5 text-accent group-hover:text-white" />
-            </div>
-            <span className="text-[10px] font-black uppercase tracking-widest">{t('simClearResponse')}</span>
-          </button>
         </div>
       </div>
 

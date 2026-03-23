@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock } from 'lucide-react';
+import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle } from 'lucide-react';
 
 import { EXAMPLE_BODY_C2C_SALE, API_BASE, COMMAND_METHODS } from './simulator.constants';
 import { useSimulatorAuth }                from './useSimulatorAuth';
@@ -19,6 +19,7 @@ export default function SimulatorView({ onLog }) {
   const [body,     setBody]     = useState(JSON.stringify(COMMAND_METHODS[0].template, null, 2));
   const [loading,  setLoading]  = useState(false);
   const [response, setResponse] = useState(null);
+  const [abortController, setAbortController] = useState(null);
   
   // Initialize with localStorage if available for the triad
   const [params,   setParams]   = useState({
@@ -125,6 +126,7 @@ export default function SimulatorView({ onLog }) {
     // ────────────────────────────────────────────────────────────
 
     setLoading(true);
+    const controller = new AbortController();
 
     if (auth.accessToken) {
       if (onLog) onLog(`🔑 Token cargado: ${auth.accessToken.substring(0, 30)}...`, 'info');
@@ -140,8 +142,11 @@ export default function SimulatorView({ onLog }) {
       const options = { 
         method, 
         headers,
-        body: method !== 'GET' && method !== 'HEAD' ? currentBodyStr : undefined
+        body: method !== 'GET' && method !== 'HEAD' ? currentBodyStr : undefined,
+        signal: controller.signal
       };
+
+      setAbortController(controller);
 
       const startTime = Date.now();
       const res       = await fetch(url, options);
@@ -164,26 +169,38 @@ export default function SimulatorView({ onLog }) {
 
       if (res.ok) {
         if (onLog) onLog(`✅ ${res.status} OK (${endTime - startTime}ms)`, 'success');
-        
-        // Auto-scroll to response on mobile
-        if (window.innerWidth < 1024) {
-          setTimeout(() => {
-            const responseEl = document.getElementById('response-view');
-            if (responseEl) {
-              responseEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-          }, 100);
-        }
       } else {
         if (onLog) onLog(`❌ ${res.status} — ${JSON.stringify(data).substring(0, 120)}`, 'error');
         if (res.status === 401) setShow401Prompt(true);
       }
+
+      // Auto-scroll to response on mobile (success or error)
+      if (window.innerWidth < 1024) {
+        setTimeout(() => {
+          const responseEl = document.getElementById('response-view');
+          if (responseEl) {
+            responseEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 100);
+      }
     } catch (error) {
-      console.error('Request Error:', error);
-      if (onLog) onLog(`Error: ${error.message}`, 'error');
-      setResponse({ error: error.message });
+      if (error.name === 'AbortError') {
+        if (onLog) onLog('🚫 Petición cancelada por el usuario', 'info');
+      } else {
+        console.error('Request Error:', error);
+        if (onLog) onLog(`Error: ${error.message}`, 'error');
+        setResponse({ error: error.message });
+      }
     } finally {
       setLoading(false);
+      setAbortController(null);
+    }
+  };
+
+  const handleCancel = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
     }
   };
 
@@ -266,6 +283,7 @@ export default function SimulatorView({ onLog }) {
               params={params}
               onOpenAuth={() => setIsAuthModalOpen(true)}
               onSend={handleSend}
+              onCancel={handleCancel}
               loading={loading}
             />
           </div>
@@ -295,19 +313,13 @@ export default function SimulatorView({ onLog }) {
                     readOnly
                     className="w-full bg-background border border-accent/10 rounded-xl px-12 py-3 text-[11px] font-black tracking-wider text-text-primary outline-none focus:border-accent transition-all shadow-sm"
                   />
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/5 rounded-lg border border-accent/10">
-                      <div className="w-1 h-1 rounded-full bg-accent animate-ping" />
-                      <span className="text-[9px] font-black text-accent uppercase tracking-widest">{method}</span>
-                    </div>
-                  </div>
                 </div>
                 <button
-                  onClick={handleSend}
-                  disabled={loading || !auth.accessToken}
+                  onClick={loading ? handleCancel : handleSend}
+                  disabled={!loading && !auth.accessToken}
                   className={`hidden sm:flex px-8 py-3.5 rounded-2xl text-white font-black items-center justify-center gap-3 transition-all active:scale-95 cursor-pointer shadow-xl text-xs uppercase tracking-widest w-full sm:w-auto ${
                     loading 
-                      ? 'bg-text-secondary/20 cursor-wait' 
+                      ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/20' 
                       : !auth.accessToken 
                         ? 'bg-text-secondary/10 text-text-secondary/40 cursor-not-allowed border border-dashed border-text-secondary/20 grayscale shadow-none'
                         : 'bg-accent hover:bg-accent-warm glow shadow-accent/20'
@@ -315,8 +327,8 @@ export default function SimulatorView({ onLog }) {
                 >
                   {loading ? (
                     <>
-                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Enviando...</span>
+                      <XCircle className="w-4 h-4" />
+                      <span>Cancelar</span>
                     </>
                   ) : (
                     <>
@@ -398,6 +410,7 @@ export default function SimulatorView({ onLog }) {
                 params={params}
                 onOpenAuth={() => setIsAuthModalOpen(true)}
                 onSend={handleSend}
+                onCancel={handleCancel}
                 loading={loading}
               />
             </div>
