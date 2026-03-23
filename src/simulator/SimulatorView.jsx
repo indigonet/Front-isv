@@ -95,7 +95,12 @@ export default function SimulatorView({ onLog }) {
   }, [lastScrollY]);
 
   const scrollToCommands = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const anchor = document.getElementById('mobile-commands-anchor');
+    if (anchor) {
+      anchor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   // Called by SimulatorSidebar when a command is selected
@@ -297,7 +302,7 @@ export default function SimulatorView({ onLog }) {
         <div id="simulator-main" className={`grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-top-4 duration-700 ${!auth.accessToken ? 'hidden' : ''}`}>
           
           {/* MOBILE ONLY: Selector appears first */}
-          <div className="lg:hidden">
+          <div id="mobile-commands-anchor" className="lg:hidden scroll-mt-24">
             <SimulatorSidebar
               selectedId={selectedId}
               env={env}
