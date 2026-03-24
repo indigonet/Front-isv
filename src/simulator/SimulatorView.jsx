@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle, ChevronUp } from 'lucide-react';
+import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle, ChevronUp, Trash2 } from 'lucide-react';
 
 import { EXAMPLE_BODY_C2C_SALE, API_BASE, COMMAND_METHODS } from './simulator.constants';
 import { useSimulatorAuth }                from './useSimulatorAuth';
@@ -401,9 +401,28 @@ export default function SimulatorView({ onLog }) {
                       <Terminal className="w-3.5 h-3.5 text-sky-400" /> RESPONSE VIEW
                     </span>
                     {response && (
-                      <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                        <span className="text-[9px] font-black text-emerald-500">OK</span>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5 bg-accent/5 rounded-lg p-0.5 border border-accent/10">
+                          <button 
+                            onClick={() => copyToClipboard(JSON.stringify(response, null, 2))}
+                            className="p-1.5 hover:bg-accent/10 rounded-md text-text-secondary hover:text-accent transition-all cursor-pointer"
+                            title={t('copyResponse') || 'Copiar Respuesta'}
+                          >
+                            <Copy className="w-3 h-3" />
+                          </button>
+                          <div className="w-[1px] h-3 bg-accent/10" />
+                          <button 
+                            onClick={handleClearResponse}
+                            className="p-1.5 hover:bg-rose-500/10 rounded-md text-text-secondary hover:text-rose-500 transition-all cursor-pointer"
+                            title={t('clearResponse') || 'Limpiar'}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-2 px-2 py-1 bg-emerald-500/5 rounded-lg border border-emerald-500/10">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="text-[9px] font-black text-emerald-500">OK</span>
+                        </div>
                       </div>
                     )}
                   </div>

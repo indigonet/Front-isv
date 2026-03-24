@@ -248,6 +248,8 @@ const translations = {
     simCopied: "Copiado al portapapeles",
     simSending: "Enviando...",
     simBackToCommands: "Volver a comandos",
+    copyResponse: "Copiar Respuesta",
+    clearResponse: "Limpiar Response",
   },
 
   en: {
@@ -454,6 +456,8 @@ const translations = {
     simCopied: "Copied to clipboard",
     simSending: "Sending...",
     simBackToCommands: "Back to commands",
+    copyResponse: "Copy Response",
+    clearResponse: "Clear Response",
   },
 
   pt: {
@@ -687,6 +691,8 @@ const translations = {
     simCopied: "Copiado para a área de transferência",
     simSending: "Enviando...",
     simBackToCommands: "Voltar aos comandos",
+    copyResponse: "Copiar Resposta",
+    clearResponse: "Limpar Resposta",
   },
 };
 
