@@ -61,7 +61,7 @@ export default function SimulatorSidebar({
     let finalValue = rawValue;
     if (field === 'amount') {
       finalValue = parseCLP(String(rawValue));
-    } else if (field === 'idPromo' || field === 'serialNumber') {
+    } else if (field === 'serialNumber') {
       finalValue = String(rawValue).toUpperCase();
     } else if (typeof rawValue !== 'boolean' && FIELD_CONFIG[field]?.type === 'number') {
       finalValue = rawValue === '' ? '' : Number(rawValue);
@@ -88,7 +88,7 @@ export default function SimulatorSidebar({
           key={field}
           className={`col-span-2 flex items-center justify-between p-3 bg-background border border-accent/10 rounded-xl cursor-pointer hover:border-accent/30 transition-all select-none`}
         >
-          <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest">
+          <span className={`text-[10px] font-black text-text-secondary tracking-widest ${field !== 'idPromo' ? 'uppercase' : ''}`}>
             {field === 'c2cMode' ? (value ? t('simDesatendido') : t('simAtendido')) : t(cfg.label)}
           </span>
           <button
@@ -124,7 +124,7 @@ export default function SimulatorSidebar({
         className={`block space-y-1.5 ${cfg.span === 2 ? 'col-span-2' : ''}`}
       >
         <div className="flex items-center justify-between px-1">
-          <span className="text-[10px] font-black text-text-secondary uppercase tracking-widest leading-none">
+          <span className={`text-[10px] font-black text-text-secondary tracking-widest leading-none ${field !== 'idPromo' ? 'uppercase' : ''}`}>
             {t(cfg.label)}
           </span>
         </div>
