@@ -195,11 +195,6 @@ export default function SimulatorView({ onLog }) {
     if (onLog) onLog(`→ ${method} ${url}`, 'info');
 
     try {
-      let targetUrl = url;
-      if (auth.useProxy) {
-        targetUrl = `https://cors-anywhere.herokuapp.com/${targetUrl}`;
-      }
-
       const headers = { 
         'Content-Type': 'application/json',
         'env': env,
@@ -218,7 +213,7 @@ export default function SimulatorView({ onLog }) {
       setAbortController(controller);
 
       const startTime = Date.now();
-      const res       = await fetch(targetUrl, options);
+      const res       = await fetch(url, options);
       const endTime   = Date.now();
 
       let data;
@@ -590,8 +585,6 @@ export default function SimulatorView({ onLog }) {
         fetching={auth.fetching}
         fetchToken={auth.fetchToken}
         clearToken={auth.clearToken}
-        useProxy={auth.useProxy}
-        setUseProxy={auth.setUseProxy}
       />
 
       <Modal 

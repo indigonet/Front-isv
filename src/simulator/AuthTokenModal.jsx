@@ -25,8 +25,6 @@ export default function AuthTokenModal({
   fetching,
   fetchToken,
   clearToken,
-  useProxy,
-  setUseProxy
 }) {
   const { t } = useLanguage();
   const prevFetching = useRef(fetching);
@@ -94,25 +92,6 @@ export default function AuthTokenModal({
                   </svg>
                 </div>
               </div>
-            </div>
-
-            {/* Proxy Toggle */}
-            <div className="space-y-3">
-              <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] ml-1">
-                RED & SEGURIDAD
-              </label>
-              <label 
-                className={`flex items-center justify-between p-3.5 bg-background border rounded-xl cursor-pointer transition-all select-none hover:bg-accent/5 ${useProxy ? 'border-accent/40 shadow-sm' : 'border-accent/10'}`}
-                onClick={() => setUseProxy(!useProxy)}
-              >
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-[11px] font-black text-text-primary uppercase tracking-wider">Proxy CORS</span>
-                  <span className="text-[9px] font-bold text-text-secondary/60">Soluciona bloqueos en hosting</span>
-                </div>
-                <div className={`relative w-10 h-5 rounded-full transition-all duration-300 ${useProxy ? 'bg-accent shadow-lg shadow-accent/20' : 'bg-slate-200 dark:bg-slate-700'}`}>
-                  <div className={`absolute top-1 left-1 w-3 h-3 rounded-full bg-white transition-all transform duration-300 ${useProxy ? 'translate-x-5' : 'translate-x-0'}`} />
-                </div>
-              </label>
             </div>
 
             <div className="space-y-4">
