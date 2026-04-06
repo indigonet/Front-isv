@@ -4,9 +4,9 @@ import {
 } from 'lucide-react';
 
 export const API_BASE = {
-  dev: '/ar-api-dev/',
-  uat: '/ar-api-uat/',
-  prod: '/ar-api-prod/',
+  dev: '/api/ar/dev/',
+  uat: '/api/ar/uat/',
+  prod: '/api/ar/prod/',
 };
 
 export const DEFAULT_CREDENTIALS = {
