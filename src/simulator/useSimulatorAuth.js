@@ -14,6 +14,7 @@ export function useSimulatorAuth({ env, country = 'cl', onLog = () => {} }) {
   const [accessToken,  setAccessToken]  = useState(() => localStorage.getItem(`isv_auth_token_${country}`)        || '');
   const [showSecret,   setShowSecret]   = useState(false);
   const [fetching,     setFetching]     = useState(false);
+  const [useProxy,     setUseProxy]     = useState(() => localStorage.getItem('isv_auth_useProxy') === 'true');
 
   // When country changes, load the country-specific stored credentials
   useEffect(() => {
@@ -25,6 +26,7 @@ export function useSimulatorAuth({ env, country = 'cl', onLog = () => {} }) {
   // Auto-save credentials & token (Token only if explicitly needed, but for security we'll skip auto-save now)
   useEffect(() => { localStorage.setItem(`isv_auth_clientId_${country}`,     clientId); },     [clientId, country]);
   useEffect(() => { localStorage.setItem(`isv_auth_clientSecret_${country}`, clientSecret); }, [clientSecret, country]);
+  useEffect(() => { localStorage.setItem('isv_auth_useProxy', useProxy); }, [useProxy]);
   useEffect(() => {
     if (accessToken) {
       localStorage.setItem(`isv_auth_token_${country}`, accessToken);
@@ -52,7 +54,12 @@ export function useSimulatorAuth({ env, country = 'cl', onLog = () => {} }) {
     onLog(`Obteniendo Token de Acceso (${country.toUpperCase()})...`, 'info');
 
     try {
-      const tokenUrl = API_BASE[env] + (endpoint || 'auth');
+      let tokenUrl = API_BASE[env] + (endpoint || 'auth');
+      
+      // Apply CORS Proxy if enabled
+      if (useProxy) {
+        tokenUrl = `https://cors-anywhere.herokuapp.com/${tokenUrl}`;
+      }
       
       let body;
       let headers = {
@@ -118,6 +125,7 @@ export function useSimulatorAuth({ env, country = 'cl', onLog = () => {} }) {
     accessToken,
     showSecret, setShowSecret,
     fetching, setFetching,
+    useProxy, setUseProxy,
     // actions
     fetchToken,
     clearToken,
