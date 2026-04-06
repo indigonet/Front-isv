@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { Braces, ShieldCheck, UserCheck, Key, Eye, EyeOff, Lock } from 'lucide-react';
+import ReCAPTCHA from 'react-google-recaptcha';
 import Modal from '../components/modal/Modal';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -11,6 +12,7 @@ export default function AuthTokenModal({
   isOpen,
   onClose,
   env,
+  country,
   onEnvChange,
   // from useSimulatorAuth
   clientId,
@@ -26,6 +28,7 @@ export default function AuthTokenModal({
 }) {
   const { t } = useLanguage();
   const prevFetching = useRef(fetching);
+  const recaptchaRef = useRef();
 
   // Auto-close on successful token fetch
   useEffect(() => {
@@ -37,8 +40,25 @@ export default function AuthTokenModal({
     prevFetching.current = fetching;
   }, [accessToken, fetching, isOpen, onClose]);
 
+  const modalTitle = (
+    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+      <span className="text-sm sm:text-xl truncate">{t('tokenConfigBtn')}</span>
+      <span className="hidden sm:inline text-text-secondary/40 font-normal">-</span>
+      <div className="flex items-center gap-2 bg-accent/5 sm:bg-transparent px-2.5 py-1 sm:p-0 rounded-lg border border-accent/10 sm:border-none w-fit">
+        <img 
+          src={`https://flagcdn.com/w20/${country}.png`} 
+          alt={country} 
+          className="w-4 sm:w-5 rounded-[2px] shadow-sm shrink-0"
+        />
+        <span className={`${country === 'cl' ? 'text-accent' : 'text-sky-500'} text-[10px] sm:text-lg font-black uppercase tracking-widest`}>
+          {country === 'cl' ? 'Chile' : 'Argentina'}
+        </span>
+      </div>
+    </div>
+  );
+
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={t('tokenConfigBtn')}>
+    <Modal isOpen={isOpen} onClose={onClose} title={modalTitle}>
       <div className="space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
@@ -116,9 +136,27 @@ export default function AuthTokenModal({
               </div>
             </div>
 
+            {/* Google ReCAPTCHA Invisible */}
+            <ReCAPTCHA
+              ref={recaptchaRef}
+              size="invisible"
+              sitekey={(import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI").trim()} // Limpia espacios accidentales
+            />
+
             {/* Get token button */}
             <button
-              onClick={fetchToken}
+              onClick={async (e) => {
+                e.preventDefault();
+                try {
+                  const token = await recaptchaRef.current.executeAsync();
+                  if (token) {
+                    fetchToken();
+                    recaptchaRef.current.reset();
+                  }
+                } catch (error) {
+                  console.error('Error en ReCAPTCHA:', error);
+                }
+              }}
               disabled={fetching || !clientId?.trim() || !clientSecret?.trim()}
               className="w-full py-5 rounded-2xl bg-accent text-white hover:bg-accent-warm transition-all font-black uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 text-xs shadow-xl shadow-accent/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale disabled:pointer-events-none"
             >

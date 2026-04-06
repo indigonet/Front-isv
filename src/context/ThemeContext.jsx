@@ -3,17 +3,11 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [darkMode, setDarkMode] = useState(false);
-  
-  // Cargar tema guardado
-  useEffect(() => {
+  const [darkMode, setDarkMode] = useState(() => {
     const savedTheme = localStorage.getItem('theme');
-    if (savedTheme) {
-      setDarkMode(savedTheme === 'dark');
-    } else {
-      setDarkMode(false);
-    }
-  }, []);
+    // Default to dark if no theme is saved (as per CSS comments)
+    return savedTheme ? savedTheme === 'dark' : true;
+  });
   
   // Aplicar tema
   useEffect(() => {

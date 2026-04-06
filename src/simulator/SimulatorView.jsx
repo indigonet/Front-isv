@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle, ChevronUp, Trash2 } from 'lucide-react';
+import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 
-import { EXAMPLE_BODY_C2C_SALE, API_BASE, COMMAND_METHODS } from './simulator.constants';
+import { CONFIG } from './simulator.constants';
 import { useSimulatorAuth }                from './useSimulatorAuth';
 import AuthTokenModal                      from './AuthTokenModal';
 import SimulatorSidebar                    from './SimulatorSidebar';
@@ -11,35 +11,48 @@ import { useLanguage }                     from '../context/LanguageContext';
 
 export default function SimulatorView({ onLog }) {
   const { t } = useLanguage();
-  // ── Request state ──────────────────────────────────────────────
-  // ── Request state ──────────────────────────────────────────────
+  const [country,         setCountry]         = useState(() => localStorage.getItem('isv_simulator_country') || 'cl'); // cl | ar
+  const [isCountryOpen,   setIsCountryOpen]   = useState(false);
+  
+  const API_BASE = CONFIG[country].API_BASE;
+  const COMMAND_METHODS = CONFIG[country].COMMAND_METHODS;
+
   const [method,   setMethod]   = useState('POST');
   const [env,      setEnv]      = useState('uat');
   const [selectedId, setSelectedId] = useState(COMMAND_METHODS[0].id);
-  const [url,      setUrl]      = useState(API_BASE.uat + 'poll');
+  const [url,      setUrl]      = useState(API_BASE.uat + (COMMAND_METHODS[0].endpoint || 'poll'));
   const [body,     setBody]     = useState(JSON.stringify(COMMAND_METHODS[0].template, null, 2));
   const [loading,  setLoading]  = useState(false);
   const [response, setResponse] = useState(null);
   const [abortController, setAbortController] = useState(null);
   
-  // Initialize with localStorage if available for the triad
-  const [params,   setParams]   = useState(() => {
+  const [params, setParams] = useState(() => {
     const template = { ...COMMAND_METHODS[0].template };
-    
-    // Auto-randomize if initial command is a sale
-    if (COMMAND_METHODS[0].id === 'c2c_sale' || COMMAND_METHODS[0].id === 'sale_promo') {
-      const base = Math.floor(Math.random() * 99) + 1;
-      template.amount = (base * 1000) + 990;
-      template.ticketNumber = String(Math.floor(Math.random() * 89999) + 10000);
-    }
-
+    const keyPrefix = `isv_pos_${country}_${env}`;
     return {
       ...template,
-      idTerminal:   localStorage.getItem('isv_pos_idTerminal')   || template.idTerminal,
-      idSucursal:   localStorage.getItem('isv_pos_idSucursal')   || template.idSucursal,
-      serialNumber: localStorage.getItem('isv_pos_serialNumber') || template.serialNumber,
+      idTerminal:   localStorage.getItem(`${keyPrefix}_idTerminal`)   || template.idTerminal,
+      idSucursal:   localStorage.getItem(`${keyPrefix}_idSucursal`)   || template.idSucursal,
+      serialNumber: localStorage.getItem(`${keyPrefix}_idSerialNumber`) || template.serialNumber,
     };
   });
+
+  // Reload triad when environment changes
+  React.useEffect(() => {
+    const keyPrefix = `isv_pos_${country}_${env}`;
+    const savedTerminal = localStorage.getItem(`${keyPrefix}_idTerminal`);
+    const savedSucursal = localStorage.getItem(`${keyPrefix}_idSucursal`);
+    const savedSerial   = localStorage.getItem(`${keyPrefix}_idSerialNumber`);
+    
+    if (savedTerminal || savedSucursal || savedSerial) {
+      setParams(prev => ({
+        ...prev,
+        idTerminal:   savedTerminal || prev.idTerminal,
+        idSucursal:   savedSucursal || prev.idSucursal,
+        serialNumber: savedSerial   || prev.serialNumber,
+      }));
+    }
+  }, [env, country]);
 
   // ── Request history ─────────────────────────────────────────────
   const [history, setHistory] = useState([]);
@@ -48,18 +61,34 @@ export default function SimulatorView({ onLog }) {
   // ── Auth modal ──────────────────────────────────────────────────
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [show401Prompt,   setShow401Prompt]   = useState(false);
-  const [country,         setCountry]         = useState('cl'); // cl | ar
   const [showJumpBtn,     setShowJumpBtn]     = useState(false);
   const [lastScrollY,     setLastScrollY]     = useState(0);
 
   // ── Auth hook (token logic lives here) ─────────────────────────
-  const auth = useSimulatorAuth({ env, onLog });
+  const auth = useSimulatorAuth({ env, country, onLog });
 
   // ── Handlers ───────────────────────────────────────────────────
+  
+  // When country changes, reset command and url
+  React.useEffect(() => {
+    const newConfig = CONFIG[country];
+    const firstMethod = newConfig.COMMAND_METHODS[0];
+    setSelectedId(firstMethod.id);
+    setUrl(newConfig.API_BASE[env] + (firstMethod.endpoint || ''));
+    setBody(JSON.stringify(firstMethod.template, null, 2));
+    const keyPrefix = `isv_pos_${country}_${env}`;
+    setParams(prev => ({
+      ...firstMethod.template,
+      idTerminal:   localStorage.getItem(`${keyPrefix}_idTerminal`)   || firstMethod.template.idTerminal,
+      idSucursal:   localStorage.getItem(`${keyPrefix}_idSucursal`)   || firstMethod.template.idSucursal,
+      serialNumber: localStorage.getItem(`${keyPrefix}_idSerialNumber`) || firstMethod.template.serialNumber,
+    }));
+  }, [country]);
+
   const handleEnvChange = (newEnv) => {
     setEnv(newEnv);
-    const endpoint = url.split('/').pop() || 'sale';
-    setUrl(API_BASE[newEnv] + endpoint);
+    const endpoint = url.split('/').pop() || '';
+    setUrl(CONFIG[country].API_BASE[newEnv] + endpoint);
     if (onLog) onLog(`Entorno: ${newEnv.toUpperCase()}`, 'info');
   };
 
@@ -67,10 +96,11 @@ export default function SimulatorView({ onLog }) {
   React.useEffect(() => {
     setBody(JSON.stringify(params, null, 2));
     
-    // Auto-save POS config triad
-    if (params.idTerminal)   localStorage.setItem('isv_pos_idTerminal',   params.idTerminal);
-    if (params.idSucursal)   localStorage.setItem('isv_pos_idSucursal',   params.idSucursal);
-    if (params.serialNumber) localStorage.setItem('isv_pos_serialNumber', params.serialNumber);
+    // Auto-save POS config triad specific to country/env
+    const keyPrefix = `isv_pos_${country}_${env}`;
+    if (params.idTerminal)   localStorage.setItem(`${keyPrefix}_idTerminal`,   params.idTerminal);
+    if (params.idSucursal)   localStorage.setItem(`${keyPrefix}_idSucursal`,   params.idSucursal);
+    if (params.serialNumber) localStorage.setItem(`${keyPrefix}_idSerialNumber`, params.serialNumber);
   }, [params]);
 
   React.useEffect(() => {
@@ -119,7 +149,7 @@ export default function SimulatorView({ onLog }) {
     } catch {
       setBody(bodyStr);
     }
-    setUrl(API_BASE[env] + endpoint);
+    setUrl(CONFIG[country].API_BASE[env] + endpoint);
     setResponse(null);
     if (onLog) onLog(`Plantilla cargada → /${endpoint}`, 'info');
   };
@@ -165,7 +195,12 @@ export default function SimulatorView({ onLog }) {
     if (onLog) onLog(`→ ${method} ${url}`, 'info');
 
     try {
-      const headers = { 'Content-Type': 'application/json' };
+      const headers = { 
+        'Content-Type': 'application/json',
+        'env': env,
+        'country': country,
+        'app': 'posintegrado'
+      };
       if (auth.accessToken) headers['Authorization'] = `Bearer ${auth.accessToken}`;
 
       const options = { 
@@ -256,9 +291,11 @@ export default function SimulatorView({ onLog }) {
       <div className="max-w-[1700px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-12 relative z-10">
 
         {/* Header Content */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-10 bg-card rounded-[2.5rem] border border-accent/10 relative overflow-hidden shadow-2xl transition-colors duration-500">
-          <div className="absolute inset-0 bg-grid-white/[0.02] dark:bg-grid-white/[0.02] bg-grid-black/[0.02] pointer-events-none" />
-          <div className="absolute -top-24 -left-24 w-96 h-96 bg-accent/10 rounded-full blur-[80px] pointer-events-none" />
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-10 relative rounded-[2.5rem] shadow-2xl transition-colors duration-500 z-20">
+          <div className="absolute inset-0 bg-card rounded-[2.5rem] border border-accent/10 overflow-hidden pointer-events-none">
+            <div className="absolute inset-0 bg-grid-white/[0.02] dark:bg-grid-white/[0.02] bg-grid-black/[0.02]" />
+            <div className="absolute -top-24 -left-24 w-96 h-96 bg-accent/10 rounded-full blur-[80px]" />
+          </div>
           
           <div className="relative z-10 space-y-2">
             <div className="flex items-center gap-3">
@@ -273,6 +310,59 @@ export default function SimulatorView({ onLog }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 relative z-10">
+            {/* Custom Country Selector */}
+            <div className="relative mr-2 z-50">
+              <button
+                onClick={() => setIsCountryOpen(!isCountryOpen)}
+                className="flex items-center gap-2.5 bg-accent hover:bg-accent-warm border border-white/10 rounded-[14px] py-2 px-4 shadow-lg shadow-accent/20 cursor-pointer transition-all active:scale-95"
+              >
+                <img 
+                  src={`https://flagcdn.com/w20/${country}.png`} 
+                  alt={country}
+                  className="w-4 rounded-sm shadow-sm"
+                />
+                <span className="text-[11px] font-black text-white uppercase tracking-widest">
+                  {country === 'cl' ? 'CL' : 'AR'}
+                </span>
+              </button>
+
+              {isCountryOpen && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setIsCountryOpen(false)} />
+                  <div className="absolute top-full left-0 mt-2 w-52 bg-card border border-accent/10 rounded-2xl shadow-2xl z-50 p-2 animate-in fade-in slide-in-from-top-2 backdrop-blur-xl">
+                    <button
+                      onClick={() => { 
+                        setCountry('cl'); 
+                        localStorage.setItem('isv_simulator_country', 'cl');
+                        setIsCountryOpen(false); 
+                      }}
+                      className={`flex w-full items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer ${country === 'cl' ? 'bg-accent text-white shadow-md' : 'text-text-secondary hover:bg-accent/5'}`}
+                    >
+                      <img src="https://flagcdn.com/w20/cl.png" className="w-4 rounded-sm" alt="CL" />
+                      <div className="flex flex-col items-start leading-none">
+                        <span className={`text-[8px] font-black uppercase tracking-widest ${country === 'cl' ? 'text-white/60' : 'text-slate-400'}`}>CL</span>
+                        <span className="text-[13px] font-bold mt-1">Chile</span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => { 
+                        setCountry('ar'); 
+                        localStorage.setItem('isv_simulator_country', 'ar');
+                        setIsCountryOpen(false); 
+                      }}
+                      className={`flex w-full items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer mt-1 ${country === 'ar' ? 'bg-accent text-white shadow-md' : 'text-text-secondary hover:bg-accent/5'}`}
+                    >
+                      <img src="https://flagcdn.com/w20/ar.png" className="w-4 rounded-sm" alt="AR" />
+                      <div className="flex flex-col items-start leading-none">
+                        <span className={`text-[8px] font-black uppercase tracking-widest ${country === 'ar' ? 'text-white/60' : 'text-slate-400'}`}>AR</span>
+                        <span className="text-[13px] font-bold mt-1">Argentina</span>
+                      </div>
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
             <button
               onClick={() => setIsAuthModalOpen(true)}
               className="px-4 py-2 bg-accent text-white hover:bg-accent-warm rounded-xl transition-all font-black uppercase tracking-widest text-[9px] flex items-center gap-2.5 active:scale-95 shadow-lg shadow-accent/20 cursor-pointer glow"
@@ -282,7 +372,7 @@ export default function SimulatorView({ onLog }) {
 
             {auth.accessToken && (
               <div 
-                onClick={() => copyToClipboard(`Bearer ${auth.accessToken}`)}
+                onClick={() => copyToClipboard(auth.accessToken)}
                 className="flex items-center gap-2.5 px-4 py-3 bg-emerald-500/[0.03] border border-emerald-500/20 rounded-2xl group cursor-pointer hover:bg-emerald-500/[0.08] hover:border-emerald-500/40 transition-all duration-300 active:scale-95"
               >
                 <div className="relative flex items-center justify-center">
@@ -305,6 +395,7 @@ export default function SimulatorView({ onLog }) {
           <div id="mobile-commands-anchor" className="lg:hidden scroll-mt-24">
             <SimulatorSidebar
               selectedId={selectedId}
+              country={country}
               env={env}
               onEnvChange={handleEnvChange}
               onLoadTemplate={handleLoadTemplate}
@@ -451,6 +542,7 @@ export default function SimulatorView({ onLog }) {
             <div className="hidden lg:block">
               <SimulatorSidebar
                 selectedId={selectedId}
+                country={country}
                 env={env}
                 onEnvChange={handleEnvChange}
                 onLoadTemplate={handleLoadTemplate}
@@ -484,6 +576,7 @@ export default function SimulatorView({ onLog }) {
           auth.setFetching(false);
         }}
         env={env}
+        country={country}
         onEnvChange={handleEnvChange}
         clientId={auth.clientId}         setClientId={auth.setClientId}
         clientSecret={auth.clientSecret} setClientSecret={auth.setClientSecret}

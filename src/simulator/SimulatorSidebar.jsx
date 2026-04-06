@@ -1,13 +1,14 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { ChevronRight, Layers, History, X, Trash2, Play, RefreshCw, Lock, ShieldCheck, Wand2, HelpCircle, XCircle } from 'lucide-react';
 
-import { COMMAND_METHODS, FIELD_CONFIG } from './simulator.constants';
+import { CONFIG } from './simulator.constants';
 import { useLanguage } from '../context/LanguageContext';
 
 
 
 export default function SimulatorSidebar({
   selectedId, 
+  country = 'cl',
   env,
   onEnvChange,
   onLoadTemplate,
@@ -25,6 +26,10 @@ export default function SimulatorSidebar({
   loading,
 }) {
   const { t } = useLanguage();
+
+  const currentConfig = CONFIG[country] || CONFIG.cl;
+  const COMMAND_METHODS = currentConfig.COMMAND_METHODS;
+  const FIELD_CONFIG = currentConfig.FIELD_CONFIG;
 
   const selected = COMMAND_METHODS.find((m) => m.id === selectedId) ?? COMMAND_METHODS[0];
   const Icon = selected.icon;
@@ -48,19 +53,31 @@ export default function SimulatorSidebar({
     }
   }, [onLoadTemplate]);
 
-  const formatCLP = (num) => {
+  const formatCurrency = (num) => {
     if (!num && num !== 0) return '';
-    return `$ ${Number(num).toLocaleString('es-CL')}`;
+    const isAr = country === 'ar';
+    const val = isAr ? num / 100 : num;
+    return new Intl.NumberFormat(isAr ? 'es-AR' : 'es-CL', {
+      style: 'currency',
+      currency: isAr ? 'ARS' : 'CLP',
+      minimumFractionDigits: isAr ? 2 : 0,
+      maximumFractionDigits: isAr ? 2 : 0
+    }).format(val);
   };
 
-  const parseCLP = (str) => {
-    return Number(str.replace(/[^0-9]/g, ''));
+  const parseCurrency = (str) => {
+    if (!str) return 0;
+    const isAr = country === 'ar';
+    // Remove symbols and separators
+    const digitsOnly = str.replace(/[^0-9]/g, '');
+    let val = parseInt(digitsOnly, 10) || 0;
+    return val;
   };
 
   const handleParamChange = useCallback((field, rawValue) => {
     let finalValue = rawValue;
-    if (field === 'amount') {
-      finalValue = parseCLP(String(rawValue));
+    if (field === 'amount' || field === 'tip') {
+      finalValue = parseCurrency(String(rawValue));
     } else if (field === 'serialNumber') {
       finalValue = String(rawValue).toUpperCase();
     } else if (typeof rawValue !== 'boolean' && FIELD_CONFIG[field]?.type === 'number') {
@@ -68,13 +85,6 @@ export default function SimulatorSidebar({
     }
     onSyncParam(field, finalValue);
   }, [onSyncParam]);
-
-  // Auto-save POS config whenever the triad changes
-  useEffect(() => {
-    if (params.idTerminal !== undefined) localStorage.setItem('isv_pos_idTerminal', params.idTerminal);
-    if (params.idSucursal !== undefined) localStorage.setItem('isv_pos_idSucursal', params.idSucursal);
-    if (params.serialNumber !== undefined) localStorage.setItem('isv_pos_serialNumber', params.serialNumber);
-  }, [params.idTerminal, params.idSucursal, params.serialNumber]);
 
   // ── Render one input field based on its FIELD_CONFIG type ──────────────────
   const renderField = (field) => {
@@ -129,8 +139,8 @@ export default function SimulatorSidebar({
           </span>
         </div>
         <input
-          type={field === 'amount' ? 'text' : cfg.type}
-          value={field === 'amount' ? formatCLP(value) : value}
+          type={(field === 'amount' || field === 'tip') ? 'text' : cfg.type}
+          value={(field === 'amount' || field === 'tip') ? formatCurrency(value) : value}
           onChange={(e) => handleParamChange(field, e.target.value)}
           maxLength={field === 'serialNumber' ? 20 : undefined}
           className="w-full bg-background border border-accent/10 rounded-xl px-3 py-2.5 outline-none focus:border-accent transition-all font-black text-text-primary text-sm shadow-sm"
@@ -174,7 +184,7 @@ export default function SimulatorSidebar({
                 {t(selected.label)}
               </p>
               <p className="text-[9px] text-text-secondary/60 font-bold mt-0.5">
-                /{selected.endpoint.toUpperCase()} · CMD {selected.template.command ?? '—'}
+                /{selected.endpoint?.toUpperCase() || 'UNKNOWN'} · CMD {selected.template?.command ?? '—'}
               </p>
             </div>
             {(selected.id === 'sale_promo' || selected.id === 'c2c_mode' || selected.id === 'bioauth') && (

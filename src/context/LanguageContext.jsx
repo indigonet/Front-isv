@@ -165,7 +165,7 @@ const translations = {
     
     // Simulator
     simulatorTitle: "Simulador Cloud to Cloud",
-    simulatorDesc: "Consola de transacciones C2C. Valida tokens, envía comandos directamente al servidor POS Integrado y examina el log de eventos.",
+    simulatorDesc: "Consola de comandos C2C. Valida tokens y examina el log de eventos.",
     simSendBtn: "Enviar Comando",
     simAtendido: "Atendido",
     simDesatendido: "Desatendido",
@@ -209,6 +209,13 @@ const translations = {
     
     // Commands
     "cmd.poll": "Conexión (106)",
+    "cmd.validate_ar": "Validar comunicación (106)",
+    "cmd.params_ar": "Información de terminal (114)",
+    "cmd.sale_ar": "Venta (100)",
+    "cmd.return_ar": "Devolución (108)",
+    "cmd.lastvoucher_ar": "Reimprimir (101)",
+    "cmd.details_ar": "Detalle de Venta (105)",
+    "cmd.totals_ar": "Totales (104)",
     "cmd.c2c_sale": "Venta (100)",
     "cmd.sale_promo": "Venta Promo (126)",
     "cmd.refund": "Anulación (102)",
@@ -235,6 +242,17 @@ const translations = {
     "field.c2cMode": "Modo Atendido/Desatendido",
     "field.rutToValidate": "RUT a Validar",
     "field.authType": "Tipo Auth",
+    "field.tip": "Propina",
+    "field.saleType": "Tipo Venta",
+    "field.employeeId": "ID Empleado",
+    "field.planId": "ID Plan",
+    "field.interest": "Interés",
+    "field.operationMode": "Modo Operación",
+    "field.skipConfirmation": "Omitir Confirmación",
+    "field.skipReceipt": "Omitir Comprobante",
+    "field.originalTransDate": "Fecha Operación Original",
+    "field.originalDate": "Fecha Original",
+    "field.originalTime": "Hora Original",
     simClearResponse: "Limpiar Response",
     confirmClearToken: "¿Estás seguro de que deseas borrar el Token guardado?",
     simVersionNotice: "Este comando al igual que el de Venta Promo, c2cmode y Bio Auth son solo para las versiones 1.0.1 de iOnetech",
@@ -374,7 +392,7 @@ const translations = {
     
     // Simulator
     simulatorTitle: "Cloud to Cloud Simulator",
-    simulatorDesc: "C2C transaction console. Validate tokens, send commands directly to the Integrated POS server and examine event logs.",
+    simulatorDesc: "C2C command console. Validate tokens and examine event logs.",
     simSendBtn: "Send Request",
     simAtendido: "Attended",
     simDesatendido: "Unattended",
@@ -417,6 +435,13 @@ const translations = {
     
     // Commands
     "cmd.poll": "Connection (106)",
+    "cmd.validate_ar": "Validate Communication (106)",
+    "cmd.params_ar": "Terminal Info (114)",
+    "cmd.sale_ar": "Sale (100)",
+    "cmd.return_ar": "Return (108)",
+    "cmd.lastvoucher_ar": "Re-print (101)",
+    "cmd.details_ar": "Sale Details (105)",
+    "cmd.totals_ar": "Totals (104)",
     "cmd.c2c_sale": "Sale (100)",
     "cmd.sale_promo": "Promo Sale (126)",
     "cmd.refund": "Abortion (102)",
@@ -582,7 +607,7 @@ const translations = {
     
     // Simulator
     simulatorTitle: "Simulador Cloud to Cloud",
-    simulatorDesc: "Console de transações C2C. Valide tokens, envie comandos diretamente ao servidor POS Integrado e examine os logs de eventos.",
+    simulatorDesc: "Console de comandos C2C. Valide tokens e examine os logs de eventos.",
     simSendBtn: "Enviar Requisição",
     simEnv: "AMBIENTE",
     simCommand: "COMANDO",
@@ -648,6 +673,13 @@ const translations = {
     
     // Commands
     "cmd.poll": "Conexão (106)",
+    "cmd.validate_ar": "Validar comunicação (106)",
+    "cmd.params_ar": "Informação de terminal (114)",
+    "cmd.sale_ar": "Venda (100)",
+    "cmd.return_ar": "Reembolso (108)",
+    "cmd.lastvoucher_ar": "Reimprimir (101)",
+    "cmd.details_ar": "Detalhes de Venda (105)",
+    "cmd.totals_ar": "Totais (104)",
     "cmd.c2c_sale": "Venda (100)",
     "cmd.sale_promo": "Venda Promo (126)",
     "cmd.refund": "Anulação (102)",

@@ -24,11 +24,13 @@ export default function Modal({ isOpen, onClose, title, children }) {
       {/* Modal Card */}
       <div className="bg-card w-full max-w-4xl max-h-[85vh] rounded-3xl border border-accent/10 shadow-2xl flex flex-col relative animate-in zoom-in duration-300 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-8 py-6 border-b border-accent/5">
-          <h3 className="text-xl font-black text-text-primary tracking-tight uppercase tracking-widest">{title}</h3>
+        <div className="flex items-center justify-between px-5 sm:px-8 py-4 sm:py-6 border-b border-accent/5">
+          <div className="flex-1 min-w-0 pr-2">
+            <h3 className="text-lg sm:text-xl font-black text-text-primary uppercase tracking-widest">{title}</h3>
+          </div>
           <button 
             onClick={onClose}
-            className="p-3 text-text-secondary/40 hover:text-accent transition-all duration-300 cursor-pointer group active:scale-95"
+            className="p-2 sm:p-3 text-text-secondary/40 hover:text-accent transition-all duration-300 cursor-pointer group active:scale-95 shrink-0"
             aria-label="Cerrar modal"
           >
             <X className="w-5 h-5 group-hover:rotate-90 transition-transform duration-500" />
