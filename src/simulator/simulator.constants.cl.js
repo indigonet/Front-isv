@@ -4,9 +4,9 @@ import {
 } from 'lucide-react';
 
 export const API_BASE = {
-  dev: '/api/cl/dev/',
-  uat: '/api/cl/uat/',
-  prod: '/api/cl/prod/',
+  dev: 'https://api-dev-getnet-posintegrado.ione.cl/api/postxs/',
+  uat: 'https://api-uat-getnet-posintegrado.ione.cl/api/postxs/',
+  prod: 'https://api-getnet-posintegrado.ione.cl/api/postxs/',
 };
 
 export const DEFAULT_CREDENTIALS = {

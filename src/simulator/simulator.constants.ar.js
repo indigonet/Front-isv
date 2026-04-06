@@ -4,9 +4,9 @@ import {
 } from 'lucide-react';
 
 export const API_BASE = {
-  dev: '/api/ar/dev/',
-  uat: '/api/ar/uat/',
-  prod: '/api/ar/prod/',
+  dev: 'https://api-dev.ione-tech.com/api/postxs/',
+  uat: 'https://api-uat.ione-tech.com/api/postxs/',
+  prod: 'https://api.ione-tech.com/api/postxs/',
 };
 
 export const DEFAULT_CREDENTIALS = {
@@ -49,28 +49,28 @@ export const FIELD_CONFIG = {
 };
 
 const BODY_POLL_AR = {
-  idTerminal: 'AR001S4K',
-  idSucursal: '0000087294',
-  serialNumber: 'NAC101116123',
+  idTerminal: '',
+  idSucursal: '',
+  serialNumber: '',
   command: 106,
   customId: '1234',
 };
 
 const BODY_PARAMS_AR = {
-  idTerminal: 'AR001S4K',
-  idSucursal: '0000087294',
-  serialNumber: 'NAC101116123',
+  idTerminal: '',
+  idSucursal: '',
+  serialNumber: '',
   command: 114,
   customId: '1234',
 };
 
 const BODY_SALE_AR = {
-  idTerminal: 'AR001S4K',
-  idSucursal: '0000087294',
-  serialNumber: 'NAC101116123',
+  idTerminal: '',
+  idSucursal: '',
+  serialNumber: '',
   command: 100,
-  amount: 120000,
-  tip: 1000,
+  amount: 0,
+  tip: 0,
   printOnPos: true,
   saleType: 0,
   employeeId: 1,
@@ -84,24 +84,23 @@ const BODY_SALE_AR = {
 };
 
 const BODY_RETURN_AR = {
-  idTerminal: 'AR001S4K',
-  idSucursal: '0000087294',
-  serialNumber: 'NAC101116123',
+  idTerminal: '',
+  idSucursal: '',
+  serialNumber: '',
   command: 108,
   authorizationCode: "",
-  originalTransDate: "2025-10-09T14:47:34.402Z",
+  originalTransDate: "2025-10-09",
   skipConfirmation: false,
   skipReceipt: false,
   printOnPos: true,
   amount: 0,
-  originalTransDate: "2025-10-09",
   customId: "1234"
 };
 
 const BODY_LASTVOUCHER_AR = {
-  idTerminal: 'AR001S4K',
-  idSucursal: '0000087294',
-  serialNumber: 'NAC101116123',
+  idTerminal: '',
+  idSucursal: '',
+  serialNumber: '',
   command: 101,
   printOnPos: true,
   skipReceipt: false,

@@ -53,6 +53,24 @@ export function useSimulatorAuth({ env, country = 'cl', onLog = () => {} }) {
 
     try {
       const tokenUrl = API_BASE[env] + (endpoint || 'auth');
+      let fetchUrl = tokenUrl;
+      
+      // Transform REAL URL to internal Proxy URL silently for the fetch call (Ghost Proxy)
+      const proxyMap = {
+        'https://api-dev-getnet-posintegrado.ione.cl/api/postxs/': '/api/cl/dev/',
+        'https://api-uat-getnet-posintegrado.ione.cl/api/postxs/': '/api/cl/uat/',
+        'https://api-getnet-posintegrado.ione.cl/api/postxs/':     '/api/cl/prod/',
+        'https://api-dev.ione-tech.com/api/postxs/':              '/api/ar/dev/',
+        'https://api-uat.ione-tech.com/api/postxs/':              '/api/ar/uat/',
+        'https://api.ione-tech.com/api/postxs/':                  '/api/ar/prod/',
+      };
+      
+      for (const [real, proxy] of Object.entries(proxyMap)) {
+        if (fetchUrl.startsWith(real)) {
+          fetchUrl = fetchUrl.replace(real, proxy);
+          break;
+        }
+      }
       
       let body;
       let headers = {
@@ -79,7 +97,7 @@ export function useSimulatorAuth({ env, country = 'cl', onLog = () => {} }) {
 
       onLog(`→ POST ${tokenUrl}`, 'info');
 
-      const res = await fetch(tokenUrl, {
+      const res = await fetch(fetchUrl, {
         method: 'POST',
         headers,
         body,
