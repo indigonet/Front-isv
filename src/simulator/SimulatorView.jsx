@@ -137,7 +137,19 @@ export default function SimulatorView({ onLog }) {
   const handleLoadTemplate = (bodyStr, endpoint, cmdId) => {
     setSelectedId(cmdId);
     try {
-      const template = JSON.parse(bodyStr);
+      let template = JSON.parse(bodyStr);
+
+      // RANDOMIZER: If it's an Argentina Sale, generate random amount and tip
+      if (cmdId === 'sale_ar' && country === 'ar') {
+        // Random amount between $1,500.00 and $85,000.00
+        const randomAmount = Math.floor(Math.random() * (85000 - 1500 + 1) + 1500) * 100;
+        // Random tip between $0.00 and $2,500.00
+        const randomTip = Math.floor(Math.random() * (2500 - 0 + 1) + 0) * 100;
+        
+        template.amount = randomAmount;
+        template.tip = randomTip;
+      }
+
       // Preserve current triad when switching templates
       const mergedParams = {
         ...template,
