@@ -510,7 +510,7 @@ export default function SimulatorView({ onLog }) {
                     <textarea
                       className="w-full h-full min-h-[400px] bg-transparent outline-none resize-none text-emerald-500 font-mono text-[13px] font-bold leading-relaxed custom-scrollbar selection:bg-accent selection:text-white"
                       value={body}
-                      onChange={(e) => setBody(e.target.value)}
+                      readOnly
                       spellCheck="false"
                     />
                   </div>

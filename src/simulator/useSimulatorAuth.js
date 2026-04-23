@@ -28,10 +28,41 @@ export function useSimulatorAuth({ env, country = 'cl', onLog = () => {} }) {
   useEffect(() => {
     if (accessToken) {
       localStorage.setItem(`isv_auth_token_${country}`, accessToken);
+      // Save timestamp only if it doesn't exist yet (to avoid resetting expiration on every render)
+      if (!localStorage.getItem(`isv_auth_token_timestamp_${country}`)) {
+        localStorage.setItem(`isv_auth_token_timestamp_${country}`, Date.now().toString());
+      }
     } else {
       localStorage.removeItem(`isv_auth_token_${country}`);
+      localStorage.removeItem(`isv_auth_token_timestamp_${country}`);
     }
   }, [accessToken, country]);
+
+  // Token Expiration Logic
+  useEffect(() => {
+    const checkExpiration = () => {
+      const storedToken = localStorage.getItem(`isv_auth_token_${country}`);
+      const storedTimestamp = localStorage.getItem(`isv_auth_token_timestamp_${country}`);
+
+      if (storedToken && storedTimestamp) {
+        const now = Date.now();
+        const ageInMs = now - parseInt(storedTimestamp, 10);
+        
+        // PRODUCTION: 24 hours (24 * 60 * 60 * 1000)
+        const EXPIRATION_TIME = 24 * 60 * 60 * 1000; 
+
+        if (ageInMs > EXPIRATION_TIME) {
+          console.log(`[Auth] Token for ${country} expired. Clearing...`);
+          clearToken();
+        }
+      }
+    };
+
+    // Check immediately and then every 30 seconds
+    checkExpiration();
+    const interval = setInterval(checkExpiration, 30000);
+    return () => clearInterval(interval);
+  }, [country]);
 
   const clearToken = () => {
     setAccessToken('');
@@ -118,6 +149,8 @@ export function useSimulatorAuth({ env, country = 'cl', onLog = () => {} }) {
 
       if (tokenValue) {
         setAccessToken(tokenValue);
+        // Explicitly set timestamp on new fetch
+        localStorage.setItem(`isv_auth_token_timestamp_${country}`, Date.now().toString());
         onLog(`✅ Token obtenido (expira en ${data.data?.expires_in ?? '?'}s)`, 'success');
       } else {
         throw new Error('No se encontró el token en la respuesta: ' + JSON.stringify(data));

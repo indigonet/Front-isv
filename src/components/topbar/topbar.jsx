@@ -80,7 +80,7 @@ export default function Topbar() {
   };
 
   const handleGitHubDownload = () => {
-    window.open("https://github.com/indigonet/ISV_Toolkit", "_blank");
+    window.open("https://github.com/indigonet/ISV_Toolkit_Flutter", "_blank");
     setOpen(false);
     setShowLanguageDropdown(false);
   };
@@ -117,15 +117,20 @@ export default function Topbar() {
         onClick={goToHome}
         style={{ cursor: "pointer" }}
       >
-        <span className="logo-text">{t("topbar.logoText")}</span>
-        <img
-          src={getIconImage()}
-          alt="ISV Toolkit Logo"
-          className="logo-image"
-          loading="eager"
-          style={{ fetchPriority: 'high' }}
-          key={darkMode ? "dark-icon" : "light-icon"}
-        />
+        <div className="logo-brand">
+          <span className="logo-text-v2">ISV</span>
+          <span className="logo-subtext-v2">Toolkit</span>
+        </div>
+        <div className="logo-icon-wrapper">
+          <img
+            src={getIconImage()}
+            alt="ISV Toolkit Logo"
+            className="logo-image-v2"
+            loading="eager"
+            style={{ fetchPriority: 'high' }}
+            key={darkMode ? "dark-icon" : "light-icon"}
+          />
+        </div>
       </div>
 
       <nav

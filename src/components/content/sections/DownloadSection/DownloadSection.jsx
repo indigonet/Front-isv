@@ -7,17 +7,17 @@ export default function DownloadSection() {
   const [isDownloading, setIsDownloading] = useState(false);
 
   const DOWNLOAD_URL =
-    "https://github.com/indigonet/Front-isv/releases/download/v1.2.4/ISV_Toolkit.exe";
-  const RELEASES_PAGE = "https://github.com/indigonet/ISV_Toolkit";
+    "https://github.com/indigonet/ISV_Toolkit_Flutter/releases/download/ISVTOOLKIT/ISV_Toolkit_Setup.exe";
+  const RELEASES_PAGE = "https://github.com/indigonet/ISV_Toolkit_Flutter";
 
   const downloadOptions = [
     {
       id: 1,
       os: t("windows"),
       icon: "🪟",
-      version: "v1.2.4",
-      fileSize: "103 MB",
-      fileName: "ISV_Toolkit.exe", 
+      version: "v1.0.1",
+      fileSize: "14 MB",
+      fileName: "ISV_Toolkit_Setup.exe", 
       requirements: t("ADB PlatformTools"),
     },
   ];
@@ -29,7 +29,7 @@ export default function DownloadSection() {
       // Crear enlace de descarga
       const link = document.createElement("a");
       link.href = DOWNLOAD_URL;
-      link.download = "ISVToolkit.exe";
+      link.download = "ISV_Toolkit_Setup.exe";
       link.target = "_blank";
 
       // Forzar descarga
@@ -68,7 +68,7 @@ export default function DownloadSection() {
         <div>
           <strong>¡Descarga iniciada!</strong>
           <div style="font-size: 0.9em; margin-top: 5px;">
-            <strong>ISVToolkit.exe</strong> (103 MB)
+            <strong>ISV_Toolkit_Setup.exe</strong> (14 MB)
           </div>
           <div style="font-size: 0.8em; margin-top: 8px; opacity: 0.9;">
             Si no se descarga automáticamente,<br>
@@ -146,197 +146,113 @@ export default function DownloadSection() {
   }, []);
 
   return (
-    <section className="download-section" id="download">
-      <h2 className="download-title">{t("downloadTitle")}</h2>
-      <p className="download-subtitle">{t("downloadSubtitle")}</p>
+    <section className="download-section-v2" id="download">
+      <div className="download-header-v2">
+        <h2 className="download-title-v2">{t("downloadTitle")}</h2>
+        <p className="download-subtitle-v2">{t("downloadSubtitle")}</p>
+      </div>
 
-      <div className="download-content">
-        {/* Columna izquierda - Requerimientos */}
-        <div className="requirements-column">
-          <div className="requirements-card">
-            <h3 className="requirements-title">{t("requirementsTitle")}</h3>
-            <ul className="requirements-list">
-              <li className="requirement-item">
-                <span className="requirement-icon">💻</span>
-                <div className="requirement-content">
-                  <h4>{t("os")}</h4>
+      <div className="download-grid-v2">
+        {/* Columna 1: Requerimientos */}
+        <div className="download-col requirements-col">
+          <div className="glass-card-v2">
+            <h3 className="card-title-v2">
+              <span className="icon-glow">📋</span> {t("requirementsTitle")}
+            </h3>
+            <ul className="info-list-v2">
+              <li>
+                <span className="info-icon-v2">💻</span>
+                <div>
+                  <strong>{t("os")}</strong>
                   <p>{t("osDesc")}</p>
                 </div>
               </li>
-              <li className="requirement-item">
-                <span className="requirement-icon">🧠</span>
-                <div className="requirement-content">
-                  <h4>{t("ram")}</h4>
+              <li>
+                <span className="info-icon-v2">🧠</span>
+                <div>
+                  <strong>{t("ram")}</strong>
                   <p>{t("ramDesc")}</p>
                 </div>
               </li>
-              <li className="requirement-item">
-                <span className="requirement-icon">💾</span>
-                <div className="requirement-content">
-                  <h4>{t("disk")}</h4>
+              <li>
+                <span className="info-icon-v2">💾</span>
+                <div>
+                  <strong>{t("disk")}</strong>
                   <p>{t("diskDesc")}</p>
                 </div>
               </li>
-              <li className="requirement-item">
-                <span className="requirement-icon">🔌</span>
-                <div className="requirement-content">
-                  <h4>{t("internet")}</h4>
-                  <p>{t("internetDesc")}</p>
-                </div>
-              </li>
             </ul>
           </div>
         </div>
 
-        {/* Columna central - Tarjeta de descarga */}
-        <div className="download-column">
-          <div className="download-grid">
-            {downloadOptions.map((option) => (
-              <div key={option.id} className="download-card">
-                <div className="card-header">
-                  <span className="os-icon">{option.icon}</span>
-                  <h3 className="os-name">{option.os}</h3>
+        {/* Columna 2: Descarga Principal (Destacada) */}
+        <div className="download-col main-download-col">
+          {downloadOptions.map((option) => (
+            <div key={option.id} className="premium-download-card">
+              <div className="platform-tag">{option.os}</div>
+              <div className="card-header-v2">
+                <span className="main-os-icon">{option.icon}</span>
+                <div className="version-pill">{option.version}</div>
+              </div>
+
+              <div className="download-details-v2">
+                <div className="detail-item-v2">
+                  <span>File:</span>
+                  <strong>{option.fileName}</strong>
                 </div>
-
-                <div className="card-body">
-                  <div className="version-info">
-                    <span className="version-label">{t("version")}</span>
-                    <span className="version-value">{option.version}</span>
-                  </div>
-
-                  <div className="file-info">
-                    <span className="file-label">{t("file")}</span>
-                    <span className="file-value">{option.fileName}</span>
-                  </div>
-
-                  <div className="size-info">
-                    <span className="size-label">{t("size")}</span>
-                    <span className="size-value">{option.fileSize}</span>
-                  </div>
-
-                  <div className="requirements-info">
-                    <span className="req-label">{t("requirements")}</span>
-                    <span className="req-value">{option.requirements}</span>
-                  </div>
-                </div>
-
-                <button
-                  className={`download-button ${isDownloading ? "loading" : ""}`}
-                  onClick={handleDownload}
-                  disabled={isDownloading}
-                >
-                  {isDownloading ? (
-                    <span className="button-text">Descargando...</span>
-                  ) : (
-                    <>
-                      <span className="button-icon">⬇️</span>
-                      <span className="button-text">
-                        {t("downloadButton")} {option.os}
-                        <br />
-                        <small style={{ fontSize: "0.75em", opacity: 0.9 }}>
-                          v1.2.4 • 103 MB
-                        </small>
-                      </span>
-                    </>
-                  )}
-                </button>
-
-                {/* Enlace directo como respaldo */}
-                <div
-                  style={{
-                    textAlign: "center",
-                    marginTop: "15px",
-                    paddingTop: "15px",
-                    borderTop: "1px solid #e0e5ff",
-                  }}
-                >
-                  <a
-                    href={RELEASES_PAGE}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      color: "#667eea",
-                      textDecoration: "none",
-                      fontSize: "0.85rem",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "6px",
-                    }}
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    >
-                      <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                    </svg>
-                    Enlace directo al repositorio
-                  </a>
+                <div className="detail-item-v2">
+                  <span>Size:</span>
+                  <strong>{option.fileSize}</strong>
                 </div>
               </div>
-            ))}
-          </div>
+
+              <button
+                className={`action-download-btn ${isDownloading ? "loading" : ""}`}
+                onClick={handleDownload}
+                disabled={isDownloading}
+              >
+                {isDownloading ? (
+                  "Downloading..."
+                ) : (
+                  <>
+                    <span className="btn-icon">⬇️</span>
+                    <span>Download for Windows</span>
+                  </>
+                )}
+              </button>
+
+              <div className="github-fallback-v2">
+                <a href={RELEASES_PAGE} target="_blank" rel="noopener noreferrer">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                  </svg>
+                  Source on GitHub
+                </a>
+              </div>
+            </div>
+          ))}
         </div>
 
-        {/* Columna derecha - Dependencias */}
-        <div className="dependencies-column">
-          <div className="dependencies-card">
-            <h3 className="dependencies-title">{t("dependenciesTitle")}</h3>
-            <ul className="dependencies-list">
-              <li className="dependency-item">
-                <a
-                  href="https://developer.android.com/studio/releases/platform-tools"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="dependency-link"
-                >
-                  <span className="dependency-icon">🔧</span>
-                  <div className="dependency-content">
-                    <h4>{t("platformTools")}</h4>
-                    <p>{t("platformToolsDesc")}</p>
-                  </div>
-                </a>
-              </li>
-              <li className="dependency-item">
-                <a
-                  href="https://developer.android.com/studio/releases/build-tools"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="dependency-link"
-                >
-                  <span className="dependency-icon">🛠️</span>
-                  <div className="dependency-content">
-                    <h4>{t("buildTools")}</h4>
-                    <p>{t("buildToolsDesc")}</p>
-                  </div>
-                </a>
-              </li>
-              <li className="dependency-item">
-                <a
-                  href="https://www.oracle.com/java/technologies/javase/jdk11-archive-downloads.html"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="dependency-link"
-                >
-                  <span className="dependency-icon">☕</span>
-                  <div className="dependency-content">
-                    <h4>{t("jdk")}</h4>
-                    <p>{t("jdkDesc")}</p>
-                  </div>
-                </a>
-              </li>
-              <li className="dependency-item">
-                <div className="dependency-link free">
-                  <span className="dependency-icon">🎁</span>
-                  <div className="dependency-content">
-                    <h4>{t("free")}</h4>
-                    <p>{t("freeDesc")}</p>
-                  </div>
-                </div>
-              </li>
-            </ul>
+        {/* Columna 3: Dependencias */}
+        <div className="download-col dependencies-col">
+          <div className="glass-card-v2">
+            <h3 className="card-title-v2">
+              <span className="icon-glow">📦</span> {t("dependenciesTitle")}
+            </h3>
+            <div className="dep-grid-v2">
+              <a href="https://developer.android.com/studio/releases/platform-tools" target="_blank" className="dep-item-v2">
+                <span className="dep-icon-v2">🔧</span>
+                <strong>Platform Tools</strong>
+              </a>
+              <a href="https://developer.android.com/studio/releases/build-tools" target="_blank" className="dep-item-v2">
+                <span className="dep-icon-v2">🛠️</span>
+                <strong>Build Tools</strong>
+              </a>
+              <a href="https://www.oracle.com/java/technologies/javase/jdk11-archive-downloads.html" target="_blank" className="dep-item-v2">
+                <span className="dep-icon-v2">☕</span>
+                <strong>JDK 11</strong>
+              </a>
+            </div>
           </div>
         </div>
       </div>

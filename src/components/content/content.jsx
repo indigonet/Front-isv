@@ -9,12 +9,14 @@ import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 
 
+import { Zap, Shield, Wrench, Key } from "lucide-react";
+
 export default function Content() {
   const { t } = useLanguage();
   const [downloading, setDownloading] = useState(false);
 
   const DOWNLOAD_URL =
-    "https://github.com/indigonet/Front-isv/releases/download/v1.2.4/ISV_Toolkit.exe";
+    "https://github.com/indigonet/ISV_Toolkit_Flutter/releases/download/ISVTOOLKIT/ISV_Toolkit_Setup.exe";
 
   const handleDownload = () => {
     if (downloading) return;
@@ -23,7 +25,7 @@ export default function Content() {
 
     const link = document.createElement("a");
     link.href = DOWNLOAD_URL;
-    link.download = "ISV_Toolkit.exe";
+    link.download = "ISV_Toolkit_Setup.exe";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -53,11 +55,11 @@ export default function Content() {
 
     notification.innerHTML = `
       <div style="display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 1.5em;">✅</span>
+        <span style="font-size: 1.5em;"></span>
         <div>
           <strong>¡Descarga iniciada!</strong>
           <div style="font-size: 0.9em; margin-top: 5px;">
-            <strong>ISV_Toolkit.exe</strong> (103 MB)
+            <strong>ISV_Toolkit_Setup.exe</strong> (14 MB)
           </div>
           <div style="font-size: 0.8em; margin-top: 8px; opacity: 0.9;">
             Si no se descarga automáticamente,<br>
@@ -94,89 +96,97 @@ export default function Content() {
 
   return (
     <main className="content">
-      {/* Hero Section con las 4 tarjetas en fila */}
+      {/* Hero Section Redesign: Two Columns */}
       <section className="hero-section">
-        {/* Fondo de programación difuminado */}
-        <div className="code-background">
-          <div className="code-line"></div>
-          <div className="code-line"></div>
-          <div className="code-line"></div>
-          <div className="code-line"></div>
-          <div className="code-line"></div>
-          <div className="code-line"></div>
-          <div className="code-line"></div>
-          <div className="code-line"></div>
-        </div>
-
-        <div className="hero-container">
-          {/* Logo botón de descarga */}
-          <div
-            className={`logo-wrapper logo-button ${
-              downloading ? "downloading" : ""
-            }`}
-            onClick={handleDownload}
-            role="button"
-            aria-label="Descargar ISV Toolkit"
-            style={{ cursor: "pointer" }}
-          >
-            <img 
-              className="hero-logo" 
-              src={logo} 
-              alt="ISV Toolkit Logo" 
-              loading="eager"
-              style={{ fetchPriority: 'high' }}
-            />
+        {/* Modern Mesh Gradient Background */}
+        <div className="hero-mesh-background"></div>
+        
+        <div className="hero-container-v2">
+          {/* Left Column: Information */}
+          <div className="hero-text-content">
+            <div className="hero-badge">ISV Toolkit v1.0.1</div>
+            <h1 className="hero-title-v2">{t("heroTitle")}</h1>
+            <p className="hero-description-v2">{t("heroDescription")}</p>
+            
+            <div className="hero-actions">
+              <button 
+                className={`cta-button primary ${downloading ? "loading" : ""}`}
+                onClick={handleDownload}
+              >
+                <span className="btn-icon">⬇️</span>
+                {downloading ? "Descargando..." : "Descargar Toolkit"}
+              </button>
+              <button 
+                className="cta-button secondary"
+                onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
+              >
+                Saber más
+              </button>
+            </div>
           </div>
 
-          {/* Título y descripción */}
-          <div className="hero-info">
-            <h1 className="hero-title">{t("heroTitle")}</h1>
-            <p className="hero-description">{t("heroDescription")}</p>
+          {/* Right Column: Visual Component */}
+          <div className="hero-visual-content">
+            <div className={`logo-main-container ${downloading ? "anim-download" : ""}`}>
+              <div className="logo-glow"></div>
+              <img 
+                className="hero-logo-v2" 
+                src={logo} 
+                alt="ISV Toolkit Logo" 
+                loading="eager"
+              />
+              {/* Floating elements for extra depth */}
+              <div className="floating-element f1">⚡</div>
+              <div className="floating-element f2">🛡️</div>
+              <div className="floating-element f3">📊</div>
+            </div>
+          </div>
+        </div>
 
-            {/* Contenedor horizontal para las 4 tarjetas */}
-            <div className="hero-features-row">
-              {/* Tarjeta 1 */}
-              <div className="hero-feature-card">
-                <div className="hero-feature-icon">
-                  <span>⚡</span>
-                </div>
-                <div className="hero-feature-content">
-                  <h3>{t("feature1")}</h3>
-                  <p>{t("feature1Desc")}</p>
-                </div>
+        {/* Features Section - Bento Style Grid */}
+        <div className="features-grid-container">
+          <div className="features-grid">
+            {/* Feature 1 */}
+            <div className="feature-card-v2 feature-primary">
+              <div className="feature-icon-wrapper icon-blue">
+                <Zap className="feature-icon-v2" />
               </div>
-
-              {/* Tarjeta 2 */}
-              <div className="hero-feature-card">
-                <div className="hero-feature-icon">
-                  <span>🛡️</span>
-                </div>
-                <div className="hero-feature-content">
-                  <h3>{t("feature2")}</h3>
-                  <p>{t("feature2Desc")}</p>
-                </div>
+              <div className="feature-info-v2">
+                <h3>{t("feature1")}</h3>
+                <p>{t("feature1Desc")}</p>
               </div>
+            </div>
 
-              {/* Tarjeta 3 */}
-              <div className="hero-feature-card">
-                <div className="hero-feature-icon">
-                  <span>🔧</span>
-                </div>
-                <div className="hero-feature-content">
-                  <h3>{t("feature3")}</h3>
-                  <p>{t("feature3Desc")}</p>
-                </div>
+            {/* Feature 2 */}
+            <div className="feature-card-v2 feature-info">
+              <div className="feature-icon-wrapper icon-sky">
+                <Shield className="feature-icon-v2" />
               </div>
+              <div className="feature-info-v2">
+                <h3>{t("feature2")}</h3>
+                <p>{t("feature2Desc")}</p>
+              </div>
+            </div>
 
-              {/* Tarjeta 4 */}
-              <div className="hero-feature-card">
-                <div className="hero-feature-icon">
-                  <span>📊</span>
-                </div>
-                <div className="hero-feature-content">
-                  <h3>{t("feature4")}</h3>
-                  <p>{t("feature4Desc")}</p>
-                </div>
+            {/* Feature 3 */}
+            <div className="feature-card-v2 feature-tools">
+              <div className="feature-icon-wrapper icon-indigo">
+                <Wrench className="feature-icon-v2" />
+              </div>
+              <div className="feature-info-v2">
+                <h3>{t("feature3")}</h3>
+                <p>{t("feature3Desc")}</p>
+              </div>
+            </div>
+
+            {/* Feature 4 */}
+            <div className="feature-card-v2 feature-accent">
+              <div className="feature-icon-wrapper icon-rose">
+                <Key className="feature-icon-v2" />
+              </div>
+              <div className="feature-info-v2">
+                <h3>{t("feature4")}</h3>
+                <p>{t("feature4Desc")}</p>
               </div>
             </div>
           </div>

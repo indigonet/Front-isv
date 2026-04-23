@@ -3,12 +3,12 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 export const releaseNotes = {
   es: [
     {
-      version: "v1.2.4",
+      version: "v1.0.1",
       changes: [
-        "Mejoras en Logcat",
+        "Nueva interfaz moderna desarrollada en Flutter",
+        "Mejoras críticas en estabilidad y rendimiento",
         "Optimización de conexión ADB",
-        "Mejoras en análisis de APK",
-        "Mejora general de rendimiento",
+        "Refactorización completa del motor de análisis de APK",
         "La consola CMD ya no se muestra al ejecutar herramientas",
       ],
     },
@@ -16,12 +16,12 @@ export const releaseNotes = {
 
   en: [
     {
-      version: "v1.2.4",
+      version: "v1.0.1",
       changes: [
-        "Logcat improvements",
+        "New modern interface developed in Flutter",
+        "Critical stability and performance improvements",
         "ADB connection optimization",
-        "APK analysis improvements",
-        "Overall performance improvement",
+        "Complete refactoring of the APK analysis engine",
         "CMD console no longer appears when running tools",
       ],
     },
@@ -29,12 +29,12 @@ export const releaseNotes = {
 
   pt: [
     {
-      version: "v1.2.4",
+      version: "v1.0.1",
       changes: [
-        "Melhorias no Logcat",
+        "Nova interface moderna desenvolvida em Flutter",
+        "Melhorias críticas de estabilidade e desempenho",
         "Otimização da conexão ADB",
-        "Melhorias na análise de APK",
-        "Melhoria geral de desempenho",
+        "Refatoração completa do mecanismo de análise de APK",
         "O console CMD não aparece mais ao executar ferramentas",
       ],
     },
@@ -118,21 +118,15 @@ const translations = {
     adb3: "Ejecución de comandos personalizados",
     adb4: "Historial de comandos ejecutados",
 
-    screenTitle: "Grabación y Captura de Pantalla",
-    screenDesc:
-      "Graba la pantalla de tus dispositivos Android y captura imágenes en alta calidad. Perfecto para crear tutoriales, documentar bugs o compartir demostraciones.",
-    screen1: "Grabación de pantalla en alta calidad",
-    screen2: "Capturas de pantalla instantáneas",
-    screen3: "Configuración de resolución y fps",
-    screen4: "Formatos de exportación múltiples",
 
-    managementTitle: "Gestión de APKs",
+
+    managementTitle: "Configuraciones Globales",
     managementDesc:
-      "Gestiona tus aplicaciones de manera eficiente: instala, desinstala, actualiza y realiza copias de seguridad de APKs. Organiza tu colección de aplicaciones con herramientas de categorización.",
-    management1: "Instalación masiva de APKs",
-    management2: "Copia de seguridad de aplicaciones",
-    management3: "Comparación de versiones",
-    management4: "Eliminación segura de aplicaciones",
+      "Personaliza tu experiencia en ISV Toolkit. Cambia el idioma, ajusta el tema visual y gestiona el estado de tu terminal conectada de forma remota.",
+    management1: "Idiomas: Español, Inglés y Portugués",
+    management2: "Modo Oscuro y Claro",
+    management3: "Reboot remoto del terminal",
+    management4: "Persistencia de preferencias",
 
     // Download Section
     downloadTitle: "Descarga ISV Toolkit",
@@ -144,8 +138,8 @@ const translations = {
     size: "Tamaño:",
     requirements: "Requisitos:",
     downloadButton: "Descargar para",
-    requirementsTitle: "📦 Requisitos del Sistema",
-    dependenciesTitle: "⚙️ Dependencias Necesarias",
+    requirementsTitle: "Requisitos del Sistema",
+    dependenciesTitle: "Dependencias Necesarias",
     os: "Sistema Operativo",
     osDesc: "Windows 7/8/10/11 (64-bit)",
     ram: "Memoria RAM",
@@ -160,8 +154,6 @@ const translations = {
     buildToolsDesc: "AAPT, APKSigner, etc.",
     jdk: "JDK 11",
     jdkDesc: "Para JarSigner",
-    free: "Totalmente Gratis",
-    freeDesc: "ISV Toolkit es 100% gratuito",
     
     // Simulator
     simulatorTitle: "Simulador Cloud to Cloud",
@@ -353,13 +345,13 @@ const translations = {
     screen3: "Resolution and fps configuration",
     screen4: "Multiple export formats",
 
-    managementTitle: "APK Management",
+    managementTitle: "Global Settings",
     managementDesc:
-      "Manage your applications efficiently: install, uninstall, update and backup APKs. Organize your application collection with categorization tools.",
-    management1: "Bulk APK installation",
-    management2: "Application backup",
-    management3: "Version comparison",
-    management4: "Secure application removal",
+      "Customize your ISV Toolkit experience. Change the language, adjust the visual theme, and manage the status of your connected terminal remotely.",
+    management1: "Languages: Spanish, English, and Portuguese",
+    management2: "Dark and Light Mode",
+    management3: "Remote terminal reboot",
+    management4: "Preference persistence",
 
     // Download Section
     downloadTitle: "Download ISV Toolkit",
@@ -371,8 +363,8 @@ const translations = {
     size: "Size:",
     requirements: "Requirements:",
     downloadButton: "Download for",
-    requirementsTitle: "📦 System Requirements",
-    dependenciesTitle: "⚙️ Required Dependencies",
+    requirementsTitle: "System Requirements",
+    dependenciesTitle: "Required Dependencies",
     os: "Operating System",
     osDesc: "Windows 7/8/10/11 (64-bit)",
     ram: "RAM Memory",
@@ -387,9 +379,7 @@ const translations = {
     buildToolsDesc: "AAPT, APKSigner, etc.",
     jdk: "JDK 11",
     jdkDesc: "For JarSigner",
-    free: "Completely Free",
-    freeDesc: "ISV Toolkit is 100% free",
-    
+
     // Simulator
     simulatorTitle: "Cloud to Cloud Simulator",
     simulatorDesc: "C2C command console. Validate tokens and examine event logs.",
@@ -568,13 +558,13 @@ const translations = {
     screen3: "Configuração de resolução e fps",
     screen4: "Múltiplos formatos de exportação",
 
-    managementTitle: "Gestão de APKs",
+    managementTitle: "Configurações Globais",
     managementDesc:
-      "Gerencie suas aplicações de forma eficiente: instale, desinstale, atualize e faça backup de APKs. Organize sua coleção de aplicativos com ferramentas de categorização.",
-    management1: "Instalação em massa de APKs",
-    management2: "Backup de aplicações",
-    management3: "Comparação de versões",
-    management4: "Remoção segura de aplicações",
+      "Personalize sua experiência no ISV Toolkit. Altere o idioma, ajuste o tema visual e gerencie o status do seu terminal conectado remotamente.",
+    management1: "Idiomas: Espanhol, Inglês e Português",
+    management2: "Modo Escuro e Claro",
+    management3: "Reboot remoto do terminal",
+    management4: "Persistência de preferências",
 
     // Download Section
     downloadTitle: "Baixar ISV Toolkit",
@@ -586,8 +576,8 @@ const translations = {
     size: "Tamanho:",
     requirements: "Requisitos:",
     downloadButton: "Baixar para",
-    requirementsTitle: "📦 Requisitos do Sistema",
-    dependenciesTitle: "⚙️ Dependências Necessárias",
+    requirementsTitle: "Requisitos do Sistema",
+    dependenciesTitle: "Dependências Necessárias",
     os: "Sistema Operacional",
     osDesc: "Windows 7/8/10/11 (64-bit)",
     ram: "Memória RAM",
@@ -602,9 +592,7 @@ const translations = {
     buildToolsDesc: "AAPT, APKSigner, etc.",
     jdk: "JDK 11",
     jdkDesc: "Para JarSigner",
-    free: "Totalmente Gratuito",
-    freeDesc: "ISV Toolkit é 100% gratuito",
-    
+  
     // Simulator
     simulatorTitle: "Simulador Cloud to Cloud",
     simulatorDesc: "Console de comandos C2C. Valide tokens e examine os logs de eventos.",
