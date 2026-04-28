@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 
 import { CONFIG } from './simulator.constants';
@@ -25,6 +25,9 @@ export default function SimulatorView({ onLog }) {
   const [loading,  setLoading]  = useState(false);
   const [response, setResponse] = useState(null);
   const [abortController, setAbortController] = useState(null);
+  const [isFlashRunning, setIsFlashRunning] = useState(false);
+  const [isStopping,     setIsStopping]     = useState(false);
+  const flashRef = useRef(false);
   
   const [params, setParams] = useState(() => {
     const template = { ...COMMAND_METHODS[0].template };
@@ -175,7 +178,7 @@ export default function SimulatorView({ onLog }) {
     let currentParams = { ...params };
     const currentBodyStr = JSON.stringify(currentParams, null, 2);
 
-    if (loading) return;
+    if (loading || isFlashRunning) return;
 
     // ── Validation ──────────────────────────────────────────────
     if (!currentParams.idTerminal || !currentParams.idSucursal || !currentParams.serialNumber) {
@@ -196,102 +199,146 @@ export default function SimulatorView({ onLog }) {
     }
     // ────────────────────────────────────────────────────────────
 
-    setLoading(true);
-    const controller = new AbortController();
-
-    if (auth.accessToken) {
-      if (onLog) onLog(`🔑 Token cargado: ${auth.accessToken.substring(0, 30)}...`, 'info');
-    } else {
-      if (onLog) onLog('⚠️ Sin token — el request irá SIN Authorization header', 'error');
-    }
-    if (onLog) onLog(`→ ${method} ${url}`, 'info');
-
-    try {
-      // Transform REAL URL to internal Proxy URL silently for the fetch call
-      let fetchUrl = url;
-      const proxyMap = {
-        'https://api-dev-getnet-posintegrado.ione.cl/api/postxs/': '/api/cl/dev/',
-        'https://api-uat-getnet-posintegrado.ione.cl/api/postxs/': '/api/cl/uat/',
-        'https://api-getnet-posintegrado.ione.cl/api/postxs/':     '/api/cl/prod/',
-        'https://api-dev.ione-tech.com/api/postxs/':              '/api/ar/dev/',
-        'https://api-uat.ione-tech.com/api/postxs/':              '/api/ar/uat/',
-        'https://api.ione-tech.com/api/postxs/':                  '/api/ar/prod/',
-      };
-      
-      for (const [real, proxy] of Object.entries(proxyMap)) {
-        if (fetchUrl.startsWith(real)) {
-          fetchUrl = fetchUrl.replace(real, proxy);
-          break;
-        }
-      }
-
-      const headers = { 
-        'Content-Type': 'application/json',
-        'env': env,
-        'country': country,
-        'app': 'posintegrado'
-      };
-      if (auth.accessToken) headers['Authorization'] = `Bearer ${auth.accessToken}`;
-
-      const options = { 
-        method, 
-        headers,
-        body: method !== 'GET' && method !== 'HEAD' ? currentBodyStr : undefined,
-        signal: controller.signal
-      };
-
+    const isFlash = selectedId === 'flash_sale';
+    
+    // Internal request runner
+    const runRequest = async (bodyToUse) => {
+      const controller = new AbortController();
       setAbortController(controller);
 
-      const startTime = Date.now();
-      const res       = await fetch(fetchUrl, options);
-      const endTime   = Date.now();
-
-      let data;
-      const ct = res.headers.get('content-type');
-      data = ct?.includes('application/json') ? await res.json() : await res.text();
-
-      setResponse(data);
-      setHistory((prev) => [{
-        id:       `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        method,
-        endpoint: url.split('/').pop() || '/sale',
-        status:   res.status,
-        request:  currentBodyStr,
-        response: data,
-        time:     new Date().toLocaleTimeString('es-CL', { hour12: false }),
-      }, ...prev]);
-
-      if (res.ok) {
-        if (onLog) onLog(`✅ ${res.status} OK (${endTime - startTime}ms)`, 'success');
-      } else {
-        if (onLog) onLog(`❌ ${res.status} — ${JSON.stringify(data).substring(0, 120)}`, 'error');
-        if (res.status === 401) setShow401Prompt(true);
-      }
-
-      // Auto-scroll to response on mobile (success or error)
-      if (window.innerWidth < 1024) {
-        setTimeout(() => {
-          const responseEl = document.getElementById('response-view');
-          if (responseEl) {
-            responseEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      try {
+        let fetchUrl = url;
+        const proxyMap = {
+          'https://api-dev-getnet-posintegrado.ione.cl/api/postxs/': '/api/cl/dev/',
+          'https://api-uat-getnet-posintegrado.ione.cl/api/postxs/': '/api/cl/uat/',
+          'https://api-getnet-posintegrado.ione.cl/api/postxs/':     '/api/cl/prod/',
+          'https://api-dev.ione-tech.com/api/postxs/':              '/api/ar/dev/',
+          'https://api-uat.ione-tech.com/api/postxs/':              '/api/ar/uat/',
+          'https://api.ione-tech.com/api/postxs/':                  '/api/ar/prod/',
+        };
+        
+        for (const [real, proxy] of Object.entries(proxyMap)) {
+          if (fetchUrl.startsWith(real)) {
+            fetchUrl = fetchUrl.replace(real, proxy);
+            break;
           }
-        }, 100);
+        }
+
+        const headers = { 
+          'Content-Type': 'application/json',
+          'env': env,
+          'country': country,
+          'app': 'posintegrado'
+        };
+        if (auth.accessToken) headers['Authorization'] = `Bearer ${auth.accessToken}`;
+
+        const options = { 
+          method, 
+          headers,
+          body: method !== 'GET' && method !== 'HEAD' ? bodyToUse : undefined,
+          signal: controller.signal
+        };
+
+        if (onLog) onLog(`→ ${method} ${url}`, 'info');
+
+        const startTime = Date.now();
+        const res       = await fetch(fetchUrl, options);
+        const endTime   = Date.now();
+
+        let data;
+        const ct = res.headers.get('content-type');
+        data = ct?.includes('application/json') ? await res.json() : await res.text();
+
+        setResponse(data);
+        setHistory((prev) => [{
+          id:       `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          method,
+          endpoint: url.split('/').pop() || '/sale',
+          status:   res.status,
+          request:  bodyToUse,
+          response: data,
+          time:     new Date().toLocaleTimeString('es-CL', { hour12: false }),
+        }, ...prev]);
+
+        if (res.ok) {
+          if (onLog) onLog(`✅ ${res.status} OK (${endTime - startTime}ms)`, 'success');
+        } else {
+          if (onLog) onLog(`❌ ${res.status} — ${JSON.stringify(data).substring(0, 120)}`, 'error');
+          if (res.status === 401) setShow401Prompt(true);
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          if (onLog) onLog('🚫 Petición cancelada', 'info');
+        } else {
+          console.error('Request Error:', error);
+          if (onLog) onLog(`Error: ${error.message}`, 'error');
+          setResponse({ error: error.message });
+        }
+      } finally {
+        setAbortController(null);
       }
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        if (onLog) onLog('🚫 Petición cancelada por el usuario', 'info');
+    };
+
+    setLoading(true);
+    try {
+      if (isFlash) {
+        if (onLog) onLog('⚡ Iniciando modo Venta Flash...', 'info');
+        flashRef.current = true;
+        setIsFlashRunning(true);
+        
+        let iterParams = { ...params };
+        
+        while (flashRef.current) {
+          if (!flashRef.current) break;
+          const bodyToUse = JSON.stringify(iterParams, null, 2);
+          setBody(bodyToUse); 
+          setParams(iterParams);
+          
+          await runRequest(bodyToUse);
+          
+          if (flashRef.current) {
+            const nextAmount = Math.floor(Math.random() * (99000 - 1000 + 1) + 1000);
+            const nextTicket = String(parseInt(iterParams.ticketNumber || "0") + 1);
+            const nextCustomId = String(Math.floor(Math.random() * 9999999));
+            const nextEmployeeId = (parseInt(iterParams.employeeId || "1") % 99) + 1;
+            
+            iterParams = {
+              ...iterParams,
+              amount: nextAmount,
+              ticketNumber: nextTicket,
+              customId: nextCustomId,
+              employeeId: nextEmployeeId,
+            };
+            
+            if (flashRef.current) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+          }
+        }
       } else {
-        console.error('Request Error:', error);
-        if (onLog) onLog(`Error: ${error.message}`, 'error');
-        setResponse({ error: error.message });
+        await runRequest(currentBodyStr);
       }
     } finally {
+      setIsFlashRunning(false);
+      setIsStopping(false);
       setLoading(false);
-      setAbortController(null);
+      flashRef.current = false;
     }
   };
 
   const handleCancel = () => {
+    if (isFlashRunning) {
+      setIsStopping(true);
+      flashRef.current = false;
+      setIsFlashRunning(false);
+      if (onLog) onLog('⏹️ Deteniendo Venta Flash...', 'info');
+      // Abort current in-flight request if any
+      if (abortController) {
+        abortController.abort();
+        setAbortController(null);
+      }
+      return;
+    }
     if (abortController) {
       const confirmMsg = t('cancelConfirm') || 'La transacción seguirá por el servicio pero si cancelas no podrás ver la respuesta en esta pantalla.';
       if (window.confirm(confirmMsg)) {
@@ -344,35 +391,45 @@ export default function SimulatorView({ onLog }) {
             <div className="relative mr-2 z-50">
               <button
                 onClick={() => setIsCountryOpen(!isCountryOpen)}
-                className="flex items-center gap-2.5 bg-accent hover:bg-accent-warm border border-white/10 rounded-[14px] py-2 px-4 shadow-lg shadow-accent/20 cursor-pointer transition-all active:scale-95"
+                className="flex items-center gap-2.5 bg-[#6366f1] hover:bg-[#4f46e5] border border-white/20 rounded-lg py-2.5 px-4 shadow-[0_8px_20px_-4px_rgba(99,102,241,0.4)] cursor-pointer transition-all active:scale-95 group"
               >
-                <img 
-                  src={`https://flagcdn.com/w20/${country}.png`} 
-                  alt={country}
-                  className="w-4 rounded-sm shadow-sm"
-                />
-                <span className="text-[11px] font-black text-white uppercase tracking-widest">
+                <div className="relative">
+                  <img 
+                    src={`https://flagcdn.com/w20/${country}.png`} 
+                    alt={country}
+                    className="w-4 rounded-[2px] shadow-sm relative z-10"
+                  />
+                  <div className="absolute inset-0 bg-white/20 blur-[2px] scale-125 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
+                <span className="text-[11px] font-black text-white uppercase tracking-[0.15em]">
                   {country === 'cl' ? 'CL' : 'AR'}
                 </span>
+                <div className={`transition-transform duration-300 ${isCountryOpen ? 'rotate-180' : ''}`}>
+                  <ChevronDown className="w-3.5 h-3.5 text-white/70" />
+                </div>
               </button>
 
               {isCountryOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsCountryOpen(false)} />
-                  <div className="absolute top-full left-0 mt-2 w-52 bg-card border border-accent/10 rounded-2xl shadow-2xl z-50 p-2 animate-in fade-in slide-in-from-top-2 backdrop-blur-xl">
+                  <div className="absolute top-full left-0 mt-3 w-56 bg-[#1e1b4b]/95 border border-white/10 rounded-xl shadow-2xl z-50 p-1.5 animate-in fade-in slide-in-from-top-2 backdrop-blur-2xl ring-1 ring-white/5">
+                    <div className="px-3 py-2 mb-1">
+                      <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest opacity-70">{t('simCountrySelectLabel')}</span>
+                    </div>
                     <button
                       onClick={() => { 
                         setCountry('cl'); 
                         localStorage.setItem('isv_simulator_country', 'cl');
                         setIsCountryOpen(false); 
                       }}
-                      className={`flex w-full items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer ${country === 'cl' ? 'bg-accent text-white shadow-md' : 'text-text-secondary hover:bg-accent/5'}`}
+                      className={`flex w-full items-center gap-3 px-3.5 py-3 rounded-lg transition-all cursor-pointer group ${country === 'cl' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5'}`}
                     >
-                      <img src="https://flagcdn.com/w20/cl.png" className="w-4 rounded-sm" alt="CL" />
+                      <img src="https://flagcdn.com/w20/cl.png" className="w-4 rounded-[2px]" alt="CL" />
                       <div className="flex flex-col items-start leading-none">
-                        <span className={`text-[8px] font-black uppercase tracking-widest ${country === 'cl' ? 'text-white/60' : 'text-slate-400'}`}>CL</span>
+                        <span className={`text-[8px] font-black uppercase tracking-widest ${country === 'cl' ? 'text-indigo-200' : 'text-indigo-400/60'}`}>CL</span>
                         <span className="text-[13px] font-bold mt-1">Chile</span>
                       </div>
+                      {country === 'cl' && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />}
                     </button>
                     <button
                       onClick={() => { 
@@ -380,13 +437,14 @@ export default function SimulatorView({ onLog }) {
                         localStorage.setItem('isv_simulator_country', 'ar');
                         setIsCountryOpen(false); 
                       }}
-                      className={`flex w-full items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer mt-1 ${country === 'ar' ? 'bg-accent text-white shadow-md' : 'text-text-secondary hover:bg-accent/5'}`}
+                      className={`flex w-full items-center gap-3 px-3.5 py-3 rounded-lg transition-all cursor-pointer mt-1 group ${country === 'ar' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5'}`}
                     >
-                      <img src="https://flagcdn.com/w20/ar.png" className="w-4 rounded-sm" alt="AR" />
+                      <img src="https://flagcdn.com/w20/ar.png" className="w-4 rounded-[2px]" alt="AR" />
                       <div className="flex flex-col items-start leading-none">
-                        <span className={`text-[8px] font-black uppercase tracking-widest ${country === 'ar' ? 'text-white/60' : 'text-slate-400'}`}>AR</span>
+                        <span className={`text-[8px] font-black uppercase tracking-widest ${country === 'ar' ? 'text-indigo-200' : 'text-indigo-400/60'}`}>AR</span>
                         <span className="text-[13px] font-bold mt-1">Argentina</span>
                       </div>
+                      {country === 'ar' && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />}
                     </button>
                   </div>
                 </>
@@ -395,7 +453,7 @@ export default function SimulatorView({ onLog }) {
 
             <button
               onClick={() => setIsAuthModalOpen(true)}
-              className="px-4 py-2 bg-accent text-white hover:bg-accent-warm rounded-xl transition-all font-black uppercase tracking-widest text-[9px] flex items-center gap-2.5 active:scale-95 shadow-lg shadow-accent/20 cursor-pointer glow"
+              className="px-5 py-2.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg transition-all font-black uppercase tracking-widest text-[10px] flex items-center gap-2.5 active:scale-95 shadow-[0_8px_20px_-4px_rgba(79,70,229,0.4)] cursor-pointer ring-1 ring-white/10"
             >
               <ShieldCheck className="w-4 h-4" /> TOKEN
             </button>
@@ -438,6 +496,8 @@ export default function SimulatorView({ onLog }) {
               onSend={handleSend}
               onCancel={handleCancel}
               loading={loading}
+              isFlashRunning={isFlashRunning}
+              isStopping={isStopping}
             />
           </div>
 
@@ -481,7 +541,7 @@ export default function SimulatorView({ onLog }) {
                   {loading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>{t('simCancelBtn')}</span>
+                      <span>{isStopping ? 'DETENIENDO...' : isFlashRunning ? 'DETENER' : t('simCancelBtn')}</span>
                     </>
                   ) : (
                     <>
@@ -585,6 +645,8 @@ export default function SimulatorView({ onLog }) {
                 onSend={handleSend}
                 onCancel={handleCancel}
                 loading={loading}
+                isFlashRunning={isFlashRunning}
+                isStopping={isStopping}
               />
             </div>
 

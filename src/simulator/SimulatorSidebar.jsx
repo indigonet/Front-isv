@@ -24,6 +24,8 @@ export default function SimulatorSidebar({
   onSend,
   onCancel,
   loading,
+  isFlashRunning,
+  isStopping,
 }) {
   const { t } = useLanguage();
 
@@ -165,7 +167,8 @@ export default function SimulatorSidebar({
             <select
               value={selectedId}
               onChange={(e) => handleCommandChange(e.target.value)}
-              className="w-full appearance-none bg-background border border-accent/10 rounded-2xl px-5 py-3.5 pr-10 font-black text-text-primary text-sm outline-none focus:border-accent transition-all cursor-pointer shadow-sm"
+              disabled={loading}
+              className={`w-full appearance-none bg-background border border-accent/10 rounded-2xl px-5 py-3.5 pr-10 font-black text-text-primary text-sm outline-none focus:border-accent transition-all shadow-sm ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               {COMMAND_METHODS.map((m) => (
                 <option key={m.id} value={m.id}>{t(m.label)}</option>
@@ -242,7 +245,7 @@ export default function SimulatorSidebar({
             {loading ? (
               <>
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>{t('simCancelBtn')}</span>
+                <span>{isStopping ? 'DETENIENDO...' : isFlashRunning ? 'DETENER' : t('simCancelBtn')}</span>
               </>
             ) : (
               <>

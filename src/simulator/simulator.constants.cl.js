@@ -46,6 +46,8 @@ export const FIELD_CONFIG = {
   c2cMode: { label: 'field.c2cMode', type: 'toggle', span: 2 },
   rutToValidate: { label: 'field.rutToValidate', type: 'text', span: 1 },
   authType: { label: 'field.authType', type: 'number', span: 1 },
+  employeeId: { label: 'field.employeeId', type: 'number', span: 1 },
+  saleType: { label: 'field.saleType', type: 'number', span: 1 },
 };
 
 // ─── Templates ─────────────────────────────────────────────────────────────────
@@ -137,7 +139,7 @@ export const COMMAND_METHODS = [
   {
     id: 'c2c_sale', label: 'cmd.c2c_sale', icon: Cloud, color: 'text-accent', bg: 'bg-accent/10',
     endpoint: 'sale',
-    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'ticketNumber', 'customId', 'printOnPos'],
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'ticketNumber', 'customId', 'saleType', 'employeeId', 'printOnPos'],
     template: BODY_C2C_SALE,
   },
   {
@@ -193,6 +195,13 @@ export const COMMAND_METHODS = [
     endpoint: 'c2cmode',
     fields: ['idTerminal', 'idSucursal', 'serialNumber', 'c2cMode'],
     template: BODY_C2C_MODE,
+  },
+  {
+    id: 'flash_sale', label: 'cmd.flash_sale', icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-400/10',
+    endpoint: 'sale',
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'ticketNumber', 'customId', 'saleType', 'employeeId', 'printOnPos'],
+    template: BODY_C2C_SALE,
+    isIterative: true,
   },
 ];
 

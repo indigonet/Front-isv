@@ -50,7 +50,7 @@ export default function AuthTokenModal({
           alt={country} 
           className="w-4 sm:w-5 rounded-[2px] shadow-sm shrink-0"
         />
-        <span className={`${country === 'cl' ? 'text-accent' : 'text-sky-500'} text-[10px] sm:text-lg font-black uppercase tracking-widest`}>
+        <span className={`${country === 'cl' ? 'text-indigo-500' : 'text-sky-500'} text-[10px] sm:text-lg font-black uppercase tracking-widest`}>
           {country === 'cl' ? 'Chile' : 'Argentina'}
         </span>
       </div>
@@ -78,9 +78,9 @@ export default function AuthTokenModal({
                     if (accessToken) clearToken();
                     onEnvChange(newEnv);
                   }}
-                  className={`w-full appearance-none bg-background border border-accent/10 rounded-xl py-3.5 px-5 text-xs font-black uppercase tracking-widest outline-none transition-all shadow-sm cursor-pointer pr-10 ${
-                    env === 'prod' ? 'text-rose-500 border-rose-500/20' : env === 'uat' ? 'text-accent border-accent/20' : 'text-emerald-500 border-emerald-500/20'
-                  } focus:ring-4 focus:ring-accent/5`}
+                  className={`w-full appearance-none bg-background border border-indigo-500/10 rounded-lg py-3.5 px-5 text-xs font-black uppercase tracking-widest outline-none transition-all shadow-sm cursor-pointer pr-10 ${
+                    env === 'prod' ? 'text-rose-500 border-rose-500/20' : env === 'uat' ? 'text-indigo-500 border-indigo-500/20' : 'text-emerald-500 border-emerald-500/20'
+                  } focus:ring-4 focus:ring-indigo-500/5`}
                 >
                   <option value="dev">DEV - Ambiente Desarrollo</option>
                   <option value="uat">UAT - Ambiente Pruebas</option>
@@ -97,40 +97,53 @@ export default function AuthTokenModal({
             <div className="space-y-4">
             {/* Client ID */}
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1">
+              <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1 opacity-70">
                 {t('clientIdLabel')}
               </label>
               <div className="relative group">
-                <UserCheck className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary group-focus-within:text-accent transition-colors" />
+                <UserCheck className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500/30 group-focus-within:text-indigo-500 transition-colors z-20 pointer-events-none" />
+                
                 <input
+                  id="clientIdInput"
                   type="text"
                   value={clientId}
                   onChange={(e) => setClientId(e.target.value)}
-                  className="w-full bg-background border border-accent/10 rounded-xl py-3 pl-12 pr-6 text-sm font-bold text-text-primary focus:border-accent outline-none transition-all shadow-sm truncate"
+                  className="peer w-full bg-background border border-indigo-500/10 rounded-xl py-4 pl-14 pr-14 text-sm font-bold text-text-primary focus:border-indigo-500 outline-none transition-all shadow-sm"
                   placeholder="Client ID"
                 />
+
+                {/* Preview Overlay: Static, non-scrollable view when not focused */}
+                {clientId && (
+                  <div 
+                    className="absolute inset-y-0 left-14 right-14 flex items-center pointer-events-none peer-focus:hidden bg-background z-10"
+                  >
+                    <span className="text-sm font-bold text-text-primary truncate block w-full">
+                      {clientId}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Client Secret */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1">
+            <div className="space-y-2 mt-5">
+              <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1 opacity-70">
                 {t('clientSecretLabel')}
               </label>
               <div className="relative group">
-                <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary group-focus-within:text-accent transition-colors" />
+                <Key className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500/30 group-focus-within:text-indigo-500 transition-colors z-20 pointer-events-none" />
                 <button
                   type="button"
                   onClick={() => setShowSecret(!showSecret)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 z-20 text-text-secondary hover:text-accent cursor-pointer transition-colors p-2 rounded-lg bg-background/50 backdrop-blur-sm"
+                  className="absolute right-5 top-1/2 -translate-y-1/2 z-20 text-text-secondary/30 hover:text-indigo-500 transition-colors cursor-pointer"
                 >
-                  {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4 ml-1" />}
+                  {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
                 <input
                   type={showSecret ? 'text' : 'password'}
                   value={clientSecret}
                   onChange={(e) => setClientSecret(e.target.value)}
-                  className="w-full bg-background border border-accent/10 rounded-xl py-3 pl-12 pr-20 text-sm font-bold text-text-primary focus:border-accent outline-none transition-all shadow-sm"
+                  className="w-full bg-background border border-indigo-500/10 rounded-xl py-4 pl-14 pr-16 text-sm font-bold text-text-primary focus:border-indigo-500 outline-none transition-all shadow-sm"
                   placeholder="••••••••"
                 />
               </div>
@@ -158,7 +171,7 @@ export default function AuthTokenModal({
                 }
               }}
               disabled={fetching || !clientId?.trim() || !clientSecret?.trim()}
-              className="w-full py-5 rounded-2xl bg-accent text-white hover:bg-accent-warm transition-all font-black uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 text-xs shadow-xl shadow-accent/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale disabled:pointer-events-none"
+              className="w-full py-5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-all font-black uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 text-xs shadow-[0_12px_24px_-8px_rgba(79,70,229,0.5)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale disabled:pointer-events-none"
             >
               {fetching ? (
                 <div className="flex items-center gap-2">

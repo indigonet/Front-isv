@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useLanguage } from "../../../../context/LanguageContext";
+import { Download } from "lucide-react";
 import "./DownloadSection.css";
 
 export default function DownloadSection() {
@@ -191,17 +192,21 @@ export default function DownloadSection() {
             <div key={option.id} className="premium-download-card">
               <div className="platform-tag">{option.os}</div>
               <div className="card-header-v2">
-                <span className="main-os-icon">{option.icon}</span>
+                <div className="main-os-icon">
+                  <svg width="80" height="80" viewBox="0 0 24 24" fill="currentColor" style={{ color: 'var(--color-primary)', filter: 'drop-shadow(0 10px 20px rgba(var(--color-primary-rgb), 0.3))' }}>
+                    <path d="M0 3.449L9.75 2.1V11.4H0V3.449zm0 17.102L9.75 21.9V12.6H0v7.951zM10.65 1.95l13.35-1.95V11.4h-13.35V1.95zm0 20.1l13.35 1.95V12.6h-13.35v9.45z"/>
+                  </svg>
+                </div>
                 <div className="version-pill">{option.version}</div>
               </div>
 
               <div className="download-details-v2">
                 <div className="detail-item-v2">
-                  <span>File:</span>
+                  <span>{t("file")}</span>
                   <strong>{option.fileName}</strong>
                 </div>
                 <div className="detail-item-v2">
-                  <span>Size:</span>
+                  <span>{t("size")}</span>
                   <strong>{option.fileSize}</strong>
                 </div>
               </div>
@@ -212,11 +217,11 @@ export default function DownloadSection() {
                 disabled={isDownloading}
               >
                 {isDownloading ? (
-                  "Downloading..."
+                  t("downloading")
                 ) : (
                   <>
-                    <span className="btn-icon">⬇️</span>
-                    <span>Download for Windows</span>
+                    <Download size={22} />
+                    <span>{t("downloadButton")} {option.os}</span>
                   </>
                 )}
               </button>

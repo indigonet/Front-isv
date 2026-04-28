@@ -9,7 +9,7 @@ import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 
 
-import { Zap, Shield, Wrench, Key } from "lucide-react";
+import { Zap, Shield, Wrench, Key, Download, Github } from "lucide-react";
 
 export default function Content() {
   const { t } = useLanguage();
@@ -104,7 +104,7 @@ export default function Content() {
         <div className="hero-container-v2">
           {/* Left Column: Information */}
           <div className="hero-text-content">
-            <div className="hero-badge">ISV Toolkit v1.0.1</div>
+            <div className="hero-badge">{t("topbar.logoText")} v1.0.1</div>
             <h1 className="hero-title-v2">{t("heroTitle")}</h1>
             <p className="hero-description-v2">{t("heroDescription")}</p>
             
@@ -113,14 +113,14 @@ export default function Content() {
                 className={`cta-button primary ${downloading ? "loading" : ""}`}
                 onClick={handleDownload}
               >
-                <span className="btn-icon">⬇️</span>
-                {downloading ? "Descargando..." : "Descargar Toolkit"}
+                <Download size={20} />
+                {downloading ? t("downloading") : t("topbar.download") + " Toolkit"}
               </button>
               <button 
                 className="cta-button secondary"
                 onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
               >
-                Saber más
+                {t("learnMore")}
               </button>
             </div>
           </div>

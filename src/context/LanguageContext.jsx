@@ -154,6 +154,8 @@ const translations = {
     buildToolsDesc: "AAPT, APKSigner, etc.",
     jdk: "JDK 11",
     jdkDesc: "Para JarSigner",
+    downloading: "Descargando...",
+    learnMore: "Saber más",
     
     // Simulator
     simulatorTitle: "Simulador Cloud to Cloud",
@@ -218,6 +220,7 @@ const translations = {
     "cmd.bioauth": "Bio Auth (121)",
     "cmd.print": "Imprimir (117)",
     "cmd.c2c_mode": "Modo C2C (129)",
+    "cmd.flash_sale": "Venta Flash (100+)",
 
     // Fields
     "field.idTerminal": "ID Terminal",
@@ -379,6 +382,8 @@ const translations = {
     buildToolsDesc: "AAPT, APKSigner, etc.",
     jdk: "JDK 11",
     jdkDesc: "For JarSigner",
+    downloading: "Downloading...",
+    learnMore: "Learn More",
 
     // Simulator
     simulatorTitle: "Cloud to Cloud Simulator",
@@ -442,6 +447,7 @@ const translations = {
     "cmd.bioauth": "Bio Auth (121)",
     "cmd.print": "Print (117)",
     "cmd.c2c_mode": "C2C Mode (129)",
+    "cmd.flash_sale": "Flash Sale (100+)",
 
     // Fields
     "field.idTerminal": "Terminal ID",
@@ -592,6 +598,8 @@ const translations = {
     buildToolsDesc: "AAPT, APKSigner, etc.",
     jdk: "JDK 11",
     jdkDesc: "Para JarSigner",
+    downloading: "Baixando...",
+    learnMore: "Saiba mais",
   
     // Simulator
     simulatorTitle: "Simulador Cloud to Cloud",
@@ -678,6 +686,7 @@ const translations = {
     "cmd.bioauth": "Bio Auth (121)",
     "cmd.print": "Imprimir (117)",
     "cmd.c2c_mode": "Modo C2C (129)",
+    "cmd.flash_sale": "Venda Flash (100+)",
 
     // Fields
     "field.idTerminal": "ID Terminal",

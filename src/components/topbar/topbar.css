@@ -50,8 +50,8 @@
 }
 
 .logo-text-v2 {
-  font-size: 1.4rem;
-  font-weight: 900;
+  font-size: 1.5rem;
+  font-weight: 850;
   color: var(--color-primary);
   letter-spacing: -0.05em;
   text-transform: uppercase;
@@ -83,7 +83,7 @@
 }
 
 .logo-container:hover .logo-image-v2 {
-  transform: rotate(15deg);
+  transform: rotate(0deg);
 }
 
 .menu {

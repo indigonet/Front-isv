@@ -22,7 +22,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
       />
       
       {/* Modal Card */}
-      <div className="bg-card w-full max-w-4xl max-h-[85vh] rounded-3xl border border-accent/10 shadow-2xl flex flex-col relative animate-in zoom-in duration-300 overflow-hidden">
+      <div className="bg-card w-full max-w-4xl max-h-[85vh] rounded-2xl border border-accent/10 shadow-2xl flex flex-col relative animate-in zoom-in duration-300 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 sm:px-8 py-4 sm:py-6 border-b border-accent/5">
           <div className="flex-1 min-w-0 pr-2">
