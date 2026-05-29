@@ -3,6 +3,16 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 export const releaseNotes = {
   es: [
     {
+      version: "v1.0.3",
+      changes: [
+        "Carpeta en el proceso de firma y guardado de directorio",
+        "Soporte de Jarsigner para APKs sin firma o con firma existente",
+        "Mejoras visuales y nuevo ícono de la aplicación",
+        "Instalación de APK mejorada: barra de progreso y gestión del error -1",
+        "Experiencia de instalación más profesional y detallada",
+      ],
+    },
+    {
       version: "v1.0.1",
       changes: [
         "Nueva interfaz moderna desarrollada en Flutter",
@@ -16,6 +26,16 @@ export const releaseNotes = {
 
   en: [
     {
+      version: "v1.0.3",
+      changes: [
+        "Folder selection in signing process and directory saving",
+        "Jarsigner support for unsigned or already-signed APKs",
+        "Visual improvements and new app icon",
+        "Improved APK installation: progress bar and error -1 handling",
+        "More professional and detailed installation experience",
+      ],
+    },
+    {
       version: "v1.0.1",
       changes: [
         "New modern interface developed in Flutter",
@@ -28,6 +48,16 @@ export const releaseNotes = {
   ],
 
   pt: [
+    {
+      version: "v1.0.3",
+      changes: [
+        "Pasta no processo de assinatura e salvamento de diretório",
+        "Suporte a Jarsigner para APKs sem assinatura ou com assinatura existente",
+        "Melhorias visuais e novo ícone do aplicativo",
+        "Instalação de APK aprimorada: barra de progresso e tratamento do erro -1",
+        "Experiência de instalação mais profissional e detalhada",
+      ],
+    },
     {
       version: "v1.0.1",
       changes: [
@@ -131,7 +161,7 @@ const translations = {
     // Download Section
     downloadTitle: "Descarga ISV Toolkit",
     downloadSubtitle:
-      "Disponible para todas las plataformas principales. Elige tu sistema operativo:",
+      "Disponible para Windows",
     windows: "Windows",
     version: "Versión:",
     file: "Archivo:",
@@ -247,7 +277,7 @@ const translations = {
     "field.originalTime": "Hora Original",
     simClearResponse: "Limpiar Response",
     confirmClearToken: "¿Estás seguro de que deseas borrar el Token guardado?",
-    simVersionNotice: "Este comando al igual que el de Venta Promo, c2cmode y Bio Auth son solo para las versiones 1.0.1 de iOnetech",
+    simVersionNotice: "Este comando al igual que el de Venta Promo, c2cmode y Bio Auth son solo para las versiones 1.0.3 de iOnetech",
     confirmClearHistory: "¿Estás seguro de que deseas borrar el historial de transacciones?",
     cancelConfirm: "La transacción seguirá por el servicio pero si cancelas no podrás ver la respuesta en esta pantalla.",
     simCancelBtn: "Cancelar",
@@ -356,7 +386,7 @@ const translations = {
     // Download Section
     downloadTitle: "Download ISV Toolkit",
     downloadSubtitle:
-      "Available for all major platforms. Choose your operating system:",
+      "Available for Windows",
     windows: "Windows",
     version: "Version:",
     file: "File:",
@@ -460,7 +490,7 @@ const translations = {
     "field.authType": "Auth Type",
     simClearResponse: "Clear Response",
     confirmClearToken: "Are you sure you want to clear the saved Token?",
-    simVersionNotice: "This command as well as Venta Promo, c2c_mode and Bio Auth are only for iOnetech version 1.0.1",
+    simVersionNotice: "This command as well as Venta Promo, c2c_mode and Bio Auth are only for iOnetech version 1.0.3",
     confirmClearHistory: "Are you sure you want to clear the transaction history?",
     cancelConfirm: "The transaction will continue on the service but if you cancel you won't be able to see the response on this screen.",
     simCancelBtn: "Cancel",
@@ -569,7 +599,7 @@ const translations = {
     // Download Section
     downloadTitle: "Baixar ISV Toolkit",
     downloadSubtitle:
-      "Disponível para todas as principais plataformas. Escolha seu sistema operacional:",
+      "Disponível para Windows",
     windows: "Windows",
     version: "Versão:",
     file: "Arquivo:",
@@ -699,7 +729,7 @@ const translations = {
     "field.authType": "Tipo Auth",
     simClearResponse: "Limpar Response",
     confirmClearToken: "Tem certeza de que deseja apagar o Token salvo?",
-    simVersionNotice: "Este comando, assim como Venta Promo, c2cmode e Bio Auth, é apenas para iOnetech versão 1.0.1",
+    simVersionNotice: "Este comando, assim como Venta Promo, c2cmode e Bio Auth, é apenas para iOnetech versão 1.0.3",
     confirmClearHistory: "Tem certeza de que deseja apagar o histórico de transações?",
     simAtendido: "Atendido",
     simDesatendido: "Desatendido",

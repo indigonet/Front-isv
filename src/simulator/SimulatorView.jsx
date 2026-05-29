@@ -332,7 +332,6 @@ export default function SimulatorView({ onLog }) {
       flashRef.current = false;
       setIsFlashRunning(false);
       if (onLog) onLog('⏹️ Deteniendo Venta Flash...', 'info');
-      // Abort current in-flight request if any
       if (abortController) {
         abortController.abort();
         setAbortController(null);

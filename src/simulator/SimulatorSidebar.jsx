@@ -206,7 +206,7 @@ export default function SimulatorSidebar({
                 <div className="absolute right-0 bottom-full mb-2 w-48 p-3 bg-card border border-accent/20 rounded-xl shadow-2xl opacity-0 md:group-hover:opacity-100 pointer-events-none transition-all duration-300 z-50 text-[9px] font-bold text-text-secondary leading-relaxed backdrop-blur-md translate-y-2 group-hover:translate-y-0">
                   {t('simVersionNotice') && t('simVersionNotice') !== 'simVersionNotice' 
                     ? t('simVersionNotice') 
-                    : 'Este comando al igual que el de c2cmode son solo para las versiones 1.0.1 de iOnetech'}
+                    : 'Este comando al igual que el de c2cmode son solo para las versiones 1.0.3 de iOnetech'}
                 </div>
               </div>
             )}
