@@ -362,9 +362,9 @@ export default function SimulatorView({ onLog }) {
 
   return (
     <div className="min-h-[calc(100vh-80px)] w-full py-8 px-4 sm:px-6 lg:px-8 bg-background relative overflow-hidden transition-colors duration-500">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,_var(--tw-gradient-stops))] from-accent/10 via-transparent to-transparent pointer-events-none opacity-40" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,var(--tw-gradient-stops))] from-accent/10 via-transparent to-transparent pointer-events-none opacity-40" />
       
-      <div className="max-w-[1700px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-12 relative z-10">
+      <div className="max-w-425 mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-12 relative z-10">
 
         {/* Header Content */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-10 relative rounded-[2.5rem] shadow-2xl transition-colors duration-500 z-20">
@@ -375,7 +375,7 @@ export default function SimulatorView({ onLog }) {
           
           <div className="relative z-10 space-y-2">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-gradient-to-br from-accent to-blue-600 rounded-2xl shadow-xl shadow-accent/20">
+              <div className="p-3 bg-linear-to-br from-accent to-blue-600 rounded-2xl shadow-xl shadow-accent/20">
                 <Cloud className="w-6 h-6 text-white" />
               </div>
               <h2 className="text-3xl sm:text-4xl font-black text-text-primary tracking-tighter uppercase transition-colors">
@@ -390,15 +390,15 @@ export default function SimulatorView({ onLog }) {
             <div className="relative mr-2 z-50">
               <button
                 onClick={() => setIsCountryOpen(!isCountryOpen)}
-                className="flex items-center gap-2.5 bg-[#6366f1] hover:bg-[#4f46e5] border border-white/20 rounded-lg py-2.5 px-4 shadow-[0_8px_20px_-4px_rgba(99,102,241,0.4)] cursor-pointer transition-all active:scale-95 group"
+                className="flex items-center gap-2.5 bg-[#6366f1] hover:bg-[#4f46e5] border border-white/20 rounded-lg py-2.5 px-4 shadow-[0_8px_20px_-4px_rgba(99,102,241,0.4)] cursor-pointer transition-all group"
               >
                 <div className="relative">
-                  <img 
+                    <img 
                     src={`https://flagcdn.com/w20/${country}.png`} 
                     alt={country}
-                    className="w-4 rounded-[2px] shadow-sm relative z-10"
+                    className="w-4 rounded-xs shadow-sm relative z-10"
                   />
-                  <div className="absolute inset-0 bg-white/20 blur-[2px] scale-125 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 bg-white/20 blur-xs scale-125 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <span className="text-[11px] font-black text-white uppercase tracking-[0.15em]">
                   {country === 'cl' ? 'CL' : 'AR'}
@@ -423,7 +423,7 @@ export default function SimulatorView({ onLog }) {
                       }}
                       className={`flex w-full items-center gap-3 px-3.5 py-3 rounded-lg transition-all cursor-pointer group ${country === 'cl' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5'}`}
                     >
-                      <img src="https://flagcdn.com/w20/cl.png" className="w-4 rounded-[2px]" alt="CL" />
+                      <img src="https://flagcdn.com/w20/cl.png" className="w-4 rounded-xs" alt="CL" />
                       <div className="flex flex-col items-start leading-none">
                         <span className={`text-[8px] font-black uppercase tracking-widest ${country === 'cl' ? 'text-indigo-200' : 'text-indigo-400/60'}`}>CL</span>
                         <span className="text-[13px] font-bold mt-1">Chile</span>
@@ -438,7 +438,7 @@ export default function SimulatorView({ onLog }) {
                       }}
                       className={`flex w-full items-center gap-3 px-3.5 py-3 rounded-lg transition-all cursor-pointer mt-1 group ${country === 'ar' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5'}`}
                     >
-                      <img src="https://flagcdn.com/w20/ar.png" className="w-4 rounded-[2px]" alt="AR" />
+                      <img src="https://flagcdn.com/w20/ar.png" className="w-4 rounded-xs" alt="AR" />
                       <div className="flex flex-col items-start leading-none">
                         <span className={`text-[8px] font-black uppercase tracking-widest ${country === 'ar' ? 'text-indigo-200' : 'text-indigo-400/60'}`}>AR</span>
                         <span className="text-[13px] font-bold mt-1">Argentina</span>
@@ -452,7 +452,7 @@ export default function SimulatorView({ onLog }) {
 
             <button
               onClick={() => setIsAuthModalOpen(true)}
-              className="px-5 py-2.5 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg transition-all font-black uppercase tracking-widest text-[10px] flex items-center gap-2.5 active:scale-95 shadow-[0_8px_20px_-4px_rgba(79,70,229,0.4)] cursor-pointer ring-1 ring-white/10"
+              className="px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg transition-all font-black uppercase tracking-widest text-[11px] flex items-center gap-2.5 shadow-[0_8px_20px_-4px_rgba(79,70,229,0.4)] cursor-pointer ring-1 ring-white/10"
             >
               <ShieldCheck className="w-4 h-4" /> TOKEN
             </button>
@@ -460,7 +460,7 @@ export default function SimulatorView({ onLog }) {
             {auth.accessToken && (
               <div 
                 onClick={() => copyToClipboard(auth.accessToken)}
-                className="flex items-center gap-2.5 px-4 py-3 bg-emerald-500/[0.03] border border-emerald-500/20 rounded-2xl group cursor-pointer hover:bg-emerald-500/[0.08] hover:border-emerald-500/40 transition-all duration-300 active:scale-95"
+                className="flex items-center gap-2.5 px-4 py-3 bg-emerald-500/3 border border-emerald-500/20 rounded-2xl group cursor-pointer hover:bg-emerald-500/8 hover:border-emerald-500/40 transition-all duration-300"
               >
                 <div className="relative flex items-center justify-center">
                   <div className="absolute inset-0 bg-emerald-500 blur-md opacity-20 animate-pulse" />
@@ -502,10 +502,10 @@ export default function SimulatorView({ onLog }) {
 
           {/* Builder Section (Middle on mobile, Left on desktop) */}
           <div id="simulator-main-builder" className="lg:col-span-8 space-y-6 scroll-mt-24">
-            <div className="bg-card rounded-[2.5rem] border border-accent/10 shadow-xl overflow-hidden flex flex-col transition-all hover:shadow-2xl hover:border-accent/20">
+            <div className="bg-card rounded-[1rem] border border-accent/10 shadow-xl overflow-hidden flex flex-col transition-all hover:shadow-2xl hover:border-accent/20">
               
               {/* URL bar */}
-              <div className="p-6 bg-accent/[0.02] border-b border-accent/5 flex flex-col sm:flex-row items-center gap-4">
+              <div className="p-6 bg-accent/2 border-b border-accent/5 flex flex-col sm:flex-row items-center gap-4">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <div className="flex items-center gap-2 p-2 px-3 bg-accent/5 rounded-xl border border-accent/10">
                     <span className={`text-[10px] font-black uppercase tracking-widest ${
@@ -529,7 +529,7 @@ export default function SimulatorView({ onLog }) {
                 <button
                   onClick={loading ? handleCancel : handleSend}
                   disabled={!loading && !auth.accessToken}
-                  className={`hidden sm:flex px-8 py-3.5 rounded-2xl text-white font-black items-center justify-center gap-3 transition-all active:scale-95 cursor-pointer shadow-xl text-xs uppercase tracking-widest w-full sm:w-auto ${
+                  className={`hidden sm:flex px-8 py-3.5 rounded-2xl text-white font-black items-center justify-center gap-3 transition-all cursor-pointer shadow-xl text-xs uppercase tracking-widest w-full sm:w-auto ${
                     loading 
                       ? 'bg-rose-500 hover:bg-rose-600 shadow-rose-500/40 animate-pulse-gentle' 
                       : !auth.accessToken 
@@ -553,7 +553,7 @@ export default function SimulatorView({ onLog }) {
 
               {/* Editor + Response view */}
               <div className="grid grid-cols-1 xl:grid-cols-2 divide-y xl:divide-y-0 xl:divide-x divide-accent/5 flex-1 min-h-0">
-                <div className="flex flex-col bg-accent/[0.01]">
+                <div className="flex flex-col bg-accent/1">
                   <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
                     <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2">
                       <Cpu className="w-3.5 h-3.5 text-accent" /> REQUEST BODY (JSON)
@@ -567,7 +567,7 @@ export default function SimulatorView({ onLog }) {
                   </div>
                   <div className="flex-1 p-6">
                     <textarea
-                      className="w-full h-full min-h-[400px] bg-transparent outline-none resize-none text-emerald-500 font-mono text-[13px] font-bold leading-relaxed custom-scrollbar selection:bg-accent selection:text-white"
+                      className="w-full h-full min-h-100 bg-transparent outline-none resize-none text-emerald-500 font-mono text-[13px] font-bold leading-relaxed custom-scrollbar selection:bg-accent selection:text-white"
                       value={body}
                       readOnly
                       spellCheck="false"
@@ -575,7 +575,7 @@ export default function SimulatorView({ onLog }) {
                   </div>
                 </div>
 
-                <div id="response-view" className="flex flex-col bg-accent/[0.01] scroll-mt-20">
+                <div id="response-view" className="flex flex-col bg-accent/1 scroll-mt-20">
                   <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
                     <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2">
                       <Terminal className="w-3.5 h-3.5 text-sky-400" /> RESPONSE VIEW
@@ -590,7 +590,7 @@ export default function SimulatorView({ onLog }) {
                           >
                             <Copy className="w-3 h-3" />
                           </button>
-                          <div className="w-[1px] h-3 bg-accent/10" />
+                          <div className="w-px h-3 bg-accent/10" />
                           <button 
                             onClick={handleClearResponse}
                             className="p-1.5 hover:bg-rose-500/10 rounded-md text-text-secondary hover:text-rose-500 transition-all cursor-pointer"
@@ -614,7 +614,7 @@ export default function SimulatorView({ onLog }) {
                         </pre>
                       </div>
                     ) : (
-                      <div className="h-full min-h-[400px] flex flex-col items-center justify-center text-text-secondary/20 italic gap-4 grayscale opacity-40">
+                      <div className="h-full min-h-100 flex flex-col items-center justify-center text-text-secondary/20 italic gap-4 grayscale opacity-40">
                         <Activity className="w-16 h-16" />
                         <p className="text-xs font-black uppercase tracking-widest">{t('simWaiting')}</p>
                       </div>
@@ -734,7 +734,7 @@ export default function SimulatorView({ onLog }) {
       </Modal>
 
       {/* Floating Scroll-to-Top Button (Mobile Only) */}
-      <div className={`fixed bottom-8 right-6 z-[100] transition-all duration-500 transform lg:hidden ${
+      <div className={`fixed bottom-8 right-6 z-100 transition-all duration-500 transform lg:hidden ${
         showJumpBtn ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-50 pointer-events-none'
       }`}>
         <button

@@ -218,9 +218,9 @@
 }
 
 .cta-button.primary:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 15px 30px -8px rgba(var(--color-primary-rgb), 0.5);
+  box-shadow: 0 10px 25px rgba(var(--color-primary-rgb), 0.5);
   background: #5558e6;
+  filter: brightness(1.08);
 }
 
 .cta-button.secondary {
@@ -232,7 +232,7 @@
 
 .cta-button.secondary:hover {
   background: var(--glass-border);
-  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
 }
 
 /* Hero Visual Column */

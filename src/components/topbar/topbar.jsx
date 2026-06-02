@@ -112,208 +112,358 @@ export default function Topbar() {
 
   return (
     <header className="topbar">
-      <div
-        className="logo-container"
-        onClick={goToHome}
-        style={{ cursor: "pointer" }}
-      >
-        <div className="logo-brand">
-          <span className="logo-text-v2">ISV</span>
-          <span className="logo-subtext-v2">Toolkit</span>
-        </div>
-        <div className="logo-icon-wrapper">
-          <img
-            src={getIconImage()}
-            alt="ISV Toolkit Logo"
-            className="logo-image-v2"
-            loading="eager"
-            style={{ fetchPriority: 'high' }}
-            key={darkMode ? "dark-icon" : "light-icon"}
-          />
-        </div>
-      </div>
-
-      <nav
-        className={`menu ${open ? "open" : ""}`}
-        ref={menuRef}
-        onClick={(e) => {
-          // Cerrar menú al hacer clic en cualquier enlace dentro
-          if (e.target.tagName === "A") {
-            setOpen(false);
-          }
-        }}
-      >
-        
-    <a
-  href="/simulator"
-  onClick={(e) => {
-    e.preventDefault();
-    navigate("/simulator");
-    setOpen(false);
-    setShowLanguageDropdown(false);
-  }}
-  className="menu-link c2c-cloud"
->
-  <Cloud size={18} />
-  <span>C2C</span>
-</a>
-        <a
-          href="/notes"
-          onClick={(e) => {
-            e.preventDefault();
-            goToNotes();
-          }}
-          className="menu-link"
-        >
-          Release notes
-        </a>
-        <a
-          href="#about"
-          onClick={(e) => {
-            e.preventDefault();
-            goToFeatures();
-          }}
-          className="menu-link"
-        >
-          {t("topbar.features")}
-        </a>
-        <a
-          href="#download"
-          onClick={(e) => {
-            e.preventDefault();
-            goToDownload();
-          }}
-          className="menu-link"
-        >
-          {t("topbar.download")}
-        </a>
-
-        {/* Selector de idiomas */}
-        <div className="language-selector">
-          <button
-            className="language-toggle"
-            onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-            aria-label={t("topbar.language")}
-            onBlur={() => setTimeout(() => setShowLanguageDropdown(false), 200)}
+      <div className="topbar-container">
+        <div className="topbar-row">
+          <div
+            className="logo-container"
+            onClick={goToHome}
+            style={{ cursor: "pointer" }}
           >
-            <TranslateIcon />
-            <span className="language-code">{language.toUpperCase()}</span>
-          </button>
-
-          {showLanguageDropdown && (
-            <div
-              className="language-dropdown"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                className={`language-option ${language === "es" ? "active" : ""}`}
-                onClick={() => handleLanguageChange("es")}
-                onMouseDown={(e) => e.preventDefault()} // Prevenir blur inmediato
-              >
-                <span className="flag">🇪🇸</span>
-                <span>Español</span>
-              </button>
-              <button
-                className={`language-option ${language === "en" ? "active" : ""}`}
-                onClick={() => handleLanguageChange("en")}
-                onMouseDown={(e) => e.preventDefault()}
-              >
-                <span className="flag">🇺🇸</span>
-                <span>English</span>
-              </button>
-              <button
-                className={`language-option ${language === "pt" ? "active" : ""}`}
-                onClick={() => handleLanguageChange("pt")}
-                onMouseDown={(e) => e.preventDefault()}
-              >
-                <span className="flag">🇵🇹</span>
-                <span>Português</span>
-              </button>
+            <div className="logo-brand">
+              <span className="logo-text-v2">ISV</span>
+              <span className="logo-subtext-v2">Toolkit</span>
             </div>
-          )}
+            <div className="logo-icon-wrapper">
+              <img
+                src={getIconImage()}
+                alt="ISV Toolkit Logo"
+                className="logo-image-v2"
+                loading="eager"
+                style={{ fetchPriority: 'high' }}
+                key={darkMode ? "dark-icon" : "light-icon"}
+              />
+            </div>
+          </div>
+
+          <nav className="desktop-menu">
+            <a
+              href="/simulator"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/simulator");
+                setOpen(false);
+                setShowLanguageDropdown(false);
+              }}
+              className="menu-link c2c-cloud"
+            >
+              <Cloud size={18} />
+              <span>C2C</span>
+            </a>
+            <a
+              href="/notes"
+              onClick={(e) => {
+                e.preventDefault();
+                goToNotes();
+              }}
+              className="menu-link"
+            >
+              Release notes
+            </a>
+            <a
+              href="#about"
+              onClick={(e) => {
+                e.preventDefault();
+                goToFeatures();
+              }}
+              className="menu-link"
+            >
+              {t("topbar.features")}
+            </a>
+            <a
+              href="#download"
+              onClick={(e) => {
+                e.preventDefault();
+                goToDownload();
+              }}
+              className="menu-link"
+            >
+              {t("topbar.download")}
+            </a>
+          </nav>
+
+          <div className="desktop-actions">
+            {/* Selector de idiomas */}
+            <div className="language-selector">
+              <button
+                className="language-toggle"
+                onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                aria-label={t("topbar.language")}
+                onBlur={() => setTimeout(() => setShowLanguageDropdown(false), 200)}
+              >
+                <TranslateIcon />
+                <span className="language-code">{language.toUpperCase()}</span>
+              </button>
+
+              {showLanguageDropdown && (
+                <div
+                  className="language-dropdown"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    className={`language-option ${language === "es" ? "active" : ""}`}
+                    onClick={() => handleLanguageChange("es")}
+                    onMouseDown={(e) => e.preventDefault()}
+                  >
+                    <span className="flag">🇪🇸</span>
+                    <span>Español</span>
+                  </button>
+                  <button
+                    className={`language-option ${language === "en" ? "active" : ""}`}
+                    onClick={() => handleLanguageChange("en")}
+                    onMouseDown={(e) => e.preventDefault()}
+                  >
+                    <span className="flag">🇺🇸</span>
+                    <span>English</span>
+                  </button>
+                  <button
+                    className={`language-option ${language === "pt" ? "active" : ""}`}
+                    onClick={() => handleLanguageChange("pt")}
+                    onMouseDown={(e) => e.preventDefault()}
+                  >
+                    <span className="flag">🇵🇹</span>
+                    <span>Português</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={1}
+              className="theme-switch-container"
+            >
+              <LightMode
+                fontSize="small"
+                sx={{
+                  color: darkMode ? "rgba(255,255,255,0.3)" : "#fde047",
+                  transition: "color .3s",
+                }}
+              />
+
+              <Switch
+                checked={darkMode}
+                onChange={toggleDarkMode}
+                color="default"
+                sx={{
+                  width: 52,
+                  height: 28,
+                  padding: 0,
+
+                  "& .MuiSwitch-switchBase": {
+                    padding: 0,
+                    margin: 0.5,
+                    "&.Mui-checked": {
+                      transform: "translateX(24px)",
+                    },
+                  },
+
+                  "& .MuiSwitch-thumb": {
+                    width: 22,
+                    height: 22,
+                    backgroundColor: darkMode ? "#fafafa" : "#fff",
+                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  },
+
+                  "& .MuiSwitch-track": {
+                    borderRadius: 999,
+                    backgroundColor: darkMode ? "#334155" : "#e5e7eb",
+                    border: darkMode ? "2px solid #7dd3fc" : "2px solid #94a3b8",
+                    opacity: 1,
+                    transition: "background-color 0.3s, border-color 0.3s",
+                  },
+                }}
+              />
+
+              <DarkMode
+                fontSize="small"
+                sx={{
+                  color: darkMode ? "#7dd3fc" : "rgba(0,0,0,0.3)",
+                  transition: "color .3s",
+                }}
+              />
+            </Stack>
+
+            <button
+              className="github-download-btn"
+              onClick={handleGitHubDownload}
+              aria-label="GitHub"
+            >
+              <span className="github-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                </svg>
+              </span>
+              <span className="github-text">{t("topbar.github")}</span>
+            </button>
+          </div>
+
+          <button
+            className={`burger ${open ? "open" : ""}`}
+            onClick={() => setOpen(!open)}
+            aria-label="Menú"
+            ref={burgerRef}
+            aria-expanded={open}
+          >
+            <MenuIcon />
+          </button>
         </div>
 
-        <Stack
-          direction="row"
-          alignItems="center"
-          spacing={1}
-          sx={{ display: { xs: "flex" } }}
-          className="theme-switch-container"
-        >
-          <LightMode
-            fontSize="small"
-            sx={{
-              color: darkMode ? "rgba(255,255,255,0.3)" : "#fde047",
-              transition: "color .3s",
-            }}
-          />
+        {open && (
+          <div className="mobile-menu" ref={menuRef}>
+            <a
+              href="/simulator"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/simulator");
+                setOpen(false);
+                setShowLanguageDropdown(false);
+              }}
+              className="menu-link c2c-cloud"
+            >
+              <Cloud size={18} />
+              <span>C2C</span>
+            </a>
+            <a
+              href="/notes"
+              onClick={(e) => {
+                e.preventDefault();
+                goToNotes();
+              }}
+              className="menu-link"
+            >
+              Release notes
+            </a>
+            <a
+              href="#about"
+              onClick={(e) => {
+                e.preventDefault();
+                goToFeatures();
+              }}
+              className="menu-link"
+            >
+              {t("topbar.features")}
+            </a>
+            <a
+              href="#download"
+              onClick={(e) => {
+                e.preventDefault();
+                goToDownload();
+              }}
+              className="menu-link"
+            >
+              {t("topbar.download")}
+            </a>
 
-          <Switch
-            checked={darkMode}
-            onChange={toggleDarkMode}
-            color="default"
-            sx={{
-              width: 52,
-              height: 28,
-              padding: 0,
+            <div className="mobile-actions-divider"></div>
 
-              "& .MuiSwitch-switchBase": {
-                padding: 0,
-                margin: 0.5,
-                "&.Mui-checked": {
-                  transform: "translateX(24px)",
-                },
-              },
+            <div className="mobile-actions-row">
+              <div className="language-selector">
+                <button
+                  className="language-toggle"
+                  onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                  aria-label={t("topbar.language")}
+                >
+                  <TranslateIcon />
+                  <span className="language-code">{language.toUpperCase()}</span>
+                </button>
 
-              "& .MuiSwitch-thumb": {
-                width: 22,
-                height: 22,
-                backgroundColor: darkMode ? "#fafafa" : "#fff",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-              },
+                {showLanguageDropdown && (
+                  <div className="language-dropdown">
+                    <button
+                      className={`language-option ${language === "es" ? "active" : ""}`}
+                      onClick={() => handleLanguageChange("es")}
+                    >
+                      <span className="flag">🇪🇸</span>
+                      <span>Español</span>
+                    </button>
+                    <button
+                      className={`language-option ${language === "en" ? "active" : ""}`}
+                      onClick={() => handleLanguageChange("en")}
+                    >
+                      <span className="flag">🇺🇸</span>
+                      <span>English</span>
+                    </button>
+                    <button
+                      className={`language-option ${language === "pt" ? "active" : ""}`}
+                      onClick={() => handleLanguageChange("pt")}
+                    >
+                      <span className="flag">🇵🇹</span>
+                      <span>Português</span>
+                    </button>
+                  </div>
+                )}
+              </div>
 
-              "& .MuiSwitch-track": {
-                borderRadius: 999,
-                backgroundColor: darkMode ? "#334155" : "#e5e7eb",
-                border: darkMode ? "2px solid #7dd3fc" : "2px solid #94a3b8",
-                opacity: 1,
-                transition: "background-color 0.3s, border-color 0.3s",
-              },
-            }}
-          />
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                className="theme-switch-container"
+              >
+                <LightMode
+                  fontSize="small"
+                  sx={{
+                    color: darkMode ? "rgba(255,255,255,0.3)" : "#fde047",
+                  }}
+                />
 
-          <DarkMode
-            fontSize="small"
-            sx={{
-              color: darkMode ? "#7dd3fc" : "rgba(0,0,0,0.3)",
-              transition: "color .3s",
-            }}
-          />
-        </Stack>
+                <Switch
+                  checked={darkMode}
+                  onChange={toggleDarkMode}
+                  color="default"
+                  sx={{
+                    width: 52,
+                    height: 28,
+                    padding: 0,
 
-        <button
-          className="github-download-btn"
-          onClick={handleGitHubDownload}
-          aria-label="GitHub"
-        >
-          <span className="github-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-            </svg>
-          </span>
-          <span className="github-text">{t("topbar.github")}</span>
-        </button>
-      </nav>
+                    "& .MuiSwitch-switchBase": {
+                      padding: 0,
+                      margin: 0.5,
+                      "&.Mui-checked": {
+                        transform: "translateX(24px)",
+                      },
+                    },
 
-      <button
-        className={`burger ${open ? "open" : ""}`}
-        onClick={() => setOpen(!open)}
-        aria-label="Menú"
-        ref={burgerRef}
-        aria-expanded={open}
-      >
-        <MenuIcon />
-      </button>
+                    "& .MuiSwitch-thumb": {
+                      width: 22,
+                      height: 22,
+                      backgroundColor: darkMode ? "#fafafa" : "#fff",
+                    },
+
+                    "& .MuiSwitch-track": {
+                      borderRadius: 999,
+                      backgroundColor: darkMode ? "#334155" : "#e5e7eb",
+                      border: darkMode ? "2px solid #7dd3fc" : "2px solid #94a3b8",
+                      opacity: 1,
+                    },
+                  }}
+                />
+
+                <DarkMode
+                  fontSize="small"
+                  sx={{
+                    color: darkMode ? "#7dd3fc" : "rgba(0,0,0,0.3)",
+                  }}
+                />
+              </Stack>
+            </div>
+
+            <button
+              className="github-download-btn w-full"
+              onClick={handleGitHubDownload}
+              aria-label="GitHub"
+            >
+              <span className="github-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                </svg>
+              </span>
+              <span className="github-text">{t("topbar.github")}</span>
+            </button>
+          </div>
+        )}
+      </div>
     </header>
   );
 }

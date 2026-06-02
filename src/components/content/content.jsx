@@ -16,7 +16,7 @@ export default function Content() {
   const [downloading, setDownloading] = useState(false);
 
   const DOWNLOAD_URL =
-    "https://github.com/indigonet/Front-isv/releases/download/1.0.3/ISV_Toolkit_Setup.1.0.3.exe";
+    "https://github.com/indigonet/ISV_Toolkit_Flutter/releases/download/ISVTOOLKIT/ISV_Toolkit_Setup.exe";
 
   const handleDownload = () => {
     if (downloading) return;
@@ -25,7 +25,7 @@ export default function Content() {
 
     const link = document.createElement("a");
     link.href = DOWNLOAD_URL;
-    link.download = "ISV_Toolkit_Setup.1.0.3.exe";
+    link.download = "ISV_Toolkit_Setup.exe";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

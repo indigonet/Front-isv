@@ -8,7 +8,7 @@ export default function DownloadSection() {
   const [isDownloading, setIsDownloading] = useState(false);
 
   const DOWNLOAD_URL =
-    "https://github.com/indigonet/Front-isv/releases/download/1.0.3/ISV_Toolkit_Setup.1.0.3.exe";
+    "https://github.com/indigonet/ISV_Toolkit_Flutter/releases/download/ISVTOOLKIT/ISV_Toolkit_Setup.exe";
   const RELEASES_PAGE = "https://github.com/indigonet/Front-isv/releases/tag/1.0.3";
 
   const downloadOptions = [

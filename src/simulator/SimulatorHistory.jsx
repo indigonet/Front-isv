@@ -21,10 +21,10 @@ export default function SimulatorHistory({
         {history.length > 0 && (
           <button 
             onClick={onClearHistory}
-            className="p-1.5 hover:bg-rose-500/10 rounded-lg text-text-secondary/40 hover:text-rose-500 transition-all cursor-pointer group"
+            className="p-1.5 hover:bg-rose-500/10 rounded-lg text-text-secondary/40 hover:text-rose-500 transition-all cursor-pointer"
             title={t('simClearHistory') || 'Limpiar Historial'}
           >
-            <Trash2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         )}
       </div>
@@ -38,7 +38,7 @@ export default function SimulatorHistory({
             <div 
               key={h.id} 
               onClick={() => onSelectHistory?.(h)}
-              className="flex items-center justify-between hover:bg-accent/5 p-3 rounded-2xl border border-transparent hover:border-accent/10 transition-all cursor-pointer group active:scale-[0.98] hover:shadow-sm"
+              className="flex items-center justify-between hover:bg-accent/5 p-3 rounded-2xl border border-transparent hover:border-accent/10 transition-all cursor-pointer"
             >
               <div className="flex items-center gap-3">
                 <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${h.status < 400 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500'}`} />
@@ -51,7 +51,7 @@ export default function SimulatorHistory({
                 <span className={`text-[10px] font-black tracking-widest ${h.status < 400 ? 'text-emerald-500' : 'text-rose-500'}`}>
                   {h.status}
                 </span>
-                <ChevronRight className="w-3 h-3 text-text-secondary/20 group-hover:translate-x-0.5 transition-transform" />
+                <ChevronRight className="w-3 h-3 text-text-secondary/20" />
               </div>
             </div>
           ))
