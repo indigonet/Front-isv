@@ -65,7 +65,7 @@ export default function SimulatorView({ onLog }) {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [show401Prompt,   setShow401Prompt]   = useState(false);
   const [showJumpBtn,     setShowJumpBtn]     = useState(false);
-  const [lastScrollY,     setLastScrollY]     = useState(0);
+
 
   // ── Auth hook (token logic lives here) ─────────────────────────
   const auth = useSimulatorAuth({ env, country, onLog });
@@ -106,9 +106,11 @@ export default function SimulatorView({ onLog }) {
     if (params.serialNumber) localStorage.setItem(`${keyPrefix}_idSerialNumber`, params.serialNumber);
   }, [params]);
 
+  const lastScrollYRef = useRef(0);
   React.useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
+      const lastScrollY = lastScrollYRef.current;
       
       // Show only on mobile, after 400px, and ONLY when scrolling DOWN
       if (window.innerWidth < 1024) {
@@ -120,12 +122,12 @@ export default function SimulatorView({ onLog }) {
         setShowJumpBtn(false);
       }
       
-      setLastScrollY(currentScrollY);
+      lastScrollYRef.current = currentScrollY;
     };
     
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY]);
+  }, []);
 
   const scrollToCommands = () => {
     const anchor = document.getElementById('mobile-commands-anchor');
@@ -258,7 +260,7 @@ export default function SimulatorView({ onLog }) {
           request:  bodyToUse,
           response: data,
           time:     new Date().toLocaleTimeString('es-CL', { hour12: false }),
-        }, ...prev]);
+        }, ...prev].slice(0, 100)); // Cap history to 100 items to prevent memory leaks
 
         if (res.ok) {
           if (onLog) onLog(`✅ ${res.status} OK (${endTime - startTime}ms)`, 'success');
@@ -323,6 +325,16 @@ export default function SimulatorView({ onLog }) {
       setIsStopping(false);
       setLoading(false);
       flashRef.current = false;
+
+      // Auto-scroll to response layout on mobile for visibility
+      if (window.innerWidth < 1024) {
+        setTimeout(() => {
+          const respView = document.getElementById('response-view');
+          if (respView) {
+            respView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 150);
+      }
     }
   };
 
@@ -361,7 +373,7 @@ export default function SimulatorView({ onLog }) {
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] w-full py-8 px-4 sm:px-6 lg:px-8 bg-background relative overflow-hidden transition-colors duration-500">
+    <div className="min-h-screen w-full pt-32 pb-8 px-4 sm:px-6 lg:px-8 bg-background relative overflow-hidden transition-colors duration-500">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,var(--tw-gradient-stops))] from-accent/10 via-transparent to-transparent pointer-events-none opacity-40" />
       
       <div className="max-w-425 mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-12 relative z-10">
@@ -683,7 +695,7 @@ export default function SimulatorView({ onLog }) {
         onClose={() => setSelectedHistoryItem(null)} 
         title={`${t('simTransactionDetail')}: ${selectedHistoryItem?.endpoint?.toUpperCase()}`}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh]">
+        <div className="grid grid-cols-1 md:grid-cols-2 grid-rows-2 md:grid-rows-none gap-4 sm:gap-6 h-[60vh] md:h-[58vh]">
           <div className="space-y-3 flex flex-col min-h-0">
             <h4 className="text-[10px] font-black text-accent uppercase tracking-widest flex items-center gap-2 px-1">
               <Code2 className="w-3.5 h-3.5" /> {t('simRequestBody')}

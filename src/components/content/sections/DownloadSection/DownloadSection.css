@@ -130,9 +130,9 @@
 }
 
 .premium-download-card:hover {
-  transform: translateY(-15px) scale(1.02);
+  transform: scale(1.02);
   border-color: var(--color-primary);
-  box-shadow: 0 60px 120px -30px rgba(var(--color-primary-rgb), 0.4);
+  box-shadow: 0 40px 80px -20px rgba(var(--color-primary-rgb), 0.35);
 }
 
 .platform-tag {
@@ -215,8 +215,8 @@
 }
 
 .action-download-btn:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 15px 30px rgba(var(--color-primary-rgb), 0.4);
+  box-shadow: 0 15px 30px rgba(var(--color-primary-rgb), 0.45);
+  filter: brightness(1.08);
 }
 
 .github-fallback-v2 {
@@ -258,9 +258,9 @@
 }
 
 .dep-item-v2:hover {
-  background: rgba(var(--color-primary-rgb), 0.05);
-  border-color: rgba(var(--color-primary-rgb), 0.2);
-  transform: translateX(5px);
+  background: rgba(var(--color-primary-rgb), 0.08);
+  border-color: rgba(var(--color-primary-rgb), 0.35);
+  box-shadow: 0 8px 24px -8px rgba(var(--color-primary-rgb), 0.2);
 }
 
 .dep-icon-v2 {
@@ -308,4 +308,4 @@
   .download-title-v2 {
     font-size: 2.5rem;
   }
-}
+}

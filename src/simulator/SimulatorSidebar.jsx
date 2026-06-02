@@ -214,18 +214,13 @@ export default function SimulatorSidebar({
       // Use MUI Switch for printOnPos for a professional static control
       if (field === 'printOnPos') {
         return (
-          <div key={field} className={`col-span-2 p-3 bg-background border border-accent/10 rounded-xl`}>
-            <FormControlLabel
-              control={(
-                <Switch
-                  checked={Boolean(value)}
-                  onChange={(e) => handleParamChange(field, e.target.checked)}
-                  color="primary"
-                  size="small"
-                />
-              )}
-              label={<span className="text-[10px] font-black text-text-secondary tracking-widest uppercase">{t(cfg.label)}</span>}
-              labelPlacement="start"
+          <div key={field} className="col-span-2 px-3 py-1.5 bg-background border border-accent/10 rounded-xl flex items-center justify-between">
+            <span className="text-[10px] font-black text-text-secondary tracking-widest uppercase">{t(cfg.label)}</span>
+            <Switch
+              checked={Boolean(value)}
+              onChange={(e) => handleParamChange(field, e.target.checked)}
+              color="primary"
+              size="medium"
             />
           </div>
         );
@@ -338,7 +333,7 @@ export default function SimulatorSidebar({
                   size="small"
                   sx={{ fontWeight: 800, borderRadius: 2, px: 2.5, py: 1 }}
                 >
-                  Gestionar
+                  CREAR TRIADA
                 </Button>
                 {/* Removed direct Guardar button per request */}
               </div>
@@ -350,9 +345,9 @@ export default function SimulatorSidebar({
                   <Tooltip
                     key={idx}
                     title={<div style={{ whiteSpace: 'normal', fontSize: 13 }}>
-                      <div><strong>Serial:</strong> {triad.serialNumber}</div>
-                      <div><strong>Sucursal:</strong> {triad.idSucursal}</div>
-                      <div><strong>Terminal:</strong> {triad.idTerminal}</div>
+                      <div><strong>S/N:</strong> {triad.serialNumber}</div>
+                      <div><strong>ID Sucursal:</strong> {triad.idSucursal}</div>
+                      <div><strong>ID Terminal:</strong> {triad.idTerminal}</div>
                     </div>}
                     placement="top"
                     arrow
@@ -398,67 +393,127 @@ export default function SimulatorSidebar({
 
         {/* Triad Edit/Create Dialog (Material UI inputs) */}
         <Dialog open={openTriadDialog} onClose={() => setOpenTriadDialog(false)} maxWidth="sm" fullWidth>
-          <DialogTitle>{editingTriadIndex === -1 ? 'Crear Triada' : 'Editar Triada'}</DialogTitle>
-          <DialogContent>
-            <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: '1fr' }}>
-              <FormControl fullWidth error={!!triadErrors.name} variant="outlined" margin="dense">
-                <Typography sx={{ fontSize: 12, fontWeight: 700, mb: 0.5, color: 'text.primary' }}>Nombre</Typography>
+          <DialogTitle sx={{ px: { xs: 3, sm: 4 }, pt: { xs: 3.5, sm: 4 }, pb: 1, fontWeight: 950, fontSize: { xs: '1.2rem', sm: '1.4rem' }, letterSpacing: '-0.02em', textTransform: 'uppercase' }}>
+            {editingTriadIndex === -1 ? 'Crear Triada' : 'Editar Triada'}
+          </DialogTitle>
+          <DialogContent sx={{ px: { xs: 3, sm: 4 }, py: 2 }}>
+            <Box sx={{ display: 'grid', gap: { xs: 2, sm: 2.5 }, gridTemplateColumns: '1fr', mt: 1.5 }}>
+              <FormControl fullWidth error={!!triadErrors.name} variant="outlined">
+                <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Nombre</Typography>
                 <OutlinedInput
                   value={editingTriad.name}
                   onChange={(e) => { setEditingTriad({ ...editingTriad, name: e.target.value }); setTriadErrors({ ...triadErrors, name: undefined }); }}
                   size="small"
                   fullWidth
                   inputProps={{ maxLength: 50 }}
-                  sx={{ borderRadius: 1 }}
+                  sx={{ borderRadius: '12px' }}
                 />
                 {triadErrors.name && <FormHelperText>{triadErrors.name}</FormHelperText>}
               </FormControl>
 
-              <FormControl fullWidth error={!!triadErrors.idTerminal} variant="outlined" margin="dense">
-                <Typography sx={{ fontSize: 12, fontWeight: 700, mb: 0.5, color: 'text.primary' }}>ID Terminal</Typography>
+              <FormControl fullWidth error={!!triadErrors.idTerminal} variant="outlined">
+                <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>ID Terminal</Typography>
                 <OutlinedInput
                   value={editingTriad.idTerminal}
                   onChange={(e) => { setEditingTriad({ ...editingTriad, idTerminal: e.target.value.slice(0,20) }); setTriadErrors({ ...triadErrors, idTerminal: undefined }); }}
                   size="small"
                   fullWidth
                   inputProps={{ maxLength: 20 }}
-                  sx={{ borderRadius: 1 }}
+                  sx={{ borderRadius: '12px' }}
                 />
-                {triadErrors.idTerminal && <FormHelperText>{triadErrors.idTerminal}</FormHelperText>}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5, px: 0.5 }}>
+                  <Typography variant="caption" color={triadErrors.idTerminal ? 'error' : 'text.secondary'} sx={{ fontSize: '11px', fontWeight: 500 }}>
+                    {triadErrors.idTerminal || ''}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '11px', fontWeight: 500, ml: 'auto' }}>
+                    {(editingTriad.idTerminal || '').length}/20
+                  </Typography>
+                </Box>
               </FormControl>
 
-              <FormControl fullWidth error={!!triadErrors.idSucursal} variant="outlined" margin="dense">
-                <Typography sx={{ fontSize: 12, fontWeight: 700, mb: 0.5, color: 'text.primary' }}>ID Sucursal</Typography>
+              <FormControl fullWidth error={!!triadErrors.idSucursal} variant="outlined">
+                <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>ID Sucursal</Typography>
                 <OutlinedInput
                   value={editingTriad.idSucursal}
                   onChange={(e) => { setEditingTriad({ ...editingTriad, idSucursal: e.target.value.slice(0,20) }); setTriadErrors({ ...triadErrors, idSucursal: undefined }); }}
                   size="small"
                   fullWidth
                   inputProps={{ maxLength: 20 }}
-                  sx={{ borderRadius: 1 }}
+                  sx={{ borderRadius: '12px' }}
                 />
-                {triadErrors.idSucursal && <FormHelperText>{triadErrors.idSucursal}</FormHelperText>}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5, px: 0.5 }}>
+                  <Typography variant="caption" color={triadErrors.idSucursal ? 'error' : 'text.secondary'} sx={{ fontSize: '11px', fontWeight: 500 }}>
+                    {triadErrors.idSucursal || ''}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '11px', fontWeight: 500, ml: 'auto' }}>
+                    {(editingTriad.idSucursal || '').length}/20
+                  </Typography>
+                </Box>
               </FormControl>
 
-              <FormControl fullWidth error={!!triadErrors.serialNumber} variant="outlined" margin="dense">
-                <Typography sx={{ fontSize: 12, fontWeight: 700, mb: 0.5, color: 'text.primary' }}>Serial Number</Typography>
+              <FormControl fullWidth error={!!triadErrors.serialNumber} variant="outlined">
+                <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Serial Number</Typography>
                 <OutlinedInput
                   value={editingTriad.serialNumber}
                   onChange={(e) => { setEditingTriad({ ...editingTriad, serialNumber: e.target.value.toUpperCase().slice(0,20) }); setTriadErrors({ ...triadErrors, serialNumber: undefined }); }}
                   size="small"
                   fullWidth
                   inputProps={{ maxLength: 20 }}
-                  sx={{ borderRadius: 1, textTransform: 'uppercase' }}
+                  sx={{ borderRadius: '12px', textTransform: 'uppercase' }}
                 />
-                {triadErrors.serialNumber && <FormHelperText>{triadErrors.serialNumber}</FormHelperText>}
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5, px: 0.5 }}>
+                  <Typography variant="caption" color={triadErrors.serialNumber ? 'error' : 'text.secondary'} sx={{ fontSize: '11px', fontWeight: 500 }}>
+                    {triadErrors.serialNumber || ''}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '11px', fontWeight: 500, ml: 'auto' }}>
+                    {(editingTriad.serialNumber || '').length}/20
+                  </Typography>
+                </Box>
               </FormControl>
             </Box>
           </DialogContent>
-          <DialogActions sx={{ px: 3, py: 2 }}>
-            <Button onClick={() => setOpenTriadDialog(false)} size="large" sx={{ px: 3, py: 1 }}>
+          <DialogActions sx={{ px: { xs: 3, sm: 4 }, pb: { xs: 3.5, sm: 4 }, pt: 2, gap: 1.5 }}>
+            <Button 
+              onClick={() => setOpenTriadDialog(false)} 
+              variant="outlined"
+              color="inherit"
+              sx={{ 
+                px: 3.5, 
+                py: 1.25, 
+                borderRadius: '12px', 
+                fontWeight: 800,
+                fontSize: '0.85rem',
+                textTransform: 'none',
+                borderColor: 'divider',
+                '&:hover': {
+                  backgroundColor: 'action.hover',
+                  borderColor: 'text.secondary',
+                }
+              }}
+            >
               Cancelar
             </Button>
-            <Button variant="contained" onClick={() => { saveEditedTriad(); }} size="large" sx={{ px: 3, py: 1.25 }}>
+            <Button 
+              variant="contained" 
+              onClick={() => { saveEditedTriad(); }} 
+              sx={{ 
+                px: 4.5, 
+                py: 1.25, 
+                borderRadius: '12px', 
+                fontWeight: 900,
+                fontSize: '0.85rem',
+                textTransform: 'none',
+                boxShadow: (theme) => `0 8px 20px -4px ${theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.4)' : 'rgba(79,70,229,0.3)'}`,
+                background: (theme) => theme.palette.mode === 'dark' 
+                  ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' 
+                  : 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
+                color: '#ffffff',
+                '&:hover': {
+                  filter: 'brightness(1.1)',
+                  boxShadow: (theme) => `0 12px 24px -4px ${theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.5)' : 'rgba(79,70,229,0.45)'}`,
+                }
+              }}
+            >
               {editingTriadIndex === -1 ? 'Crear' : 'Guardar'}
             </Button>
           </DialogActions>

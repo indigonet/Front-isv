@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { Braces, ShieldCheck, UserCheck, Key, Eye, EyeOff, Lock } from 'lucide-react';
+import { Braces, ShieldCheck, UserCheck, Key, Eye, EyeOff, Lock, X } from 'lucide-react';
 import ReCAPTCHA from 'react-google-recaptcha';
-import Modal from '../components/modal/Modal';
+import { Dialog, DialogTitle, DialogContent, Box, Typography, Select, MenuItem, FormControl, OutlinedInput, InputAdornment, IconButton, Button, CircularProgress } from '@mui/material';
 import { useLanguage } from '../context/LanguageContext';
 
 /**
@@ -40,124 +40,135 @@ export default function AuthTokenModal({
     prevFetching.current = fetching;
   }, [accessToken, fetching, isOpen, onClose]);
 
-  const modalTitle = (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
-      <span className="text-sm sm:text-xl truncate">{t('tokenConfigBtn')}</span>
-      <span className="hidden sm:inline text-text-secondary/40 font-normal">-</span>
-      <div className="flex items-center gap-2 bg-accent/5 sm:bg-transparent px-2.5 py-1 sm:p-0 rounded-lg border border-accent/10 sm:border-none w-fit">
-        <img 
-          src={`https://flagcdn.com/w20/${country}.png`} 
-          alt={country} 
-          className="w-4 sm:w-5 rounded-[2px] shadow-sm shrink-0"
-        />
-        <span className={`${country === 'cl' ? 'text-indigo-500' : 'text-sky-500'} text-[10px] sm:text-lg font-black uppercase tracking-widest`}>
-          {country === 'cl' ? 'Chile' : 'Argentina'}
-        </span>
-      </div>
-    </div>
-  );
-
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={modalTitle}>
-      <div className="space-y-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      maxWidth="md"
+      fullWidth
+      PaperProps={{
+        sx: {
+          borderRadius: '16px',
+          backgroundColor: 'background.paper',
+          backgroundImage: 'none',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        }
+      }}
+    >
+      {/* Title Header */}
+      <DialogTitle sx={{ px: { xs: 3, sm: 4 }, pt: { xs: 3.5, sm: 4 }, pb: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, gap: { xs: 1, sm: 2 } }}>
+          <Typography sx={{ fontWeight: 950, textTransform: 'uppercase', fontSize: { xs: '1.1rem', sm: '1.3rem' }, letterSpacing: '-0.01em', color: 'text.primary' }}>
+            {t('tokenConfigBtn')}
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 1.5, py: 0.5, borderRadius: '8px', border: '1px solid', borderColor: 'divider', bgcolor: 'action.hover' }}>
+            <img 
+              src={`https://flagcdn.com/w20/${country}.png`} 
+              alt={country} 
+              style={{ width: '16px', height: 'auto', borderRadius: '2px', display: 'block' }}
+            />
+            <Typography sx={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', color: country === 'cl' ? '#6366f1' : '#0ea5e9' }}>
+              {country === 'cl' ? 'Chile' : 'Argentina'}
+            </Typography>
+          </Box>
+        </Box>
+        <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary', p: 1, '&:hover': { color: 'primary.main' } }} aria-label="Cerrar modal">
+          <X size={18} />
+        </IconButton>
+      </DialogTitle>
 
-          {/* ── Environment & Credentials ── */}
-          <div className="space-y-6">
-            {/* Environment selection (NEW) */}
-            <div className="space-y-3">
-              <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] ml-1">
+      {/* Content Body */}
+      <DialogContent sx={{ px: { xs: 3, sm: 4 }, py: 4 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.1fr 0.9fr' }, gap: 4 }}>
+          {/* Column 1: Credentials */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+            {/* Environment selection */}
+            <FormControl fullWidth variant="outlined">
+              <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 {t('simEnv')}
-              </label>
-              <div className="relative group">
-                <select
-                  value={env}
-                  onChange={(e) => {
-                    const newEnv = e.target.value;
-                    if (accessToken && !window.confirm(t('confirmClearToken'))) return;
-                    if (accessToken) clearToken();
-                    onEnvChange(newEnv);
-                  }}
-                  className={`w-full appearance-none bg-background border border-indigo-500/10 rounded-lg py-3.5 px-5 text-xs font-black uppercase tracking-widest outline-none transition-all shadow-sm cursor-pointer pr-10 ${
-                    env === 'prod' ? 'text-rose-500 border-rose-500/20' : env === 'uat' ? 'text-indigo-500 border-indigo-500/20' : 'text-emerald-500 border-emerald-500/20'
-                  } focus:ring-4 focus:ring-indigo-500/5`}
-                >
-                  <option value="dev">DEV - Ambiente Desarrollo</option>
-                  <option value="uat">UAT - Ambiente Pruebas</option>
-                  <option value="prod">PROD - Ambiente Producción</option>
-                </select>
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-            </div>
+              </Typography>
+              <Select
+                value={env}
+                onChange={(e) => {
+                  const newEnv = e.target.value;
+                  if (accessToken && !window.confirm(t('confirmClearToken'))) return;
+                  if (accessToken) clearToken();
+                  onEnvChange(newEnv);
+                }}
+                size="small"
+                sx={{ 
+                  borderRadius: '12px', 
+                  bgcolor: 'background.paper',
+                  fontWeight: 800,
+                  fontSize: '13px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.05em',
+                  color: env === 'prod' ? 'error.main' : env === 'uat' ? 'primary.main' : 'success.main'
+                }}
+              >
+                <MenuItem value="dev" sx={{ fontSize: '13px', fontWeight: 700 }}>DEV - Ambiente Desarrollo</MenuItem>
+                <MenuItem value="uat" sx={{ fontSize: '13px', fontWeight: 700 }}>UAT - Ambiente Pruebas</MenuItem>
+                <MenuItem value="prod" sx={{ fontSize: '13px', fontWeight: 700 }}>PROD - Ambiente Producción</MenuItem>
+              </Select>
+            </FormControl>
 
-            <div className="space-y-4">
             {/* Client ID */}
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1 opacity-70">
+            <FormControl fullWidth variant="outlined">
+              <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 {t('clientIdLabel')}
-              </label>
-              <div className="relative group">
-                <UserCheck className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500/30 group-focus-within:text-indigo-500 transition-colors z-20 pointer-events-none" />
-                
-                <input
-                  id="clientIdInput"
-                  type="text"
-                  value={clientId}
-                  onChange={(e) => setClientId(e.target.value)}
-                  className="peer w-full bg-background border border-indigo-500/10 rounded-xl py-4 pl-14 pr-14 text-sm font-bold text-text-primary focus:border-indigo-500 outline-none transition-all shadow-sm"
-                  placeholder="Client ID"
-                />
-
-                {/* Preview Overlay: Static, non-scrollable view when not focused */}
-                {clientId && (
-                  <div 
-                    className="absolute inset-y-0 left-14 right-14 flex items-center pointer-events-none peer-focus:hidden bg-background z-10"
-                  >
-                    <span className="text-sm font-bold text-text-primary truncate block w-full">
-                      {clientId}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
+              </Typography>
+              <OutlinedInput
+                value={clientId}
+                onChange={(e) => setClientId(e.target.value)}
+                size="small"
+                placeholder="Client ID"
+                startAdornment={
+                  <InputAdornment position="start" sx={{ mr: 1.5 }}>
+                    <UserCheck size={16} style={{ opacity: 0.4 }} />
+                  </InputAdornment>
+                }
+                sx={{ borderRadius: '12px', fontSize: '13px', fontWeight: 600 }}
+              />
+            </FormControl>
 
             {/* Client Secret */}
-            <div className="space-y-2 mt-5">
-              <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest ml-1 opacity-70">
+            <FormControl fullWidth variant="outlined">
+              <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 {t('clientSecretLabel')}
-              </label>
-              <div className="relative group">
-                <Key className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-indigo-500/30 group-focus-within:text-indigo-500 transition-colors z-20 pointer-events-none" />
-                <button
-                  type="button"
-                  onClick={() => setShowSecret(!showSecret)}
-                  className="absolute right-5 top-1/2 -translate-y-1/2 z-20 text-text-secondary/30 hover:text-indigo-500 transition-colors cursor-pointer"
-                >
-                  {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-                <input
-                  type={showSecret ? 'text' : 'password'}
-                  value={clientSecret}
-                  onChange={(e) => setClientSecret(e.target.value)}
-                  className="w-full bg-background border border-indigo-500/10 rounded-xl py-4 pl-14 pr-16 text-sm font-bold text-text-primary focus:border-indigo-500 outline-none transition-all shadow-sm"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
+              </Typography>
+              <OutlinedInput
+                type={showSecret ? 'text' : 'password'}
+                value={clientSecret}
+                onChange={(e) => setClientSecret(e.target.value)}
+                size="small"
+                placeholder="••••••••"
+                startAdornment={
+                  <InputAdornment position="start" sx={{ mr: 1.5 }}>
+                    <Key size={16} style={{ opacity: 0.4 }} />
+                  </InputAdornment>
+                }
+                endAdornment={
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowSecret(!showSecret)} edge="end" size="small" sx={{ p: 1 }}>
+                      {showSecret ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </IconButton>
+                  </InputAdornment>
+                }
+                sx={{ borderRadius: '12px', fontSize: '13px', fontWeight: 600 }}
+              />
+            </FormControl>
 
             {/* Google ReCAPTCHA Invisible */}
             <ReCAPTCHA
               ref={recaptchaRef}
               size="invisible"
-              sitekey={(import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI").trim()} // Limpia espacios accidentales
+              sitekey={(import.meta.env.VITE_RECAPTCHA_SITE_KEY || "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI").trim()}
             />
 
             {/* Get token button */}
-            <button
+            <Button
+              variant="contained"
+              disabled={fetching || !clientId?.trim() || !clientSecret?.trim()}
               onClick={async (e) => {
                 e.preventDefault();
                 try {
@@ -170,91 +181,157 @@ export default function AuthTokenModal({
                   console.error('Error en ReCAPTCHA:', error);
                 }
               }}
-              disabled={fetching || !clientId?.trim() || !clientSecret?.trim()}
-              className="w-full py-5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-all font-black uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 text-xs shadow-[0_12px_24px_-8px_rgba(79,70,229,0.5)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:grayscale disabled:pointer-events-none"
+              sx={{
+                py: 1.5,
+                borderRadius: '12px',
+                fontWeight: 900,
+                fontSize: '0.85rem',
+                textTransform: 'none',
+                mt: 1,
+                boxShadow: (theme) => `0 8px 20px -4px ${theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.4)' : 'rgba(79,70,229,0.3)'}`,
+                background: (theme) => theme.palette.mode === 'dark'
+                  ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
+                  : 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
+                color: '#ffffff',
+                '&:hover': {
+                  filter: 'brightness(1.1)',
+                  boxShadow: (theme) => `0 12px 24px -4px ${theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.5)' : 'rgba(79,70,229,0.45)'}`,
+                }
+              }}
             >
               {fetching ? (
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  {t('fetchingToken')}
-                </div>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <CircularProgress size={16} color="inherit" />
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#ffffff' }}>{t('fetchingToken')}</Typography>
+                </Box>
               ) : (
-                <>
-                  <Braces className="w-5 h-5 text-white" />
-                  {t('fetchTokenBtn')}
-                </>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Braces size={16} />
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#ffffff' }}>{t('fetchTokenBtn')}</Typography>
+                </Box>
               )}
-            </button>
-            </div>
-          </div>
+            </Button>
+          </Box>
 
-          {/* ── Right: token status panel ── */}
-          <div
-            className="rounded-3xl p-6 border space-y-4 flex flex-col justify-between h-full transition-all duration-500"
-            style={{
-              borderColor: accessToken ? 'rgba(5, 150, 105, 0.3)' : 'rgba(2, 132, 199, 0.2)',
-              background:  accessToken ? 'rgba(5, 150, 105, 0.05)' : 'rgba(2, 132, 199, 0.05)',
+          {/* Column 2: Token Status */}
+          <Box
+            sx={{
+              borderRadius: '20px',
+              p: 3,
+              border: '1px solid',
+              borderColor: accessToken ? 'rgba(16,185,129,0.2)' : 'rgba(14,165,233,0.2)',
+              bgcolor: accessToken ? 'rgba(16,185,129,0.04)' : 'rgba(14,165,233,0.04)',
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              height: '100%',
+              minHeight: { xs: '200px', md: 'auto' },
+              gap: 3
             }}
           >
-            <div className="space-y-3">
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
               {/* Status indicator */}
-              <div className="flex items-center gap-3">
-                <div
-                  className={`w-3 h-3 rounded-full shrink-0 transition-all ${
-                    accessToken
-                      ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)] animate-pulse'
-                      : 'bg-text-secondary/20'
-                  }`}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                <Box
+                  sx={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: '50%',
+                    bgcolor: accessToken ? '#10b981' : 'text.disabled',
+                    boxShadow: accessToken ? '0 0 10px rgba(16,185,129,0.6)' : 'none',
+                    '@keyframes pulse': {
+                      '0%': { transform: 'scale(0.95)', opacity: 0.5 },
+                      '50%': { transform: 'scale(1.05)', opacity: 1 },
+                      '100%': { transform: 'scale(0.95)', opacity: 0.5 }
+                    },
+                    animation: accessToken ? 'pulse 2s infinite ease-in-out' : 'none'
+                  }}
                 />
-                <h4
-                  className={`text-[11px] font-black uppercase tracking-widest ${
-                    accessToken ? 'text-emerald-500' : 'text-text-secondary/40'
-                  }`}
+                <Typography
+                  sx={{
+                    fontSize: '11px',
+                    fontWeight: 900,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    color: accessToken ? '#10b981' : 'text.secondary',
+                    opacity: accessToken ? 1 : 0.6
+                  }}
                 >
                   {accessToken ? t('tokenActive') : t('tokenMissing')}
-                </h4>
-              </div>
+                </Typography>
+              </Box>
+
               {/* Token value or empty state */}
               {accessToken ? (
-                <div className="space-y-2">
-                  <div className="p-3 bg-background border border-emerald-500/20 rounded-2xl break-all font-mono text-[10px] text-emerald-500 font-bold max-h-[120px] overflow-auto custom-scrollbar leading-relaxed">
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  <Box
+                    sx={{
+                      p: 2,
+                      bgcolor: 'background.paper',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: '12px',
+                      wordBreak: 'break-all',
+                      fontFamily: 'monospace',
+                      fontSize: '10.5px',
+                      color: '#10b981',
+                      fontWeight: 700,
+                      maxHeight: '120px',
+                      overflowY: 'auto'
+                    }}
+                  >
                     {accessToken}
-                  </div>
-                  <p className="text-[9px] text-text-secondary ml-1 transition-colors">
+                  </Box>
+                  <Typography sx={{ fontSize: '10px', color: 'text.secondary', fontWeight: 500, pl: 0.5 }}>
                     {t('tokenInfo')}
-                  </p>
-                </div>
+                  </Typography>
+                </Box>
               ) : (
-                <div className="flex flex-col items-center justify-center py-8 gap-3 opacity-40">
-                  <ShieldCheck className="w-10 h-10 text-text-secondary" />
-                  <p className="text-[10px] font-black text-text-secondary uppercase tracking-widest text-center">
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: { xs: 4, md: 6 }, gap: 2, opacity: 0.4 }}>
+                  <ShieldCheck size={36} style={{ color: 'text.secondary', margin: '0 auto' }} />
+                  <Typography sx={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center', color: 'text.secondary' }}>
                     {t('tokenGuide')}
-                  </p>
-                </div>
+                  </Typography>
+                </Box>
               )}
-            </div>
+            </Box>
 
             {/* Clear button */}
             {accessToken && (
-              <button
+              <Button
                 onClick={clearToken}
-                className="w-full py-3 rounded-xl border border-rose-500/30 text-rose-500 hover:bg-rose-500/10 transition-all font-black uppercase tracking-widest text-[9px] flex items-center justify-center gap-2 active:scale-95 cursor-pointer"
+                variant="outlined"
+                color="error"
+                fullWidth
+                sx={{
+                  borderRadius: '10px',
+                  py: 1.25,
+                  fontWeight: 900,
+                  fontSize: '9px',
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                  borderWidth: '1.5px',
+                  '&:hover': {
+                    borderWidth: '1.5px'
+                  }
+                }}
               >
                 {t('simClearBtn')}
-              </button>
+              </Button>
             )}
-          </div>
-        </div>
+          </Box>
+        </Box>
 
         {/* Privacy Note */}
-        <div className="pt-4 border-t border-accent/5 flex items-center gap-3 opacity-60">
-          <div className="p-2 bg-emerald-500/10 rounded-lg">
-            <Lock className="w-4 h-4 text-emerald-500" />
-          </div>
-          <div className="space-y-0.5">
-          </div>
-        </div>
-      </div>
-    </Modal>
+        <Box sx={{ pt: 3, mt: 4, borderTop: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2, opacity: 0.6 }}>
+          <Box sx={{ p: 1, bgcolor: 'rgba(16,185,129,0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', shrink: 0 }}>
+            <Lock size={16} style={{ color: '#10b981' }} />
+          </Box>
+          <Typography sx={{ fontSize: '11px', color: 'text.secondary', fontWeight: 500 }}>
+            Tus credenciales se procesan de forma segura y se almacenan únicamente de manera local.
+          </Typography>
+        </Box>
+      </DialogContent>
+    </Dialog>
   );
 }

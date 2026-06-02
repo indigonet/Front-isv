@@ -58,7 +58,10 @@
   border-radius: 28px;
   padding: 3rem 2.5rem;
   border: 1px solid var(--card-border);
-  transition: all 0.5s cubic-bezier(0.2, 0, 0, 1);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -66,9 +69,11 @@
 }
 
 .feature-card-v3:hover {
-  transform: translateY(-12px);
-  border-color: rgba(var(--color-primary-rgb), 0.3);
-  box-shadow: var(--card-shadow-hover);
+  transform: scale(1.025);
+  background-color: var(--color-bg-secondary);
+  border-color: rgba(var(--color-primary-rgb), 0.45);
+  box-shadow: 0 20px 40px -10px rgba(var(--color-primary-rgb), 0.25),
+              0 0 20px rgba(var(--color-primary-rgb), 0.08);
 }
 
 .feature-icon-v3 {
@@ -80,12 +85,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.5s ease;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .feature-card-v3:hover .feature-icon-v3 {
-  background: var(--color-primary);
-  transform: scale(1.1) rotate(10deg);
+  background-color: var(--color-primary);
+  color: white;
+  transform: scale(1.1) rotate(8deg);
+  box-shadow: 0 0 25px rgba(var(--color-primary-rgb), 0.45);
 }
 
 .feature-content-v3 h3 {
@@ -402,4 +411,4 @@
 .text-container-v2 p,
 .feature-list-v2 li {
   transition: color 0.35s ease, background-color 0.35s ease;
-}
+}

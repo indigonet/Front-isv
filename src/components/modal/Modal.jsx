@@ -14,15 +14,15 @@ export default function Modal({ isOpen, onClose, title, children }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start sm:items-center justify-center p-4 sm:p-6 pt-24 sm:pt-0 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-6 animate-in fade-in duration-300">
       {/* Backdrop */}
       <div 
-        className="absolute inset-0 bg-background/40 backdrop-blur-md transition-opacity" 
+        className="absolute inset-0 bg-slate-950/60 backdrop-blur-md transition-opacity" 
         onClick={onClose}
       />
       
       {/* Modal Card */}
-      <div className="bg-card w-full max-w-4xl max-h-[85vh] rounded-2xl border border-accent/10 shadow-2xl flex flex-col relative animate-in zoom-in duration-300 overflow-hidden">
+      <div className="bg-card w-full max-w-4xl max-h-[90vh] sm:max-h-[85vh] rounded-2xl border border-accent/10 shadow-2xl flex flex-col relative animate-in zoom-in duration-300 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 sm:px-8 py-4 sm:py-6 border-b border-accent/5">
           <div className="flex-1 min-w-0 pr-2">
@@ -38,7 +38,7 @@ export default function Modal({ isOpen, onClose, title, children }) {
         </div>
         
         {/* Body */}
-        <div className="flex-1 overflow-auto p-8 custom-scrollbar">
+        <div className="flex-1 overflow-auto p-4 sm:p-8 custom-scrollbar">
           {children}
         </div>
       </div>

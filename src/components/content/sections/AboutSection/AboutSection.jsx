@@ -179,42 +179,6 @@ export default function AboutSection() {
         "-=0.2"
       )
     })
-
-    // Animaciones hover para tarjetas - MÁS RÁPIDAS
-    cardsRef.current.forEach((card) => {
-      const handleMouseEnter = () => {
-        gsap.to(card, {
-          y: -8,
-          scale: 1.02,
-          duration: 0.2,
-          ease: "power2.out"
-        })
-      }
-      
-      const handleMouseLeave = () => {
-        gsap.to(card, {
-          y: 0,
-          scale: 1,
-          duration: 0.2,
-          ease: "power2.out"
-        })
-      }
-
-      card.addEventListener('mouseenter', handleMouseEnter)
-      card.addEventListener('mouseleave', handleMouseLeave)
-
-      return () => {
-        card.removeEventListener('mouseenter', handleMouseEnter)
-        card.removeEventListener('mouseleave', handleMouseLeave)
-      }
-    })
-
-    return () => {
-      cardsRef.current.forEach((card) => {
-        card.removeEventListener('mouseenter', () => {})
-        card.removeEventListener('mouseleave', () => {})
-      })
-    }
   }, [])
 
   return (

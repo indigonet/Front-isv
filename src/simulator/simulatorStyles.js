@@ -45,12 +45,12 @@ export function simCardSx(theme, extra = {}) {
       ? `0 6px 24px -8px ${alpha('#000', 0.6)}`
       : `0 6px 20px -6px ${alpha('#0f172a', 0.12)}`,
     overflow: 'hidden',
-    transition: 'transform 180ms ease, box-shadow 180ms ease',
+    transition: 'border-color 180ms ease, box-shadow 180ms ease',
     '&:hover': {
-      transform: 'translateY(-6px)',
+      borderColor: dark ? alpha('#6366f1', 0.4) : alpha('#6366f1', 0.35),
       boxShadow: dark
-        ? `0 12px 36px -12px ${alpha('#000', 0.65)}`
-        : `0 12px 36px -12px ${alpha('#0f172a', 0.18)}`,
+        ? `0 12px 36px -12px rgba(99, 102, 241, 0.35)`
+        : `0 12px 36px -12px rgba(79, 70, 229, 0.18)`,
     },
     ...extra,
   };
@@ -93,11 +93,11 @@ export function simScrollbarSx(theme) {
 export function simPaperInteractiveSx(theme) {
   const dark = theme.palette.mode === 'dark';
   return {
-    transition: 'transform 140ms ease, box-shadow 140ms ease',
+    transition: 'border-color 140ms ease, box-shadow 140ms ease',
     cursor: 'pointer',
     '&:hover': {
-      transform: 'translateY(-4px)',
-      boxShadow: dark ? `0 10px 30px -12px ${alpha('#000', 0.6)}` : `0 10px 30px -12px ${alpha('#0f172a', 0.14)}`,
+      borderColor: dark ? alpha('#6366f1', 0.45) : alpha('#6366f1', 0.3),
+      boxShadow: dark ? `0 10px 30px -12px rgba(99, 102, 241, 0.35)` : `0 10px 30px -12px rgba(79, 70, 229, 0.18)`,
     },
   };
 }
@@ -114,7 +114,7 @@ export function simTopBarSx(theme) {
     alignItems: { xs: 'stretch', sm: 'center' },
     justifyContent: 'space-between',
     gap: { xs: 1.25, sm: 2 },
-    background: theme.palette.mode === 'dark' 
+    background: theme.palette.mode === 'dark'
       ? 'linear-gradient(135deg, rgba(129, 140, 248, 0.12) 0%, rgba(34, 211, 238, 0.08) 100%)'
       : 'linear-gradient(135deg, rgba(129, 140, 248, 0.06) 0%, rgba(34, 211, 238, 0.04) 100%)',
     border: `1px solid ${theme.palette.mode === 'dark' ? 'rgba(129, 140, 248, 0.25)' : 'rgba(129, 140, 248, 0.2)'}`,
@@ -137,10 +137,10 @@ export function simCommandCardSx(theme, extra = {}) {
       ? '0 6px 22px -8px rgba(99, 102, 241, 0.28)'
       : '0 6px 20px -8px rgba(99, 102, 241, 0.12)',
     overflow: 'hidden',
-    transition: 'transform 160ms ease, box-shadow 160ms ease',
+    transition: 'border-color 160ms ease, box-shadow 160ms ease',
     '&:hover': {
-      transform: 'translateY(-4px)',
-      boxShadow: dark ? '0 14px 40px -12px rgba(99,102,241,0.36)' : '0 14px 40px -12px rgba(99,102,241,0.16)',
+      borderColor: dark ? alpha('#6366f1', 0.5) : alpha('#6366f1', 0.4),
+      boxShadow: dark ? '0 14px 40px -12px rgba(99, 102, 241, 0.45)' : '0 14px 40px -12px rgba(79, 70, 229, 0.22)',
     },
     ...extra,
   };
