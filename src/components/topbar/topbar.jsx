@@ -17,7 +17,8 @@ export default function Topbar() {
   const navigate = useNavigate();
   const location = useLocation();
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
-
+  const [showTopbar, setShowTopbar] = useState(true);
+  const lastScrollY = useRef(0);
   // Referencia al menú para detectar clics fuera
   const menuRef = useRef(null);
   const burgerRef = useRef(null);
@@ -50,6 +51,16 @@ export default function Topbar() {
       if (showLanguageDropdown) {
         setShowLanguageDropdown(false);
       }
+
+      const currentScrollY = window.scrollY;
+      if (currentScrollY <= 10) {
+        setShowTopbar(true);
+      } else if (currentScrollY > lastScrollY.current + 10) {
+        setShowTopbar(false);
+      } else if (currentScrollY < lastScrollY.current - 10) {
+        setShowTopbar(true);
+      }
+      lastScrollY.current = currentScrollY;
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -111,7 +122,7 @@ export default function Topbar() {
   };
 
   return (
-    <header className="topbar">
+    <header className={`topbar ${!showTopbar ? "hidden" : ""}`}>
       <div className="topbar-container">
         <div className="topbar-row">
           <div

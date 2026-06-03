@@ -10,8 +10,8 @@ export const API_BASE = {
 };
 
 export const DEFAULT_CREDENTIALS = {
-  clientId:     import.meta.env.VITE_CL_CLIENT_ID     || '',
-  clientSecret: import.meta.env.VITE_CL_CLIENT_SECRET || '',
+  clientId: import.meta.env.VITE_CL_CLIENT_ID || '',
+  clientSecret: '',
 };
 
 export const AUTH_CONFIG = {
@@ -71,7 +71,7 @@ const BODY_SALE_PROMO = {
 
 const BODY_REFUND_V2 = {
   idTerminal: '', idSucursal: '', serialNumber: '',
-  command: 102, operationId: 12, printOnPos: true, customId: '1234',
+  command: 102, operationId: '', printOnPos: true, customId: '1234',
 };
 
 const BODY_CLOSE = {
@@ -92,7 +92,7 @@ const BODY_RETURN = {
 
 const BODY_DUPLICATE = {
   idTerminal: '', idSucursal: '', serialNumber: '',
-  command: 109, operationId: 12, printOnPos: true, customId: '1234',
+  command: 109, operationId: '', printOnPos: true, customId: '1234',
 };
 
 const BODY_BIOAUTH = {

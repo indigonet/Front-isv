@@ -185,8 +185,8 @@ export default function AboutSection() {
     <>
       <section className="about-section-v2" id="about">
         <div className="about-header">
-          <h2 className="about-title-v2">{t('aboutTitle')}</h2>
-          <p className="about-description-v2">
+          <h2 className="about-title-v2" ref={titleRef}>{t('aboutTitle')}</h2>
+          <p className="about-description-v2" ref={descRef}>
             {t('aboutDescription')}
           </p>
         </div>

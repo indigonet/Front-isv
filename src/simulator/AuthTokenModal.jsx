@@ -27,18 +27,16 @@ export default function AuthTokenModal({
   clearToken,
 }) {
   const { t } = useLanguage();
-  const prevFetching = useRef(fetching);
+  const prevAccessToken = useRef(accessToken);
   const recaptchaRef = useRef();
 
   // Auto-close on successful token fetch
   useEffect(() => {
-    // If it WAS fetching and now it's NOT fetching, AND we have a token
-    if (prevFetching.current && !fetching && accessToken && isOpen) {
-      const timer = setTimeout(() => onClose(), 800);
-      return () => clearTimeout(timer);
+    if (!prevAccessToken.current && accessToken && isOpen) {
+      onClose();
     }
-    prevFetching.current = fetching;
-  }, [accessToken, fetching, isOpen, onClose]);
+    prevAccessToken.current = accessToken;
+  }, [accessToken, isOpen, onClose]);
 
   return (
     <Dialog
@@ -72,7 +70,21 @@ export default function AuthTokenModal({
             </Typography>
           </Box>
         </Box>
-        <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary', p: 1, '&:hover': { color: 'primary.main' } }} aria-label="Cerrar modal">
+        <IconButton 
+          onClick={onClose} 
+          size="small" 
+          sx={{ 
+            color: 'text.secondary', 
+            p: 1, 
+            transition: 'all 0.2s ease-in-out',
+            '&:hover': { 
+              color: 'error.main',
+              transform: 'rotate(90deg)',
+              bgcolor: 'action.hover'
+            } 
+          }} 
+          aria-label="Cerrar modal"
+        >
           <X size={18} />
         </IconButton>
       </DialogTitle>
@@ -188,20 +200,29 @@ export default function AuthTokenModal({
                 fontSize: '0.85rem',
                 textTransform: 'none',
                 mt: 1,
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 boxShadow: (theme) => `0 8px 20px -4px ${theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.4)' : 'rgba(79,70,229,0.3)'}`,
                 background: (theme) => theme.palette.mode === 'dark'
                   ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
                   : 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
                 color: '#ffffff',
                 '&:hover': {
-                  filter: 'brightness(1.1)',
+                  filter: 'brightness(1.15)',
                   boxShadow: (theme) => `0 12px 24px -4px ${theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.5)' : 'rgba(79,70,229,0.45)'}`,
+                },
+                '&:active': {
+                  transform: 'scale(0.98)',
+                },
+                '&.Mui-disabled': {
+                  background: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
+                  color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
+                  boxShadow: 'none',
                 }
               }}
             >
               {fetching ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <CircularProgress size={16} color="inherit" />
+                  <CircularProgress size={16} color="#ffffff" />
                   <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#ffffff' }}>{t('fetchingToken')}</Typography>
                 </Box>
               ) : (
@@ -311,8 +332,13 @@ export default function AuthTokenModal({
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
                   borderWidth: '1.5px',
+                  transition: 'all 0.2s ease-in-out',
                   '&:hover': {
-                    borderWidth: '1.5px'
+                    borderWidth: '1.5px',
+                    bgcolor: 'rgba(239, 68, 68, 0.08)'
+                  },
+                  '&:active': {
+                    transform: 'scale(0.98)'
                   }
                 }}
               >

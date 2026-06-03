@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle, ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
+import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle, ChevronUp, ChevronDown, Trash2, HelpCircle } from 'lucide-react';
 
 import { CONFIG } from './simulator.constants';
 import { useSimulatorAuth }                from './useSimulatorAuth';
@@ -8,6 +8,7 @@ import SimulatorSidebar                    from './SimulatorSidebar';
 import SimulatorHistory                    from './SimulatorHistory';
 import Modal                               from '../components/modal/Modal';
 import { useLanguage }                     from '../context/LanguageContext';
+import OnboardingTour                      from '../components/OnboardingTour';
 
 export default function SimulatorView({ onLog }) {
   const { t } = useLanguage();
@@ -28,6 +29,13 @@ export default function SimulatorView({ onLog }) {
   const [isFlashRunning, setIsFlashRunning] = useState(false);
   const [isStopping,     setIsStopping]     = useState(false);
   const flashRef = useRef(false);
+
+  const [isTourRunning, setIsTourRunning] = useState(false);
+
+  const handleTourFinish = () => {
+    localStorage.setItem('isv_simulator_tour_seen', 'true');
+    setIsTourRunning(false);
+  };
   
   const [params, setParams] = useState(() => {
     const template = { ...COMMAND_METHODS[0].template };
@@ -88,12 +96,12 @@ export default function SimulatorView({ onLog }) {
     }));
   }, [country]);
 
-  const handleEnvChange = (newEnv) => {
+  const handleEnvChange = React.useCallback((newEnv) => {
     setEnv(newEnv);
     const endpoint = url.split('/').pop() || '';
     setUrl(CONFIG[country].API_BASE[newEnv] + endpoint);
     if (onLog) onLog(`Entorno: ${newEnv.toUpperCase()}`, 'info');
-  };
+  }, [country, url, onLog]);
 
   // Sync body and persist triad whenever params change
   React.useEffect(() => {
@@ -139,7 +147,7 @@ export default function SimulatorView({ onLog }) {
   };
 
   // Called by SimulatorSidebar when a command is selected
-  const handleLoadTemplate = (bodyStr, endpoint, cmdId) => {
+  const handleLoadTemplate = React.useCallback((bodyStr, endpoint, cmdId) => {
     setSelectedId(cmdId);
     try {
       let template = JSON.parse(bodyStr);
@@ -169,12 +177,12 @@ export default function SimulatorView({ onLog }) {
     setUrl(CONFIG[country].API_BASE[env] + endpoint);
     setResponse(null);
     if (onLog) onLog(`Plantilla cargada → /${endpoint}`, 'info');
-  };
+  }, [country, env, params.idTerminal, params.idSucursal, params.serialNumber, onLog]);
 
   // Called by SimulatorSidebar when a param input changes
-  const handleSyncParam = (field, value) => {
+  const handleSyncParam = React.useCallback((field, value) => {
     setParams(prev => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
   const handleSend = async () => {
     let currentParams = { ...params };
@@ -200,6 +208,8 @@ export default function SimulatorView({ onLog }) {
       }
     }
     // ────────────────────────────────────────────────────────────
+
+    setResponse(null);
 
     const isFlash = selectedId === 'flash_sale';
     
@@ -364,7 +374,7 @@ export default function SimulatorView({ onLog }) {
     if (onLog) onLog(t('simCopied'), 'success');
   };
 
-  const handleClearResponse = () => setResponse(null);
+  const handleClearResponse = React.useCallback(() => setResponse(null), []);
   
   const handleClearHistory = () => {
     if (window.confirm(t('confirmClearHistory') || '¿Estás seguro de que deseas borrar el historial de transacciones?')) {
@@ -386,7 +396,7 @@ export default function SimulatorView({ onLog }) {
           </div>
           
           <div className="relative z-10 space-y-2">
-            <div className="flex items-center gap-3">
+            <div id="tour-welcome" className="flex items-center gap-3">
               <div className="p-3 bg-linear-to-br from-accent to-blue-600 rounded-2xl shadow-xl shadow-accent/20">
                 <Cloud className="w-6 h-6 text-white" />
               </div>
@@ -399,7 +409,7 @@ export default function SimulatorView({ onLog }) {
 
           <div className="flex flex-wrap items-center gap-3 relative z-10">
             {/* Custom Country Selector */}
-            <div className="relative mr-2 z-50">
+            <div id="tour-country-selector" className="relative mr-2 z-50">
               <button
                 onClick={() => setIsCountryOpen(!isCountryOpen)}
                 className="flex items-center gap-2.5 bg-[#6366f1] hover:bg-[#4f46e5] border border-white/20 rounded-lg py-2.5 px-4 shadow-[0_8px_20px_-4px_rgba(99,102,241,0.4)] cursor-pointer transition-all group"
@@ -463,6 +473,15 @@ export default function SimulatorView({ onLog }) {
             </div>
 
             <button
+              onClick={() => setIsTourRunning(true)}
+              className="px-3 py-3 bg-white/5 border border-white/10 hover:bg-white/10 rounded-lg transition-all text-white shadow-sm cursor-pointer"
+              title={t('simTourTooltip')}
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
+
+            <button
+              id="tour-auth-btn"
               onClick={() => setIsAuthModalOpen(true)}
               className="px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg transition-all font-black uppercase tracking-widest text-[11px] flex items-center gap-2.5 shadow-[0_8px_20px_-4px_rgba(79,70,229,0.4)] cursor-pointer ring-1 ring-white/10"
             >
@@ -473,6 +492,7 @@ export default function SimulatorView({ onLog }) {
               <div 
                 onClick={() => copyToClipboard(auth.accessToken)}
                 className="flex items-center gap-2.5 px-4 py-3 bg-emerald-500/3 border border-emerald-500/20 rounded-2xl group cursor-pointer hover:bg-emerald-500/8 hover:border-emerald-500/40 transition-all duration-300"
+                title={t('copyToken')}
               >
                 <div className="relative flex items-center justify-center">
                   <div className="absolute inset-0 bg-emerald-500 blur-md opacity-20 animate-pulse" />
@@ -488,7 +508,7 @@ export default function SimulatorView({ onLog }) {
         </div>
 
         {/* Main interactive grid */}
-        <div id="simulator-main" className={`grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-top-4 duration-700 ${!auth.accessToken ? 'hidden' : ''}`}>
+        <div id="simulator-main" className={`grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-top-4 duration-700 ${(!auth.accessToken && !isTourRunning) ? 'hidden' : ''}`}>
           
           {/* MOBILE ONLY: Selector appears first */}
           <div id="mobile-commands-anchor" className="lg:hidden scroll-mt-24">
@@ -539,6 +559,7 @@ export default function SimulatorView({ onLog }) {
                   />
                 </div>
                 <button
+                  id="tour-send-btn"
                   onClick={loading ? handleCancel : handleSend}
                   disabled={!loading && !auth.accessToken}
                   className={`hidden sm:flex px-8 py-3.5 rounded-2xl text-white font-black items-center justify-center gap-3 transition-all cursor-pointer shadow-xl text-xs uppercase tracking-widest w-full sm:w-auto ${
@@ -564,7 +585,7 @@ export default function SimulatorView({ onLog }) {
               </div>
 
               {/* Editor + Response view */}
-              <div className="grid grid-cols-1 xl:grid-cols-2 divide-y xl:divide-y-0 xl:divide-x divide-accent/5 flex-1 min-h-0">
+              <div id="tour-request-response" className="grid grid-cols-1 xl:grid-cols-2 divide-y xl:divide-y-0 xl:divide-x divide-accent/5 flex-1 min-h-0">
                 <div className="flex flex-col bg-accent/1">
                   <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
                     <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2">
@@ -573,6 +594,7 @@ export default function SimulatorView({ onLog }) {
                     <button 
                       onClick={() => copyToClipboard(body)}
                       className="p-1.5 hover:bg-accent/5 rounded-lg text-text-secondary hover:text-accent transition-all cursor-pointer"
+                      title={t('copyRequest')}
                     >
                       <Copy className="w-3.5 h-3.5" />
                     </button>
@@ -640,7 +662,7 @@ export default function SimulatorView({ onLog }) {
           {/* SIDEBAR Column: (Desktop Side / Mobile Bottom) */}
           <div className="lg:col-span-4 space-y-6 flex flex-col">
             {/* DESKTOP ONLY: Side Selector */}
-            <div className="hidden lg:block">
+            <div id="desktop-commands-anchor" className="hidden lg:block">
               <SimulatorSidebar
                 selectedId={selectedId}
                 country={country}
@@ -662,11 +684,13 @@ export default function SimulatorView({ onLog }) {
             </div>
 
             {/* ALWAYS: History Panel */}
-            <SimulatorHistory
-              history={history}
-              onSelectHistory={(item) => setSelectedHistoryItem(item)}
-              onClearHistory={handleClearHistory}
-            />
+            <div id="tour-history">
+              <SimulatorHistory
+                history={history}
+                onSelectHistory={(item) => setSelectedHistoryItem(item)}
+                onClearHistory={handleClearHistory}
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -757,6 +781,8 @@ export default function SimulatorView({ onLog }) {
           <ChevronUp className="w-5 h-5 group-hover:-translate-y-1 transition-transform" />
         </button>
       </div>
+      
+      <OnboardingTour run={isTourRunning} onFinish={handleTourFinish} />
     </div>
   );
 }

@@ -7,7 +7,44 @@ import { Box, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActi
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 
+const formatRut = (value) => {
+  let clean = String(value).replace(/[^0-9kK]/g, '').toUpperCase();
+  if (clean.length > 9) clean = clean.slice(0, 9);
+  if (clean.length <= 1) return clean;
+  const dv = clean.slice(-1);
+  const body = clean.slice(0, -1);
+  let formattedBody = '';
+  for (let i = body.length - 1, j = 0; i >= 0; i--, j++) {
+    if (j > 0 && j % 3 === 0) {
+      formattedBody = '.' + formattedBody;
+    }
+    formattedBody = body[i] + formattedBody;
+  }
+  return `${formattedBody}-${dv}`;
+};
 
+const validateRut = (rut) => {
+  if (!rut) return true;
+  const clean = String(rut).replace(/[^0-9kK]/g, '').toUpperCase();
+  if (clean.length < 2) return false;
+  const dv = clean.slice(-1);
+  const body = parseInt(clean.slice(0, -1), 10);
+  if (isNaN(body)) return false;
+  let sum = 0;
+  let multiplier = 2;
+  let tempBody = body;
+  while (tempBody > 0) {
+    sum += (tempBody % 10) * multiplier;
+    tempBody = Math.floor(tempBody / 10);
+    multiplier = multiplier === 7 ? 2 : multiplier + 1;
+  }
+  const expectedDvVal = 11 - (sum % 11);
+  let expectedDv = '';
+  if (expectedDvVal === 11) expectedDv = '0';
+  else if (expectedDvVal === 10) expectedDv = 'K';
+  else expectedDv = String(expectedDvVal);
+  return dv === expectedDv;
+};
 
 export default function SimulatorSidebar({
   selectedId, 
@@ -82,14 +119,30 @@ export default function SimulatorSidebar({
   const handleParamChange = useCallback((field, rawValue) => {
     let finalValue = rawValue;
     if (field === 'amount' || field === 'tip') {
-      finalValue = parseCurrency(String(rawValue));
+      const parsed = parseCurrency(String(rawValue));
+      finalValue = field === 'amount' ? Math.min(parsed, 999999999) : parsed;
     } else if (field === 'serialNumber') {
-      finalValue = String(rawValue).toUpperCase();
+      finalValue = String(rawValue).toUpperCase().slice(0, 20);
+    } else if (field === 'ticketNumber' || field === 'customId') {
+      finalValue = String(rawValue).slice(0, 24);
+    } else if (field === 'employeeId') {
+      const digitsOnly = String(rawValue).replace(/[^0-9]/g, '').slice(0, 4);
+      finalValue = digitsOnly === '' ? '' : Number(digitsOnly);
+    } else if (field === 'authorizationCode') {
+      finalValue = String(rawValue).slice(0, 20);
+    } else if (field === 'operationId') {
+      const digitsOnly = String(rawValue).replace(/[^0-9]/g, '').slice(0, 8);
+      const numVal = digitsOnly === '' ? '' : Number(digitsOnly);
+      finalValue = numVal === '' ? '' : Math.min(numVal, 99999999);
+    } else if (field === 'rutToValidate') {
+      finalValue = formatRut(rawValue);
+    } else if (field === 'idPromo') {
+      finalValue = String(rawValue).slice(0, 250);
     } else if (typeof rawValue !== 'boolean' && FIELD_CONFIG[field]?.type === 'number') {
       finalValue = rawValue === '' ? '' : Number(rawValue);
     }
     onSyncParam(field, finalValue);
-  }, [onSyncParam]);
+  }, [onSyncParam, FIELD_CONFIG]);
 
   // --- Triads (saved terminal sets) state & persistence
   const triadStorageKey = `isv_saved_triads_${country}_${env}`;
@@ -211,11 +264,13 @@ export default function SimulatorSidebar({
     const value = params[field] ?? (cfg.type === 'toggle' ? false : '');
 
     if (cfg.type === 'toggle') {
-      // Use MUI Switch for printOnPos for a professional static control
-      if (field === 'printOnPos') {
+      // Use MUI Switch for printOnPos and c2cMode for a professional static control
+      if (field === 'printOnPos' || field === 'c2cMode') {
         return (
           <div key={field} className="col-span-2 px-3 py-1.5 bg-background border border-accent/10 rounded-xl flex items-center justify-between">
-            <span className="text-[10px] font-black text-text-secondary tracking-widest uppercase">{t(cfg.label)}</span>
+            <span className="text-[10px] font-black text-text-secondary tracking-widest uppercase">
+              {field === 'c2cMode' ? (value ? t('simDesatendido') : t('simAtendido')) : t(cfg.label)}
+            </span>
             <Switch
               checked={Boolean(value)}
               onChange={(e) => handleParamChange(field, e.target.checked)}
@@ -233,7 +288,7 @@ export default function SimulatorSidebar({
           className={`col-span-2 flex items-center justify-between p-3 bg-background border border-accent/10 rounded-xl select-none`}
         >
           <span className={`text-[10px] font-black text-text-secondary tracking-widest ${field !== 'idPromo' ? 'uppercase' : ''}`}>
-            {field === 'c2cMode' ? (value ? t('simDesatendido') : t('simAtendido')) : t(cfg.label)}
+            {t(cfg.label)}
           </span>
           <button
             type="button"
@@ -256,6 +311,33 @@ export default function SimulatorSidebar({
       );
     }
 
+    if (field === 'saleType') {
+      return (
+        <label
+          key={field}
+          className={`block space-y-1.5 ${cfg.span === 2 ? 'col-span-2' : ''}`}
+        >
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] font-black text-text-secondary tracking-widest leading-none uppercase">
+              {t(cfg.label)}
+            </span>
+          </div>
+          <select
+            value={value}
+            onChange={(e) => handleParamChange(field, Number(e.target.value))}
+            className="w-full bg-background border border-accent/10 rounded-xl px-3 py-2.5 outline-none focus:border-accent transition-all font-black text-text-primary text-sm shadow-sm cursor-pointer"
+          >
+            <option value={1} className="bg-card text-text-primary">1 - Compra Afecta</option>
+            <option value={2} className="bg-card text-text-primary">2 - Factura Afecta</option>
+            <option value={3} className="bg-card text-text-primary">3 - Compra Exenta</option>
+            <option value={4} className="bg-card text-text-primary">4 - Factura Exenta</option>
+            <option value={5} className="bg-card text-text-primary">5 - Recaudación Afecta</option>
+            <option value={6} className="bg-card text-text-primary">6 - Recaudación Exenta</option>
+          </select>
+        </label>
+      );
+    }
+
     return (
       <label
         key={field}
@@ -267,12 +349,31 @@ export default function SimulatorSidebar({
           </span>
         </div>
         <input
-          type={(field === 'amount' || field === 'tip') ? 'text' : cfg.type}
+          type={(field === 'amount' || field === 'tip') ? 'text' : (field === 'employeeId' || field === 'operationId' || field === 'rutToValidate') ? 'text' : cfg.type}
           value={(field === 'amount' || field === 'tip') ? formatCurrency(value) : value}
           onChange={(e) => handleParamChange(field, e.target.value)}
-          maxLength={field === 'serialNumber' ? 20 : undefined}
+          maxLength={
+            field === 'serialNumber' ? 20 : 
+            (field === 'ticketNumber' || field === 'customId') ? 24 : 
+            field === 'employeeId' ? 4 : 
+            field === 'authorizationCode' ? 20 :
+            field === 'operationId' ? 8 :
+            field === 'rutToValidate' ? 12 :
+            field === 'idPromo' ? 250 :
+            undefined
+          }
           className="w-full bg-background border border-accent/10 rounded-xl px-3 py-2.5 outline-none focus:border-accent transition-all font-black text-text-primary text-sm shadow-sm"
         />
+        {(field === 'ticketNumber' || field === 'customId') && (
+          <div className="flex justify-end text-[10px] font-bold text-text-secondary/60 px-1 mt-0.5">
+            {String(value ?? '').length}/24
+          </div>
+        )}
+        {field === 'rutToValidate' && value && !validateRut(value) && (
+          <div className="text-[10px] font-bold text-rose-500 px-1 mt-0.5">
+            {t('invalidRut')}
+          </div>
+        )}
       </label>
     );
   };
@@ -284,7 +385,7 @@ export default function SimulatorSidebar({
       <div className="bg-card rounded-[1rem] border border-accent/10 p-4 sm:p-6 lg:p-8 shadow-xl space-y-6">
 
         {/* Command selector */}
-        <div className="space-y-4">
+        <div className="space-y-4 tour-command-selector">
           <h3 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">
             {t('simCommand')}
           </h3>
@@ -323,7 +424,7 @@ export default function SimulatorSidebar({
           </div>
 
         {/* Saved Triads Section */}
-        <div className="mt-4">
+        <div className="mt-4 tour-triads">
           <div className="flex items-center justify-between mb-2">
             <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Triadas Guardadas</h4>
               <div className="flex items-center gap-3">
@@ -345,6 +446,7 @@ export default function SimulatorSidebar({
                   <Tooltip
                     key={idx}
                     title={<div style={{ whiteSpace: 'normal', fontSize: 13 }}>
+                      <div style={{ marginBottom: 4, fontWeight: 800, fontSize: 14, borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 4 }}>{triad.name}</div>
                       <div><strong>S/N:</strong> {triad.serialNumber}</div>
                       <div><strong>ID Sucursal:</strong> {triad.idSucursal}</div>
                       <div><strong>ID Terminal:</strong> {triad.idTerminal}</div>
@@ -366,12 +468,12 @@ export default function SimulatorSidebar({
                         <p className="text-[9px] text-text-secondary/60 truncate">{triad.serialNumber} · {triad.idSucursal} · {triad.idTerminal}</p>
                       </div>
                       <div className="flex items-center gap-1">
-                        <Tooltip title="Editar">
+                        <Tooltip title={t('edit')}>
                           <IconButton size="small" onClick={(e) => { e.stopPropagation(); openEditTriad(idx); }}>
                             <EditIcon fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Eliminar">
+                        <Tooltip title={t('delete')}>
                           <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleDeleteTriad(idx); }} color="error">
                             <DeleteOutlineIcon fontSize="small" />
                           </IconButton>
@@ -520,7 +622,7 @@ export default function SimulatorSidebar({
         </Dialog>
 
           {/* Command card */}
-          <div className={`p-2 rounded-2xl ${selected.bg} border border-white/5 flex items-center gap-4 animate-in fade-in duration-200`}>
+          <div className={`p-2 rounded-2xl ${selected.bg} border border-white/5 flex items-center gap-4 animate-in fade-in duration-200 tour-command-card`}>
             <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur-sm shrink-0">
               <Icon className={`w-5 h-5 ${selected.color}`} />
             </div>
@@ -563,12 +665,12 @@ export default function SimulatorSidebar({
 
         {/* Dynamic params */}
         {selected.fields.length > 0 && (
-          <>
+          <div className="tour-params">
             <div className="border-t border-accent/5" />
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-2 mt-4">
                 {selected.fields.map(renderField)}
               </div>
-          </>
+          </div>
         )}
 
         {/* Send Button (Visible ONLY on small screens for mobile UX) */}
@@ -599,12 +701,7 @@ export default function SimulatorSidebar({
           </button>
         </div>
 
-        {/* Print service note */}
-        {selectedId === 'print_service' && (
-          <p className="text-[9px] text-text-secondary/60 font-bold px-1 -mt-2">
-            ℹ️ {t('simDetailsNotice')}
-          </p>
-        )}
+     
 
         {/* Token status & Actions */}
         <div className="border-t border-accent/5 pt-6 space-y-3">
