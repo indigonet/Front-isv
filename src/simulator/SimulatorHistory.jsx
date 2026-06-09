@@ -1,6 +1,7 @@
 import React from 'react';
 import { History, Trash2, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { Tooltip } from '@mui/material';
 
 export default function SimulatorHistory({ 
   history, 
@@ -19,13 +20,14 @@ export default function SimulatorHistory({
           {t('simHistory')}
         </h3>
         {history.length > 0 && (
-          <button 
-            onClick={onClearHistory}
-            className="p-1.5 hover:bg-rose-500/10 rounded-lg text-text-secondary/40 hover:text-rose-500 transition-all cursor-pointer"
-            title={t('simClearHistory') || 'Limpiar Historial'}
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
+          <Tooltip title={t('simClearHistory') || 'Limpiar Historial'} arrow placement="top">
+            <button 
+              onClick={onClearHistory}
+              className="p-1.5 hover:bg-rose-500/10 rounded-lg text-text-secondary/40 hover:text-rose-500 transition-all cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </Tooltip>
         )}
       </div>
       <div className="space-y-3 relative z-10">

@@ -9,6 +9,7 @@ import SimulatorHistory                    from './SimulatorHistory';
 import Modal                               from '../components/modal/Modal';
 import { useLanguage }                     from '../context/LanguageContext';
 import OnboardingTour                      from '../components/OnboardingTour';
+import { Tooltip }                         from '@mui/material';
 
 export default function SimulatorView({ onLog }) {
   const { t } = useLanguage();
@@ -36,6 +37,8 @@ export default function SimulatorView({ onLog }) {
     localStorage.setItem('isv_simulator_tour_seen', 'true');
     setIsTourRunning(false);
   };
+
+
   
   const [params, setParams] = useState(() => {
     const template = { ...COMMAND_METHODS[0].template };
@@ -78,6 +81,41 @@ export default function SimulatorView({ onLog }) {
   // ── Auth hook (token logic lives here) ─────────────────────────
   const auth = useSimulatorAuth({ env, country, onLog });
 
+  const startTour = React.useCallback(() => {
+    // 1. Validate token
+    if (!auth.accessToken) {
+      if (onLog) onLog(t('simTokenRequired'), 'warning');
+      setIsAuthModalOpen(true);
+      return;
+    }
+    
+    // 2. Start tour and auto-click beacon
+    setIsTourRunning(false);
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setIsTourRunning(true);
+      
+      // Auto-click the beacon
+      setTimeout(() => {
+        const beaconBtn = document.querySelector('button[aria-label="Open the dialog"]') || document.querySelector('.react-joyride__beacon');
+        if (beaconBtn) {
+          beaconBtn.click();
+        }
+      }, 100);
+    }, 50);
+  }, [auth.accessToken, onLog, t]);
+
+  React.useEffect(() => {
+    const hasSeenTour = localStorage.getItem('isv_simulator_tour_seen');
+    if (!hasSeenTour && auth.accessToken) {
+      const timer = setTimeout(() => {
+        startTour();
+        localStorage.setItem('isv_simulator_tour_seen', 'true');
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [auth.accessToken, startTour]);
+
   // ── Handlers ───────────────────────────────────────────────────
   
   // When country changes, reset command and url
@@ -94,13 +132,14 @@ export default function SimulatorView({ onLog }) {
       idSucursal:   localStorage.getItem(`${keyPrefix}_idSucursal`)   || firstMethod.template.idSucursal,
       serialNumber: localStorage.getItem(`${keyPrefix}_idSerialNumber`) || firstMethod.template.serialNumber,
     }));
+    setIsTourRunning(false); // Stop onboarding tour if running
   }, [country]);
 
   const handleEnvChange = React.useCallback((newEnv) => {
     setEnv(newEnv);
     const endpoint = url.split('/').pop() || '';
     setUrl(CONFIG[country].API_BASE[newEnv] + endpoint);
-    if (onLog) onLog(`Entorno: ${newEnv.toUpperCase()}`, 'info');
+    if (onLog) onLog(`${t('envLabel')}: ${newEnv.toUpperCase()}`, 'info');
   }, [country, url, onLog]);
 
   // Sync body and persist triad whenever params change
@@ -146,6 +185,8 @@ export default function SimulatorView({ onLog }) {
     }
   };
 
+
+
   // Called by SimulatorSidebar when a command is selected
   const handleLoadTemplate = React.useCallback((bodyStr, endpoint, cmdId) => {
     setSelectedId(cmdId);
@@ -176,7 +217,7 @@ export default function SimulatorView({ onLog }) {
     }
     setUrl(CONFIG[country].API_BASE[env] + endpoint);
     setResponse(null);
-    if (onLog) onLog(`Plantilla cargada → /${endpoint}`, 'info');
+    if (onLog) onLog(`${t('templateLoaded')} → /${endpoint}`, 'info');
   }, [country, env, params.idTerminal, params.idSucursal, params.serialNumber, onLog]);
 
   // Called by SimulatorSidebar when a param input changes
@@ -197,12 +238,12 @@ export default function SimulatorView({ onLog }) {
 
     if (selectedId === 'c2c_sale' || selectedId === 'sale_promo') {
       if (!currentParams.amount || currentParams.amount <= 0) {
-        if (onLog) onLog('❌ Error: El monto es inválido', 'error');
+        if (onLog) onLog(t('errorInvalidAmount'), 'error');
         setLoading(false);
         return;
       }
       if (!currentParams.ticketNumber) {
-        if (onLog) onLog('❌ Error: El número de ticket es requerido', 'error');
+        if (onLog) onLog(t('errorTicketRequired'), 'error');
         setLoading(false);
         return;
       }
@@ -280,7 +321,7 @@ export default function SimulatorView({ onLog }) {
         }
       } catch (error) {
         if (error.name === 'AbortError') {
-          if (onLog) onLog('🚫 Petición cancelada', 'info');
+          if (onLog) onLog(t('requestCancelled'), 'info');
         } else {
           console.error('Request Error:', error);
           if (onLog) onLog(`Error: ${error.message}`, 'error');
@@ -294,7 +335,7 @@ export default function SimulatorView({ onLog }) {
     setLoading(true);
     try {
       if (isFlash) {
-        if (onLog) onLog('⚡ Iniciando modo Venta Flash...', 'info');
+        if (onLog) onLog(t('flashSaleStarting'), 'info');
         flashRef.current = true;
         setIsFlashRunning(true);
         
@@ -353,7 +394,7 @@ export default function SimulatorView({ onLog }) {
       setIsStopping(true);
       flashRef.current = false;
       setIsFlashRunning(false);
-      if (onLog) onLog('⏹️ Deteniendo Venta Flash...', 'info');
+      if (onLog) onLog(t('flashSaleStopping'), 'info');
       if (abortController) {
         abortController.abort();
         setAbortController(null);
@@ -472,13 +513,14 @@ export default function SimulatorView({ onLog }) {
               )}
             </div>
 
-            <button
-              onClick={() => setIsTourRunning(true)}
-              className="px-3 py-3 bg-white/5 border border-white/10 hover:bg-white/10 rounded-lg transition-all text-white shadow-sm cursor-pointer"
-              title={t('simTourTooltip')}
-            >
-              <HelpCircle className="w-4 h-4" />
-            </button>
+            <Tooltip title={t('simTourTooltip')} arrow placement="bottom">
+              <button
+                onClick={startTour}
+                className="px-3 py-3 bg-white/5 border border-white/10 hover:bg-white/10 rounded-lg transition-all text-white shadow-sm cursor-pointer"
+              >
+                <HelpCircle className="w-4 h-4" />
+              </button>
+            </Tooltip>
 
             <button
               id="tour-auth-btn"
@@ -489,26 +531,27 @@ export default function SimulatorView({ onLog }) {
             </button>
 
             {auth.accessToken && (
-              <div 
-                onClick={() => copyToClipboard(auth.accessToken)}
-                className="flex items-center gap-2.5 px-4 py-3 bg-emerald-500/3 border border-emerald-500/20 rounded-2xl group cursor-pointer hover:bg-emerald-500/8 hover:border-emerald-500/40 transition-all duration-300"
-                title={t('copyToken')}
-              >
-                <div className="relative flex items-center justify-center">
-                  <div className="absolute inset-0 bg-emerald-500 blur-md opacity-20 animate-pulse" />
-                  <Lock className="w-3.5 h-3.5 text-emerald-500 relative z-10" />
+              <Tooltip title={t('copyToken')} arrow placement="bottom">
+                <div 
+                  onClick={() => copyToClipboard(auth.accessToken)}
+                  className="flex items-center gap-2.5 px-4 py-3 bg-emerald-500/3 border border-emerald-500/20 rounded-2xl group cursor-pointer hover:bg-emerald-500/8 hover:border-emerald-500/40 transition-all duration-300"
+                >
+                  <div className="relative flex items-center justify-center">
+                    <div className="absolute inset-0 bg-emerald-500 blur-md opacity-20 animate-pulse" />
+                    <Lock className="w-3.5 h-3.5 text-emerald-500 relative z-10" />
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[7px] font-black text-emerald-500/60 uppercase tracking-[0.25em] leading-none">{t('simStatus')}</span>
+                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-none mt-1">{t('simTokenActive')}</span>
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-[7px] font-black text-emerald-500/60 uppercase tracking-[0.25em] leading-none">{t('simStatus')}</span>
-                  <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-none mt-1">{t('simTokenActive')}</span>
-                </div>
-              </div>
+              </Tooltip>
             )}
           </div>
         </div>
 
         {/* Main interactive grid */}
-        <div id="simulator-main" className={`grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-top-4 duration-700 ${(!auth.accessToken && !isTourRunning) ? 'hidden' : ''}`}>
+        <div id="simulator-main" className={`${(!auth.accessToken && !isTourRunning) ? 'hidden' : 'grid'} grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-top-4 duration-700`}>
           
           {/* MOBILE ONLY: Selector appears first */}
           <div id="mobile-commands-anchor" className="lg:hidden scroll-mt-24">
@@ -591,13 +634,14 @@ export default function SimulatorView({ onLog }) {
                     <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2">
                       <Cpu className="w-3.5 h-3.5 text-accent" /> REQUEST BODY (JSON)
                     </span>
-                    <button 
-                      onClick={() => copyToClipboard(body)}
-                      className="p-1.5 hover:bg-accent/5 rounded-lg text-text-secondary hover:text-accent transition-all cursor-pointer"
-                      title={t('copyRequest')}
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                    </button>
+                    <Tooltip title={t('copyRequest')} arrow placement="top">
+                      <button 
+                        onClick={() => copyToClipboard(body)}
+                        className="p-1.5 hover:bg-accent/5 rounded-lg text-text-secondary hover:text-accent transition-all cursor-pointer"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                      </button>
+                    </Tooltip>
                   </div>
                   <div className="flex-1 p-6">
                     <textarea
@@ -617,21 +661,23 @@ export default function SimulatorView({ onLog }) {
                     {response && (
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1.5 bg-accent/5 rounded-lg p-0.5 border border-accent/10">
-                          <button 
-                            onClick={() => copyToClipboard(JSON.stringify(response, null, 2))}
-                            className="p-1.5 hover:bg-accent/10 rounded-md text-text-secondary hover:text-accent transition-all cursor-pointer"
-                            title={t('copyResponse') || 'Copiar Respuesta'}
-                          >
-                            <Copy className="w-3 h-3" />
-                          </button>
+                          <Tooltip title={t('copyResponse') || 'Copiar Respuesta'} arrow placement="top">
+                            <button 
+                              onClick={() => copyToClipboard(JSON.stringify(response, null, 2))}
+                              className="p-1.5 hover:bg-accent/10 rounded-md text-text-secondary hover:text-accent transition-all cursor-pointer"
+                            >
+                              <Copy className="w-3 h-3" />
+                            </button>
+                          </Tooltip>
                           <div className="w-px h-3 bg-accent/10" />
-                          <button 
-                            onClick={handleClearResponse}
-                            className="p-1.5 hover:bg-rose-500/10 rounded-md text-text-secondary hover:text-rose-500 transition-all cursor-pointer"
-                            title={t('clearResponse') || 'Limpiar'}
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
+                          <Tooltip title={t('clearResponse') || 'Limpiar'} arrow placement="top">
+                            <button 
+                              onClick={handleClearResponse}
+                              className="p-1.5 hover:bg-rose-500/10 rounded-md text-text-secondary hover:text-rose-500 transition-all cursor-pointer"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </Tooltip>
                         </div>
                         <div className="flex items-center gap-2 px-2 py-1 bg-emerald-500/5 rounded-lg border border-emerald-500/10">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -773,13 +819,14 @@ export default function SimulatorView({ onLog }) {
       <div className={`fixed bottom-8 right-6 z-100 transition-all duration-500 transform lg:hidden ${
         showJumpBtn ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-50 pointer-events-none'
       }`}>
-        <button
-          onClick={scrollToCommands}
-          className="flex items-center justify-center w-12 h-12 bg-accent text-white rounded-full shadow-[0_10px_25px_-5px_rgba(14,165,233,0.5)] active:scale-90 transition-all border border-white/20 backdrop-blur-sm group"
-          title={t('simBackToCommands')}
-        >
-          <ChevronUp className="w-5 h-5 group-hover:-translate-y-1 transition-transform" />
-        </button>
+        <Tooltip title={t('simBackToCommands')} arrow placement="left">
+          <button
+            onClick={scrollToCommands}
+            className="flex items-center justify-center w-12 h-12 bg-accent text-white rounded-full shadow-[0_10px_25px_-5px_rgba(14,165,233,0.5)] active:scale-90 transition-all border border-white/20 backdrop-blur-sm group"
+          >
+            <ChevronUp className="w-5 h-5 group-hover:-translate-y-1 transition-transform" />
+          </button>
+        </Tooltip>
       </div>
       
       <OnboardingTour run={isTourRunning} onFinish={handleTourFinish} />

@@ -230,6 +230,8 @@ export default function AboutSection() {
                 src={img1}
                 alt={t('analysisTitle')} 
                 className="feature-image-v2"
+                loading="lazy"
+                decoding="async"
                 onClick={() => openImageModal(img1, t('analysisTitle'))}
               />
             </div>
@@ -265,6 +267,8 @@ export default function AboutSection() {
                 src={img2}
                 alt={t('signingTitle')} 
                 className="feature-image-v2"
+                loading="lazy"
+                decoding="async"
                 onClick={() => openImageModal(img2, t('signingTitle'))}
               />
             </div>
@@ -278,6 +282,8 @@ export default function AboutSection() {
                 src={img3}
                 alt={t('logcatTitle')} 
                 className="feature-image-v2"
+                loading="lazy"
+                decoding="async"
                 onClick={() => openImageModal(img3, t('logcatTitle'))}
               />
             </div>
@@ -313,6 +319,8 @@ export default function AboutSection() {
                 src={img4}
                 alt={t('adbTitle')} 
                 className="feature-image-v2"
+                loading="lazy"
+                decoding="async"
                 onClick={() => openImageModal(img4, t('adbTitle'))}
               />
             </div>
@@ -328,6 +336,8 @@ export default function AboutSection() {
                 src={img6}
                 alt={t('managementTitle')} 
                 className="feature-image-v2"
+                loading="lazy"
+                decoding="async"
                 onClick={() => openImageModal(img6, t('managementTitle'))}
               />
             </div>

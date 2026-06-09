@@ -162,6 +162,37 @@ export default function SimulatorSidebar({
       return -1;
     }
   });
+
+  const updateSavedTriads = (newTriads) => {
+    setSavedTriads(newTriads);
+    try {
+      localStorage.setItem(triadStorageKey, JSON.stringify(newTriads));
+    } catch {}
+  };
+
+  const updateSelectedTriadIndex = (newIndex) => {
+    setSelectedTriadIndex(newIndex);
+    try {
+      localStorage.setItem(`${triadStorageKey}_selected`, String(newIndex));
+    } catch {}
+  };
+
+  // Sync state when country or environment changes
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(triadStorageKey);
+      setSavedTriads(raw ? JSON.parse(raw) : []);
+    } catch {
+      setSavedTriads([]);
+    }
+    try {
+      const raw = localStorage.getItem(`${triadStorageKey}_selected`);
+      setSelectedTriadIndex(raw !== null ? parseInt(raw, 10) : -1);
+    } catch {
+      setSelectedTriadIndex(-1);
+    }
+  }, [triadStorageKey]);
+
   const [openTriadDialog, setOpenTriadDialog] = useState(false);
   const [editingTriadIndex, setEditingTriadIndex] = useState(-1);
   const [editingTriad, setEditingTriad] = useState({ name: '', idTerminal: '', idSucursal: '', serialNumber: '' });
@@ -179,14 +210,6 @@ export default function SimulatorSidebar({
   const [copiedField, setCopiedField] = useState('');
 
   useEffect(() => {
-    try { localStorage.setItem(triadStorageKey, JSON.stringify(savedTriads)); } catch {}
-  }, [savedTriads, triadStorageKey]);
-
-  useEffect(() => {
-    try { localStorage.setItem(`${triadStorageKey}_selected`, String(selectedTriadIndex)); } catch {}
-  }, [selectedTriadIndex, triadStorageKey]);
-
-  useEffect(() => {
     if (selectedTriadIndex >= 0 && savedTriads[selectedTriadIndex]) {
       const t = savedTriads[selectedTriadIndex];
       onSyncParam('idTerminal', t.idTerminal);
@@ -196,8 +219,8 @@ export default function SimulatorSidebar({
   }, [selectedTriadIndex, savedTriads, onSyncParam]);
 
   const validateTriad = (triad) => {
-    if (!triad.idTerminal || !triad.idSucursal || !triad.serialNumber) return { ok: false, msg: 'ID Terminal, ID Sucursal y Serial Number son requeridos' };
-    if (triad.idTerminal.length > 20 || triad.idSucursal.length > 20 || triad.serialNumber.length > 20) return { ok: false, msg: 'Los campos no deben exceder 20 caracteres' };
+    if (!triad.idTerminal || !triad.idSucursal || !triad.serialNumber) return { ok: false, msg: t('triad.requiredFields') };
+    if (triad.idTerminal.length > 20 || triad.idSucursal.length > 20 || triad.serialNumber.length > 20) return { ok: false, msg: t('triad.maxLength') };
     return { ok: true };
   };
 
@@ -214,20 +237,20 @@ export default function SimulatorSidebar({
       return window.alert(res.msg);
     }
     const exists = savedTriads.findIndex((t) => t.idTerminal === newTriad.idTerminal && t.idSucursal === newTriad.idSucursal && t.serialNumber === newTriad.serialNumber);
-    if (exists !== -1) { setSelectedTriadIndex(exists); return window.alert('Triada ya existe. Seleccionada.'); }
-    setSavedTriads((s) => [...s, newTriad]);
-    setSelectedTriadIndex(savedTriads.length);
-    showSnackbar('Triada creada', 'success');
+    if (exists !== -1) { updateSelectedTriadIndex(exists); return window.alert(t('triad.exists')); }
+    updateSavedTriads([...savedTriads, newTriad]);
+    updateSelectedTriadIndex(savedTriads.length);
+    showSnackbar(t('triad.created'), 'success');
   };
 
   const handleDeleteTriad = (index) => {
     const triad = savedTriads[index];
     if (!triad) return;
-    if (!window.confirm(`¿Eliminar triada "${triad.name}"?`)) return;
+    if (!window.confirm(t('triad.confirmDelete').replace('{name}', triad.name))) return;
     const arr = savedTriads.filter((_, i) => i !== index);
-    setSavedTriads(arr);
-    if (selectedTriadIndex === index) setSelectedTriadIndex(-1);
-    else if (selectedTriadIndex > index) setSelectedTriadIndex(selectedTriadIndex - 1);
+    updateSavedTriads(arr);
+    if (selectedTriadIndex === index) updateSelectedTriadIndex(-1);
+    else if (selectedTriadIndex > index) updateSelectedTriadIndex(selectedTriadIndex - 1);
   };
 
   const openEditTriad = (index) => {
@@ -247,14 +270,14 @@ export default function SimulatorSidebar({
       return;
     }
     const dup = savedTriads.findIndex((t, i) => i !== editingTriadIndex && t.idTerminal === editingTriad.idTerminal && t.idSucursal === editingTriad.idSucursal && t.serialNumber === editingTriad.serialNumber);
-    if (dup !== -1) return window.alert('La triada modificada coincide con otra existente');
+    if (dup !== -1) return window.alert(t('triad.duplicate'));
     const copy = [...savedTriads];
     if (editingTriadIndex === -1) copy.push(editingTriad); else copy[editingTriadIndex] = editingTriad;
-    setSavedTriads(copy);
+    updateSavedTriads(copy);
     setOpenTriadDialog(false);
     setEditingTriadIndex(-1);
     setTriadErrors({});
-    showSnackbar(editingTriadIndex === -1 ? 'Triada creada' : 'Triada guardada', 'success');
+    showSnackbar(editingTriadIndex === -1 ? t('triad.created') : t('triad.saved'), 'success');
   };
 
   // ── Render one input field based on its FIELD_CONFIG type ──────────────────
@@ -426,7 +449,7 @@ export default function SimulatorSidebar({
         {/* Saved Triads Section */}
         <div className="mt-4 tour-triads">
           <div className="flex items-center justify-between mb-2">
-            <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">Triadas Guardadas</h4>
+            <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">{t('triad.title')}</h4>
               <div className="flex items-center gap-3">
                 <Button
                   onClick={() => { setOpenTriadDialog(true); setEditingTriadIndex(-1); setEditingTriad({ name: `Triada ${savedTriads.length + 1}`, idTerminal: '', idSucursal: '', serialNumber: '' }); }}
@@ -434,7 +457,7 @@ export default function SimulatorSidebar({
                   size="small"
                   sx={{ fontWeight: 800, borderRadius: 2, px: 2.5, py: 1 }}
                 >
-                  CREAR TRIADA
+                  {t('triad.createBtn')}
                 </Button>
                 {/* Removed direct Guardar button per request */}
               </div>
@@ -456,7 +479,7 @@ export default function SimulatorSidebar({
                   >
                     <div
                       onClick={() => {
-                        setSelectedTriadIndex(idx);
+                        updateSelectedTriadIndex(idx);
                         onSyncParam('idTerminal', triad.idTerminal);
                         onSyncParam('idSucursal', triad.idSucursal);
                         onSyncParam('serialNumber', triad.serialNumber);
@@ -484,7 +507,7 @@ export default function SimulatorSidebar({
                 ))}
             </div>
           ) : (
-            <div className="py-4 text-center opacity-60">No hay triadas guardadas</div>
+            <div className="py-4 text-center opacity-60">{t('triad.noTriads')}</div>
           )}
           <Snackbar open={snackOpen} autoHideDuration={2500} onClose={() => setSnackOpen(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
             <Alert onClose={() => setSnackOpen(false)} severity={snackSeverity} sx={{ width: '100%' }}>
@@ -496,12 +519,12 @@ export default function SimulatorSidebar({
         {/* Triad Edit/Create Dialog (Material UI inputs) */}
         <Dialog open={openTriadDialog} onClose={() => setOpenTriadDialog(false)} maxWidth="sm" fullWidth>
           <DialogTitle sx={{ px: { xs: 3, sm: 4 }, pt: { xs: 3.5, sm: 4 }, pb: 1, fontWeight: 950, fontSize: { xs: '1.2rem', sm: '1.4rem' }, letterSpacing: '-0.02em', textTransform: 'uppercase' }}>
-            {editingTriadIndex === -1 ? 'Crear Triada' : 'Editar Triada'}
+            {editingTriadIndex === -1 ? t('triad.createTitle') : t('triad.editTitle')}
           </DialogTitle>
           <DialogContent sx={{ px: { xs: 3, sm: 4 }, py: 2 }}>
             <Box sx={{ display: 'grid', gap: { xs: 2, sm: 2.5 }, gridTemplateColumns: '1fr', mt: 1.5 }}>
               <FormControl fullWidth error={!!triadErrors.name} variant="outlined">
-                <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Nombre</Typography>
+                <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('triad.nameLabel')}</Typography>
                 <OutlinedInput
                   value={editingTriad.name}
                   onChange={(e) => { setEditingTriad({ ...editingTriad, name: e.target.value }); setTriadErrors({ ...triadErrors, name: undefined }); }}
@@ -593,7 +616,7 @@ export default function SimulatorSidebar({
                 }
               }}
             >
-              Cancelar
+              {t('triad.cancelBtn')}
             </Button>
             <Button 
               variant="contained" 
@@ -616,7 +639,7 @@ export default function SimulatorSidebar({
                 }
               }}
             >
-              {editingTriadIndex === -1 ? 'Crear' : 'Guardar'}
+              {editingTriadIndex === -1 ? t('triad.createAction') : t('triad.saveAction')}
             </Button>
           </DialogActions>
         </Dialog>

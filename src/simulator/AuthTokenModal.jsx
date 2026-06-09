@@ -83,7 +83,7 @@ export default function AuthTokenModal({
               bgcolor: 'action.hover'
             } 
           }} 
-          aria-label="Cerrar modal"
+          aria-label={t('token.closeModal')}
         >
           <X size={18} />
         </IconButton>
@@ -118,9 +118,8 @@ export default function AuthTokenModal({
                   color: env === 'prod' ? 'error.main' : env === 'uat' ? 'primary.main' : 'success.main'
                 }}
               >
-                <MenuItem value="dev" sx={{ fontSize: '13px', fontWeight: 700 }}>DEV - Ambiente Desarrollo</MenuItem>
-                <MenuItem value="uat" sx={{ fontSize: '13px', fontWeight: 700 }}>UAT - Ambiente Pruebas</MenuItem>
-                <MenuItem value="prod" sx={{ fontSize: '13px', fontWeight: 700 }}>PROD - Ambiente Producción</MenuItem>
+                <MenuItem value="dev" sx={{ fontSize: '13px', fontWeight: 700 }}>{t('token.envDev')}</MenuItem>
+                <MenuItem value="uat" sx={{ fontSize: '13px', fontWeight: 700 }}>{t('token.envUat')}</MenuItem>
               </Select>
             </FormControl>
 
@@ -214,15 +213,20 @@ export default function AuthTokenModal({
                   transform: 'scale(0.98)',
                 },
                 '&.Mui-disabled': {
-                  background: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)',
-                  color: (theme) => theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
+                  background: (theme) => fetching
+                    ? (theme.palette.mode === 'dark' ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' : 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)')
+                    : (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.06)'),
+                  color: (theme) => fetching
+                    ? '#ffffff'
+                    : (theme.palette.mode === 'dark' ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)'),
+                  opacity: fetching ? 0.8 : 1,
                   boxShadow: 'none',
                 }
               }}
             >
               {fetching ? (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                  <CircularProgress size={16} color="#ffffff" />
+                  <CircularProgress size={16} color="inherit" />
                   <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#ffffff' }}>{t('fetchingToken')}</Typography>
                 </Box>
               ) : (
@@ -354,7 +358,7 @@ export default function AuthTokenModal({
             <Lock size={16} style={{ color: '#10b981' }} />
           </Box>
           <Typography sx={{ fontSize: '11px', color: 'text.secondary', fontWeight: 500 }}>
-            Tus credenciales se procesan de forma segura y se almacenan únicamente de manera local.
+            {t('token.privacyNote')}
           </Typography>
         </Box>
       </DialogContent>
