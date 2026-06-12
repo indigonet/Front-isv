@@ -37,8 +37,8 @@ export const ThemeProvider = ({ children }) => {
           main: darkMode ? '#6366f1' : '#4f46e5', // Indigo-500 in dark mode, Indigo-600 in light mode
         },
         background: {
-          default: darkMode ? '#0f172a' : '#f8fafc',
-          paper: darkMode ? '#1e293b' : '#ffffff',
+          default: darkMode ? '#121b2d' : '#f8fafc',
+          paper: darkMode ? '#1c283f' : '#ffffff',
         },
         text: {
           primary: darkMode ? '#f8fafc' : '#0f172a',
@@ -95,7 +95,7 @@ export const ThemeProvider = ({ children }) => {
               borderRadius: '16px', // exact 1rem as requested
               border: darkMode ? '1px solid rgba(99, 102, 241, 0.25)' : '1px solid rgba(79, 70, 229, 0.2)',
               backgroundImage: 'none',
-              backgroundColor: darkMode ? '#1e293b' : '#ffffff',
+              backgroundColor: darkMode ? '#1c283f' : '#ffffff',
               boxShadow: darkMode 
                 ? '0 25px 50px -12px rgba(0, 0, 0, 0.5), 0 0 35px rgba(99, 102, 241, 0.15)'
                 : '0 25px 50px -12px rgba(79, 70, 229, 0.08)',
@@ -213,7 +213,7 @@ export const ThemeProvider = ({ children }) => {
         MuiTooltip: {
           styleOverrides: {
             tooltip: {
-              backgroundColor: darkMode ? '#1e293b' : '#0f172a',
+              backgroundColor: darkMode ? '#1c283f' : '#0f172a',
               border: darkMode ? '1px solid rgba(255, 255, 255, 0.08)' : '1px solid rgba(0, 0, 0, 0.06)',
               borderRadius: '8px',
               boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.2)',

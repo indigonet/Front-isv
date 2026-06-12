@@ -196,7 +196,7 @@ export default function Topbar() {
             {/* Selector de idiomas */}
             <div className="language-selector">
               <button
-                className="language-toggle"
+                className="language-toggle btn-reset"
                 onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
                 aria-label={t("topbar.language")}
                 onBlur={() => setTimeout(() => setShowLanguageDropdown(false), 200)}
@@ -211,7 +211,7 @@ export default function Topbar() {
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
-                    className={`language-option ${language === "es" ? "active" : ""}`}
+                    className={`language-option btn-reset ${language === "es" ? "active" : ""}`}
                     onClick={() => handleLanguageChange("es")}
                     onMouseDown={(e) => e.preventDefault()}
                   >
@@ -219,7 +219,7 @@ export default function Topbar() {
                     <span>Español</span>
                   </button>
                   <button
-                    className={`language-option ${language === "en" ? "active" : ""}`}
+                    className={`language-option btn-reset ${language === "en" ? "active" : ""}`}
                     onClick={() => handleLanguageChange("en")}
                     onMouseDown={(e) => e.preventDefault()}
                   >
@@ -227,7 +227,7 @@ export default function Topbar() {
                     <span>English</span>
                   </button>
                   <button
-                    className={`language-option ${language === "pt" ? "active" : ""}`}
+                    className={`language-option btn-reset ${language === "pt" ? "active" : ""}`}
                     onClick={() => handleLanguageChange("pt")}
                     onMouseDown={(e) => e.preventDefault()}
                   >
@@ -371,7 +371,7 @@ export default function Topbar() {
             <div className="mobile-actions-row">
               <div className="language-selector">
                 <button
-                  className="language-toggle"
+                  className="language-toggle btn-reset"
                   onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
                   aria-label={t("topbar.language")}
                 >
@@ -382,21 +382,21 @@ export default function Topbar() {
                 {showLanguageDropdown && (
                   <div className="language-dropdown">
                     <button
-                      className={`language-option ${language === "es" ? "active" : ""}`}
+                      className={`language-option btn-reset ${language === "es" ? "active" : ""}`}
                       onClick={() => handleLanguageChange("es")}
                     >
                       <span className="flag">🇪🇸</span>
                       <span>Español</span>
                     </button>
                     <button
-                      className={`language-option ${language === "en" ? "active" : ""}`}
+                      className={`language-option btn-reset ${language === "en" ? "active" : ""}`}
                       onClick={() => handleLanguageChange("en")}
                     >
                       <span className="flag">🇺🇸</span>
                       <span>English</span>
                     </button>
                     <button
-                      className={`language-option ${language === "pt" ? "active" : ""}`}
+                      className={`language-option btn-reset ${language === "pt" ? "active" : ""}`}
                       onClick={() => handleLanguageChange("pt")}
                     >
                       <span className="flag">🇵🇹</span>

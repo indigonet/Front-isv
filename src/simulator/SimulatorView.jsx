@@ -23,9 +23,26 @@ export default function SimulatorView({ onLog }) {
 
   const [method,   setMethod]   = useState('POST');
   const [env,      setEnv]      = useState('uat');
-  const [selectedId, setSelectedId] = useState(COMMAND_METHODS[0].id);
-  const [url,      setUrl]      = useState(API_BASE.uat + (COMMAND_METHODS[0].endpoint || 'poll'));
-  const [body,     setBody]     = useState(JSON.stringify(COMMAND_METHODS[0].template, null, 2));
+  const [selectedId, setSelectedId] = useState(() => {
+    const saved = localStorage.getItem(`isv_selected_command_${country}`);
+    const methods = CONFIG[country].COMMAND_METHODS;
+    if (saved && methods.some(m => m.id === saved)) {
+      return saved;
+    }
+    return methods[0].id;
+  });
+  const [url,      setUrl]      = useState(() => {
+    const savedCmd = localStorage.getItem(`isv_selected_command_${country}`);
+    const methods = CONFIG[country].COMMAND_METHODS;
+    const activeMethod = (savedCmd && methods.find(m => m.id === savedCmd)) || methods[0];
+    return API_BASE.uat + (activeMethod.endpoint || 'poll');
+  });
+  const [body,     setBody]     = useState(() => {
+    const savedCmd = localStorage.getItem(`isv_selected_command_${country}`);
+    const methods = CONFIG[country].COMMAND_METHODS;
+    const activeMethod = (savedCmd && methods.find(m => m.id === savedCmd)) || methods[0];
+    return JSON.stringify(activeMethod.template, null, 2);
+  });
   const [loading,  setLoading]  = useState(false);
   const [response, setResponse] = useState(null);
   const [abortController, setAbortController] = useState(null);
@@ -37,6 +54,13 @@ export default function SimulatorView({ onLog }) {
   const [flashBaseAmount, setFlashBaseAmount] = useState(() => Number(localStorage.getItem('isv_flash_base_amount')) || 5990);
   const [flashAltAmount, setFlashAltAmount] = useState(() => Number(localStorage.getItem('isv_flash_alt_amount')) || 1000);
   const [flashAltThreshold, setFlashAltThreshold] = useState(() => Number(localStorage.getItem('isv_flash_alt_threshold')) || 5);
+
+  const [isAmountStatic, setIsAmountStatic] = useState(() => localStorage.getItem('isv_amount_static') === 'true');
+  const [isTicketStatic, setIsTicketStatic] = useState(() => localStorage.getItem('isv_ticket_static') === 'true');
+
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   React.useEffect(() => {
     localStorage.setItem('isv_flash_count', String(flashCount));
@@ -54,6 +78,14 @@ export default function SimulatorView({ onLog }) {
     localStorage.setItem('isv_flash_alt_threshold', String(flashAltThreshold));
   }, [flashAltThreshold]);
 
+  React.useEffect(() => {
+    localStorage.setItem('isv_amount_static', String(isAmountStatic));
+  }, [isAmountStatic]);
+
+  React.useEffect(() => {
+    localStorage.setItem('isv_ticket_static', String(isTicketStatic));
+  }, [isTicketStatic]);
+
   const [isTourRunning, setIsTourRunning] = useState(false);
 
   const handleTourFinish = () => {
@@ -64,7 +96,10 @@ export default function SimulatorView({ onLog }) {
 
   
   const [params, setParams] = useState(() => {
-    const template = { ...COMMAND_METHODS[0].template };
+    const savedCmd = localStorage.getItem(`isv_selected_command_${country}`);
+    const methods = CONFIG[country].COMMAND_METHODS;
+    const activeMethod = (savedCmd && methods.find(m => m.id === savedCmd)) || methods[0];
+    const template = { ...activeMethod.template };
     const keyPrefix = `isv_pos_${country}_${env}`;
     return {
       ...template,
@@ -166,16 +201,18 @@ export default function SimulatorView({ onLog }) {
   // When country changes, reset command and url
   React.useEffect(() => {
     const newConfig = CONFIG[country];
-    const firstMethod = newConfig.COMMAND_METHODS[0];
-    setSelectedId(firstMethod.id);
-    setUrl(newConfig.API_BASE[env] + (firstMethod.endpoint || ''));
-    setBody(JSON.stringify(firstMethod.template, null, 2));
+    const savedCmd = localStorage.getItem(`isv_selected_command_${country}`);
+    const activeMethod = (savedCmd && newConfig.COMMAND_METHODS.find(m => m.id === savedCmd)) || newConfig.COMMAND_METHODS[0];
+    
+    setSelectedId(activeMethod.id);
+    setUrl(newConfig.API_BASE[env] + (activeMethod.endpoint || ''));
+    setBody(JSON.stringify(activeMethod.template, null, 2));
     const keyPrefix = `isv_pos_${country}_${env}`;
     setParams(prev => ({
-      ...firstMethod.template,
-      idTerminal:   localStorage.getItem(`${keyPrefix}_idTerminal`)   || firstMethod.template.idTerminal,
-      idSucursal:   localStorage.getItem(`${keyPrefix}_idSucursal`)   || firstMethod.template.idSucursal,
-      serialNumber: localStorage.getItem(`${keyPrefix}_idSerialNumber`) || firstMethod.template.serialNumber,
+      ...activeMethod.template,
+      idTerminal:   localStorage.getItem(`${keyPrefix}_idTerminal`)   || activeMethod.template.idTerminal,
+      idSucursal:   localStorage.getItem(`${keyPrefix}_idSucursal`)   || activeMethod.template.idSucursal,
+      serialNumber: localStorage.getItem(`${keyPrefix}_idSerialNumber`) || activeMethod.template.serialNumber,
     }));
     setIsTourRunning(false); // Stop onboarding tour if running
   }, [country]);
@@ -235,6 +272,7 @@ export default function SimulatorView({ onLog }) {
   // Called by SimulatorSidebar when a command is selected
   const handleLoadTemplate = React.useCallback((bodyStr, endpoint, cmdId) => {
     setSelectedId(cmdId);
+    localStorage.setItem(`isv_selected_command_${country}`, cmdId);
     try {
       let template = JSON.parse(bodyStr);
 
@@ -310,7 +348,7 @@ export default function SimulatorView({ onLog }) {
           setParams((prev) => {
             const isAr = country === 'ar';
             if (isAr) {
-              const randomAmount = Math.floor(Math.random() * (85000 - 1500 + 1) + 1500) * 100;
+              const randomAmount = isAmountStatic ? prev.amount : (Math.floor(Math.random() * (85000 - 1500 + 1) + 1500) * 100);
               const randomTip = Math.floor(Math.random() * (2500 - 0 + 1) + 0) * 100;
               return {
                 ...prev,
@@ -319,8 +357,8 @@ export default function SimulatorView({ onLog }) {
               };
             } else {
               const base = Math.floor(Math.random() * 99) + 1;
-              const randomAmount = (base * 1000) + 990;
-              const randomTicket = String(parseInt(prev.ticketNumber || "0") + 1);
+              const randomAmount = isAmountStatic ? prev.amount : ((base * 1000) + 990);
+              const randomTicket = isTicketStatic ? prev.ticketNumber : String(parseInt(prev.ticketNumber || "0") + 1);
               return {
                 ...prev,
                 amount: randomAmount,
@@ -426,8 +464,8 @@ export default function SimulatorView({ onLog }) {
         for (let i = 1; i <= totalSales; i++) {
           if (!flashRef.current) break;
           
-          // Determine amount based on threshold
-          const amountToUse = i >= threshold ? Number(flashAltAmount) : Number(flashBaseAmount);
+          // Determine amount based on threshold, respecting isAmountStatic
+          const amountToUse = isAmountStatic ? iterParams.amount : (i >= threshold ? Number(flashAltAmount) : Number(flashBaseAmount));
           iterParams.amount = amountToUse;
           
           // Strip out simulator parameters before sending payload to the API
@@ -446,7 +484,7 @@ export default function SimulatorView({ onLog }) {
           await runRequest(bodyToUse);
           
           if (i < totalSales && flashRef.current) {
-            const nextTicket = String(parseInt(iterParams.ticketNumber || "0") + 1);
+            const nextTicket = isTicketStatic ? iterParams.ticketNumber : String(parseInt(iterParams.ticketNumber || "0") + 1);
             const nextCustomId = String(Math.floor(Math.random() * 9999999));
             const nextEmployeeId = (parseInt(iterParams.employeeId || "1") % 99) + 1;
             
@@ -674,6 +712,10 @@ export default function SimulatorView({ onLog }) {
               setFlashAltAmount={setFlashAltAmount}
               flashAltThreshold={flashAltThreshold}
               setFlashAltThreshold={setFlashAltThreshold}
+              isAmountStatic={isAmountStatic}
+              setIsAmountStatic={setIsAmountStatic}
+              isTicketStatic={isTicketStatic}
+              setIsTicketStatic={setIsTicketStatic}
             />
           </div>
 
@@ -836,6 +878,10 @@ export default function SimulatorView({ onLog }) {
                 setFlashAltAmount={setFlashAltAmount}
                 flashAltThreshold={flashAltThreshold}
                 setFlashAltThreshold={setFlashAltThreshold}
+                isAmountStatic={isAmountStatic}
+                setIsAmountStatic={setIsAmountStatic}
+                isTicketStatic={isTicketStatic}
+                setIsTicketStatic={setIsTicketStatic}
               />
             </div>
 
@@ -895,10 +941,10 @@ export default function SimulatorView({ onLog }) {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[55vh] md:h-[50vh] mt-1">
             <div className="flex flex-col min-h-0">
-              <CodeBlock code={selectedHistoryItem?.request} filename="request.json" />
+              <CodeBlock code={selectedHistoryItem?.request} filename="REQUEST" />
             </div>
             <div className="flex flex-col min-h-0">
-              <CodeBlock code={selectedHistoryItem?.response ? selectedHistoryItem.response : {}} filename="response.json" />
+              <CodeBlock code={selectedHistoryItem?.response ? selectedHistoryItem.response : {}} filename="RESPONSE" />
             </div>
           </div>
         </div>

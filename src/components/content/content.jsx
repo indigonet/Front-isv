@@ -110,14 +110,14 @@ export default function Content() {
             
             <div className="hero-actions">
               <button 
-                className={`cta-button primary ${downloading ? "loading" : ""}`}
+                className={`cta-button primary btn-reset ${downloading ? "loading" : ""}`}
                 onClick={handleDownload}
               >
                 <Download size={20} />
                 {downloading ? t("downloading") : t("topbar.download") + " Toolkit"}
               </button>
               <button 
-                className="cta-button secondary"
+                className="cta-button secondary btn-reset"
                 onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
               >
                 {t("learnMore")}

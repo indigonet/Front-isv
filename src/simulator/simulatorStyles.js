@@ -11,7 +11,7 @@ export function isSimulatorDesktop() {
 export function simPageBgSx(theme) {
   const dark = theme.palette.mode === 'dark';
   return {
-    background: dark ? '#0c0f14' : '#f1f5f9',
+    background: dark ? '#121b2d' : '#f1f5f9',
   };
 }
 
@@ -40,7 +40,7 @@ export function simCardSx(theme, extra = {}) {
     borderRadius: `${SIM_RADIUS}px`,
     border: '1px solid',
     borderColor: dark ? alpha('#fff', 0.12) : alpha('#0f172a', 0.1),
-    bgcolor: dark ? '#0f1727' : '#ffffff',
+    bgcolor: dark ? '#1c283f' : '#ffffff',
     boxShadow: dark
       ? `0 6px 24px -8px ${alpha('#000', 0.6)}`
       : `0 6px 20px -6px ${alpha('#0f172a', 0.12)}`,

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronRight, Layers, History, X, Trash2, Play, RefreshCw, Lock, ShieldCheck, Wand2, HelpCircle, XCircle } from 'lucide-react';
+import { ChevronRight, Layers, History, X, Trash2, Play, RefreshCw, Lock, ShieldCheck, Wand2, HelpCircle, XCircle, Save } from 'lucide-react';
 
 import { CONFIG } from './simulator.constants';
 import { useLanguage } from '../context/LanguageContext';
@@ -74,6 +74,10 @@ export default function SimulatorSidebar({
   setFlashAltAmount,
   flashAltThreshold,
   setFlashAltThreshold,
+  isAmountStatic,
+  setIsAmountStatic,
+  isTicketStatic,
+  setIsTicketStatic,
 }) {
   const { t } = useLanguage();
 
@@ -227,22 +231,41 @@ export default function SimulatorSidebar({
   }, [selectedTriadIndex, savedTriads, onSyncParam]);
 
   const validateTriad = (triad) => {
-    if (!triad.idTerminal || !triad.idSucursal || !triad.serialNumber) return { ok: false, msg: t('triad.requiredFields') };
-    if (triad.idTerminal.length > 20 || triad.idSucursal.length > 20 || triad.serialNumber.length > 20) return { ok: false, msg: t('triad.maxLength') };
-    return { ok: true };
+    const errors = {};
+    if (!triad.name || !triad.name.trim()) {
+      errors.name = t('triad.nameRequired') || 'El nombre es requerido';
+    }
+    if (!triad.idTerminal || !triad.idTerminal.trim()) {
+      errors.idTerminal = t('triad.terminalRequired') || 'ID Terminal es requerido';
+    } else if (triad.idTerminal.length > 20) {
+      errors.idTerminal = t('triad.maxLength') || 'Límite de 20 caracteres';
+    }
+    
+    if (!triad.idSucursal || !triad.idSucursal.trim()) {
+      errors.idSucursal = t('triad.sucursalRequired') || 'ID Sucursal es requerido';
+    } else if (triad.idSucursal.length > 20) {
+      errors.idSucursal = t('triad.maxLength') || 'Límite de 20 caracteres';
+    }
+    
+    if (!triad.serialNumber || !triad.serialNumber.trim()) {
+      errors.serialNumber = t('triad.serialRequired') || 'Serial Number es requerido';
+    } else if (triad.serialNumber.length > 20) {
+      errors.serialNumber = t('triad.maxLength') || 'Límite de 20 caracteres';
+    }
+    
+    return {
+      ok: Object.keys(errors).length === 0,
+      errors
+    };
   };
 
   const saveCurrentTriad = () => {
     const newTriad = { name: `Triada ${savedTriads.length + 1}`, idTerminal: params.idTerminal || '', idSucursal: params.idSucursal || '', serialNumber: params.serialNumber || '' };
     const res = validateTriad(newTriad);
     if (!res.ok) {
-      // map to inline errors when possible
-      const errs = {};
-      if (res.msg.includes('Terminal')) errs.idTerminal = res.msg;
-      if (res.msg.includes('Sucursal')) errs.idSucursal = res.msg;
-      if (res.msg.includes('Serial')) errs.serialNumber = res.msg;
-      setTriadErrors(errs);
-      return window.alert(res.msg);
+      setTriadErrors(res.errors);
+      const msg = Object.values(res.errors).join('\n');
+      return window.alert(msg);
     }
     const exists = savedTriads.findIndex((t) => t.idTerminal === newTriad.idTerminal && t.idSucursal === newTriad.idSucursal && t.serialNumber === newTriad.serialNumber);
     if (exists !== -1) { updateSelectedTriadIndex(exists); return window.alert(t('triad.exists')); }
@@ -262,6 +285,7 @@ export default function SimulatorSidebar({
   };
 
   const openEditTriad = (index) => {
+    setTriadErrors({});
     setEditingTriadIndex(index);
     setEditingTriad(savedTriads[index]);
     setOpenTriadDialog(true);
@@ -270,11 +294,7 @@ export default function SimulatorSidebar({
   const saveEditedTriad = () => {
     const res = validateTriad(editingTriad);
     if (!res.ok) {
-      const errs = {};
-      if (res.msg.includes('Terminal')) errs.idTerminal = res.msg;
-      if (res.msg.includes('Sucursal')) errs.idSucursal = res.msg;
-      if (res.msg.includes('Serial')) errs.serialNumber = res.msg;
-      setTriadErrors(errs);
+      setTriadErrors(res.errors);
       return;
     }
     const dup = savedTriads.findIndex((t, i) => i !== editingTriadIndex && t.idTerminal === editingTriad.idTerminal && t.idSucursal === editingTriad.idSucursal && t.serialNumber === editingTriad.serialNumber);
@@ -286,6 +306,87 @@ export default function SimulatorSidebar({
     setEditingTriadIndex(-1);
     setTriadErrors({});
     showSnackbar(editingTriadIndex === -1 ? t('triad.created') : t('triad.saved'), 'success');
+  };
+
+  const handlePasteAutocomplete = (text) => {
+    if (!text) return;
+    const cleanText = text.trim();
+    
+    // 1. Try to split by common separators (tab, semicolon, comma, vertical bar, slash, spaces)
+    let parts = cleanText.split(/[\t;,|\/]+|\s+/).map(s => s.trim()).filter(Boolean);
+    
+    let term = '';
+    let suc = '';
+    let serial = '';
+    
+    if (parts.length >= 3) {
+      term = parts[0];
+      suc = parts[1];
+      serial = parts[2];
+    } else if (parts.length === 1) {
+      const token = parts[0];
+      // Continuous format detection (length 22 is typical: 8 terminal, 4 sucursal, 10 serial)
+      if (token.length === 22) {
+        term = token.substring(0, 8);
+        suc = token.substring(8, 12);
+        serial = token.substring(12, 22);
+      } else {
+        showSnackbar(t('triad.pasteError') || 'Formato de portapapeles no soportado', 'error');
+        return;
+      }
+    } else {
+      showSnackbar(t('triad.pasteError') || 'Formato de portapapeles no soportado', 'error');
+      return;
+    }
+    
+    if (term && suc && serial) {
+      setEditingTriad(prev => ({
+        ...prev,
+        idTerminal: term,
+        idSucursal: suc,
+        serialNumber: serial.toUpperCase()
+      }));
+      setTriadErrors(prev => ({
+        ...prev,
+        idTerminal: undefined,
+        idSucursal: undefined,
+        serialNumber: undefined
+      }));
+      showSnackbar(t('triad.pasteSuccess') || 'Tríada cargada con éxito', 'success');
+    }
+  };
+
+  const handleSaveWrittenTriad = () => {
+    const term = params.idTerminal || '';
+    const suc = params.idSucursal || '';
+    const serial = params.serialNumber || '';
+    
+    const name = window.prompt(t('triad.promptName') || 'Ingrese un nombre para la tríada:', `Triada ${savedTriads.length + 1}`);
+    if (name === null) return; // cancelled
+    const finalName = name.trim() || `Triada ${savedTriads.length + 1}`;
+    
+    const newTriad = {
+      name: finalName,
+      idTerminal: term,
+      idSucursal: suc,
+      serialNumber: serial
+    };
+    
+    const res = validateTriad(newTriad);
+    if (!res.ok) {
+      const msg = Object.values(res.errors).join('\n');
+      return window.alert(msg);
+    }
+    
+    const exists = savedTriads.findIndex((t) => t.idTerminal === newTriad.idTerminal && t.idSucursal === newTriad.idSucursal && t.serialNumber === newTriad.serialNumber);
+    if (exists !== -1) {
+      updateSelectedTriadIndex(exists);
+      return window.alert(t('triad.exists') || 'La tríada ya existe.');
+    }
+    
+    updateSavedTriads([...savedTriads, newTriad]);
+    updateSelectedTriadIndex(savedTriads.length);
+    showSnackbar(t('triad.created') || 'Tríada creada', 'success');
   };
 
   // ── Render one input field based on its FIELD_CONFIG type ──────────────────
@@ -395,6 +496,32 @@ export default function SimulatorSidebar({
           }
           className="w-full bg-background border border-accent/10 rounded-xl px-3 py-2.5 outline-none focus:border-accent transition-all font-black text-text-primary text-sm shadow-sm"
         />
+        {field === 'amount' && (
+          <label className="flex items-center gap-1.5 px-1 mt-1.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={isAmountStatic}
+              onChange={(e) => setIsAmountStatic(e.target.checked)}
+              className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+            />
+            <span className="text-[9px] font-bold text-text-secondary/80 uppercase tracking-wider cursor-pointer">
+              {t('field.amountStatic')}
+            </span>
+          </label>
+        )}
+        {field === 'ticketNumber' && (
+          <label className="flex items-center gap-1.5 px-1 mt-1.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={isTicketStatic}
+              onChange={(e) => setIsTicketStatic(e.target.checked)}
+              className="w-3.5 h-3.5 cursor-pointer rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <span className="text-[9px] font-bold text-text-secondary/80 uppercase tracking-wider">
+              {t('field.ticketStatic')}
+            </span>
+          </label>
+        )}
         {(field === 'ticketNumber' || field === 'customId') && (
           <div className="flex justify-end text-[10px] font-bold text-text-secondary/60 px-1 mt-0.5">
             {String(value ?? '').length}/24
@@ -465,6 +592,17 @@ export default function SimulatorSidebar({
             }}
             className="w-full bg-background border border-accent/10 rounded-xl px-3 py-2.5 outline-none focus:border-accent transition-all font-black text-text-primary text-sm shadow-sm"
           />
+          <label className="flex items-center gap-1.5 px-1 mt-1.5 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={isAmountStatic}
+              onChange={(e) => setIsAmountStatic(e.target.checked)}
+              className="w-3.5 h-3.5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+            />
+            <span className="text-[9px] font-bold text-text-secondary/80 cursor-pointer uppercase tracking-wider">
+              {t('field.amountStatic')}
+            </span>
+          </label>
         </label>
 
         {/* Monto Alternativo */}
@@ -552,18 +690,17 @@ export default function SimulatorSidebar({
 
         {/* Saved Triads Section */}
         <div className="mt-4 tour-triads">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
             <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">{t('triad.title')}</h4>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 flex-wrap">
                 <Button
-                  onClick={() => { setOpenTriadDialog(true); setEditingTriadIndex(-1); setEditingTriad({ name: `Triada ${savedTriads.length + 1}`, idTerminal: '', idSucursal: '', serialNumber: '' }); }}
+                  onClick={() => { setTriadErrors({}); setOpenTriadDialog(true); setEditingTriadIndex(-1); setEditingTriad({ name: `Triada ${savedTriads.length + 1}`, idTerminal: '', idSucursal: '', serialNumber: '' }); }}
                   variant="outlined"
                   size="small"
                   sx={{ fontWeight: 800, borderRadius: 2, px: 2.5, py: 1 }}
                 >
                   {t('triad.createBtn')}
                 </Button>
-                {/* Removed direct Guardar button per request */}
               </div>
           </div>
 
@@ -620,13 +757,37 @@ export default function SimulatorSidebar({
           </Snackbar>
         </div>
 
-        {/* Triad Edit/Create Dialog (Material UI inputs) */}
         <Dialog open={openTriadDialog} onClose={() => setOpenTriadDialog(false)} maxWidth="sm" fullWidth>
-          <DialogTitle sx={{ px: { xs: 3, sm: 4 }, pt: { xs: 3.5, sm: 4 }, pb: 1, fontWeight: 950, fontSize: { xs: '1.2rem', sm: '1.4rem' }, letterSpacing: '-0.02em', textTransform: 'uppercase' }}>
-            {editingTriadIndex === -1 ? t('triad.createTitle') : t('triad.editTitle')}
+          <DialogTitle sx={{ px: { xs: 3, sm: 4 }, pt: { xs: 3.5, sm: 4 }, pb: 1, fontWeight: 950, fontSize: { xs: '1.2rem', sm: '1.4rem' }, letterSpacing: '-0.02em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span>{editingTriadIndex === -1 ? t('triad.createTitle') : t('triad.editTitle')}</span>
+            <Tooltip title="Pegado Especial">
+              <IconButton 
+                onClick={async () => {
+                  try {
+                    const text = await navigator.clipboard.readText();
+                    handlePasteAutocomplete(text);
+                  } catch (err) {
+                    showSnackbar('No se pudo acceder al portapapeles', 'error');
+                  }
+                }}
+                color="primary"
+                sx={{
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  borderRadius: '10px',
+                  p: 1,
+                  '&:hover': {
+                    backgroundColor: 'action.hover'
+                  }
+                }}
+              >
+                <Wand2 className="w-4.5 h-4.5" />
+              </IconButton>
+            </Tooltip>
           </DialogTitle>
           <DialogContent sx={{ px: { xs: 3, sm: 4 }, py: 2 }}>
             <Box sx={{ display: 'grid', gap: { xs: 2, sm: 2.5 }, gridTemplateColumns: '1fr', mt: 1.5 }}>
+
               <FormControl fullWidth error={!!triadErrors.name} variant="outlined">
                 <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('triad.nameLabel')}</Typography>
                 <OutlinedInput
@@ -761,6 +922,17 @@ export default function SimulatorSidebar({
                 /{selected.endpoint?.toUpperCase() || 'UNKNOWN'} · CMD {selected.template?.command ?? '—'}
               </p>
             </div>
+
+            {/* Save Written Triad Icon Button (entre comando y parameters) */}
+            <Tooltip title={t('triad.saveAction') || "Guardar Tríada Escrita"}>
+              <button
+                type="button"
+                onClick={handleSaveWrittenTriad}
+                className="btn-reset p-2 hover:bg-white/10 rounded-xl text-text-secondary/80 hover:text-white transition-all cursor-pointer flex items-center justify-center shrink-0"
+              >
+                <Save className={`w-4 h-4 ${selected.color}`} />
+              </button>
+            </Tooltip>
             {(selected.id === 'sale_promo' || selected.id === 'c2c_mode' || selected.id === 'bioauth') && (
               <div className="relative">
                 <button

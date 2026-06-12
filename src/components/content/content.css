@@ -30,10 +30,10 @@
 /* Variables CSS para temas - Unificado con index.css */
 :root {
   /* Dark Mode - Flutter/Material Inspired */
-  --color-bg-primary: #0f172a;
-  --color-bg-secondary: #1e293b;
-  --color-bg-tertiary: #2d3748;
-  --hero-bg: radial-gradient(circle at 50% 50%, #1e293b 0%, #0f172a 100%);
+  --color-bg-primary: #121b2d;
+  --color-bg-secondary: #1c283f;
+  --color-bg-tertiary: #273754;
+  --hero-bg: radial-gradient(circle at 50% 50%, #1c283f 0%, #121b2d 100%);
 
   --color-text-primary: #f8fafc;
   --color-text-secondary: #94a3b8;
@@ -48,8 +48,8 @@
   --color-secondary-rgb: 56, 189, 248;
   --color-accent: #f43f5e; /* Rose accent */
 
-  --card-bg: rgba(15, 23, 42, 0.6);
-  --card-bg-solid: #2d3748;
+  --card-bg: rgba(28, 40, 63, 0.65);
+  --card-bg-solid: #1c283f;
   --card-border: rgba(255, 255, 255, 0.1);
   --card-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
   --card-shadow-hover: 0 30px 60px -12px rgba(0, 0, 0, 0.6);

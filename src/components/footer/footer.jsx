@@ -5,7 +5,7 @@ export default class Footer extends Component {
   render() {
     return (
       <footer className="footer">
-        <span>© 2026 ISV Toolkit - iOnetech</span>
+        <span>© {new Date().getFullYear()} ISV Toolkit - iOnetech - Desarrollado por Matias Peñaloza</span>
       </footer>
     )
   }

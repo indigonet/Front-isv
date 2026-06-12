@@ -39,10 +39,10 @@ body {
 
 /* ===== Variables globales ===== */
 :root {
-  /* Dark theme by default - Balanced Slate */
-  --bg-main: #0f172a;
-  --bg-surface: #1e293b;
-  --bg-card: #2d3748;
+  /* Dark theme by default - Premium Slate Blue */
+  --bg-main: #121b2d;
+  --bg-surface: #1c283f;
+  --bg-card: #273754;
   
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
