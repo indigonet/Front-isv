@@ -66,6 +66,14 @@ export default function SimulatorSidebar({
   loading,
   isFlashRunning,
   isStopping,
+  flashCount,
+  setFlashCount,
+  flashBaseAmount,
+  setFlashBaseAmount,
+  flashAltAmount,
+  setFlashAltAmount,
+  flashAltThreshold,
+  setFlashAltThreshold,
 }) {
   const { t } = useLanguage();
 
@@ -401,6 +409,102 @@ export default function SimulatorSidebar({
     );
   };
 
+  const renderFlashParams = () => {
+    if (selectedId !== 'flash_sale') return null;
+    return (
+      <>
+        {/* Cantidad de Ventas */}
+        <label className="block space-y-1.5">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] font-black text-text-secondary tracking-widest leading-none uppercase">
+              {t('field.flashCount')}
+            </span>
+          </div>
+          <input
+            type="number"
+            value={flashCount}
+            onChange={(e) => {
+              const val = e.target.value === '' ? '' : Math.max(1, Number(e.target.value));
+              setFlashCount(val);
+            }}
+            className="w-full bg-background border border-accent/10 rounded-xl px-3 py-2.5 outline-none focus:border-accent transition-all font-black text-text-primary text-sm shadow-sm"
+          />
+        </label>
+
+        {/* A partir de qué venta */}
+        <label className="block space-y-1.5">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] font-black text-text-secondary tracking-widest leading-none uppercase">
+              {t('field.flashAltThreshold')}
+            </span>
+          </div>
+          <input
+            type="number"
+            value={flashAltThreshold}
+            onChange={(e) => {
+              const val = e.target.value === '' ? '' : Math.max(1, Number(e.target.value));
+              setFlashAltThreshold(val);
+            }}
+            className="w-full bg-background border border-accent/10 rounded-xl px-3 py-2.5 outline-none focus:border-accent transition-all font-black text-text-primary text-sm shadow-sm"
+          />
+        </label>
+
+        {/* Monto Base */}
+        <label className="block space-y-1.5">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] font-black text-text-secondary tracking-widest leading-none uppercase">
+              {t('field.flashBaseAmount')}
+            </span>
+          </div>
+          <input
+            type="text"
+            value={formatCurrency(flashBaseAmount)}
+            onChange={(e) => {
+              const parsed = parseCurrency(e.target.value);
+              setFlashBaseAmount(parsed);
+            }}
+            className="w-full bg-background border border-accent/10 rounded-xl px-3 py-2.5 outline-none focus:border-accent transition-all font-black text-text-primary text-sm shadow-sm"
+          />
+        </label>
+
+        {/* Monto Alternativo */}
+        <label className="block space-y-1.5">
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] font-black text-text-secondary tracking-widest leading-none uppercase">
+              {t('field.flashAltAmount')}
+            </span>
+          </div>
+          <input
+            type="text"
+            value={formatCurrency(flashAltAmount)}
+            onChange={(e) => {
+              const parsed = parseCurrency(e.target.value);
+              setFlashAltAmount(parsed);
+            }}
+            className="w-full bg-background border border-accent/10 rounded-xl px-3 py-2.5 outline-none focus:border-accent transition-all font-black text-text-primary text-sm shadow-sm"
+          />
+        </label>
+      </>
+    );
+  };
+
+  const renderDynamicFields = () => {
+    const triadKeys = ['idTerminal', 'idSucursal', 'serialNumber'];
+    
+    if (selectedId === 'flash_sale') {
+      const remainingFields = selected.fields.filter(f => !triadKeys.includes(f) && f !== 'amount');
+      return (
+        <>
+          {triadKeys.filter(f => selected.fields.includes(f)).map(renderField)}
+          {renderFlashParams()}
+          {remainingFields.map(renderField)}
+        </>
+      );
+    }
+    
+    return selected.fields.map(renderField);
+  };
+
   return (
     <div className="lg:col-span-4 space-y-6">
 
@@ -691,7 +795,7 @@ export default function SimulatorSidebar({
           <div className="tour-params">
             <div className="border-t border-accent/5" />
               <div className="grid grid-cols-2 gap-2 mt-4">
-                {selected.fields.map(renderField)}
+                {renderDynamicFields()}
               </div>
           </div>
         )}

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 @theme {
   --color-background: var(--bg-main);
   --color-card: var(--bg-surface);
@@ -130,7 +132,7 @@ a:hover {
 }
 
 /* ===== Buttons ===== */
-button {
+button:not(.btn-reset):not([class*="Mui"]) {
   appearance: none;
   border: none;
   border-radius: 8px;
@@ -148,18 +150,38 @@ button {
               box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-button:hover {
+button:not(.btn-reset):not([class*="Mui"]):hover {
   filter: brightness(1.1);
   box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
 }
 
-button:active {
+button:not(.btn-reset):not([class*="Mui"]):active {
   filter: brightness(0.95);
 }
 
-button:focus-visible {
+button:not(.btn-reset):not([class*="Mui"]):focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+.btn-reset {
+  appearance: none;
+  background: transparent;
+  border: none;
+  padding: 0;
+  box-shadow: none;
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  border-radius: 0;
+  cursor: pointer;
+  outline: none;
+}
+
+.btn-reset:hover {
+  filter: none;
+  box-shadow: none;
 }
 
 /* ===== Images ===== */
@@ -231,4 +253,39 @@ input[type="text"], input[type="password"], textarea, select {
 input[type="text"]:focus, input[type="password"]:focus, textarea:focus, select:focus {
   border-color: var(--primary) !important;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
+}
+
+/* ===== Professional Scrollbar with outline spacing ===== */
+.professional-scrollbar {
+  overflow-y: scroll !important;
+}
+
+.professional-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.professional-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.professional-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; /* slate-300 */
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 9999px;
+  min-height: 40px;
+}
+
+.professional-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8; /* slate-400 */
+}
+
+/* Dark mode */
+[data-theme="dark"] .professional-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #475569; /* slate-600 */
+}
+
+[data-theme="dark"] .professional-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #64748b; /* slate-500 */
 }

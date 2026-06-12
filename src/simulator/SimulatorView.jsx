@@ -1,15 +1,17 @@
 import React, { useState, useRef } from 'react';
-import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle, ChevronUp, ChevronDown, Trash2, HelpCircle } from 'lucide-react';
+import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle, ChevronUp, ChevronDown, Trash2, HelpCircle, Clock } from 'lucide-react';
 
 import { CONFIG } from './simulator.constants';
 import { useSimulatorAuth }                from './useSimulatorAuth';
 import AuthTokenModal                      from './AuthTokenModal';
 import SimulatorSidebar                    from './SimulatorSidebar';
-import SimulatorHistory                    from './SimulatorHistory';
+import SimulatorHistory, { CodeBlock }      from './SimulatorHistory';
 import Modal                               from '../components/modal/Modal';
 import { useLanguage }                     from '../context/LanguageContext';
 import OnboardingTour                      from '../components/OnboardingTour';
 import { Tooltip }                         from '@mui/material';
+
+
 
 export default function SimulatorView({ onLog }) {
   const { t } = useLanguage();
@@ -30,6 +32,27 @@ export default function SimulatorView({ onLog }) {
   const [isFlashRunning, setIsFlashRunning] = useState(false);
   const [isStopping,     setIsStopping]     = useState(false);
   const flashRef = useRef(false);
+
+  const [flashCount, setFlashCount] = useState(() => Number(localStorage.getItem('isv_flash_count')) || 10);
+  const [flashBaseAmount, setFlashBaseAmount] = useState(() => Number(localStorage.getItem('isv_flash_base_amount')) || 5990);
+  const [flashAltAmount, setFlashAltAmount] = useState(() => Number(localStorage.getItem('isv_flash_alt_amount')) || 1000);
+  const [flashAltThreshold, setFlashAltThreshold] = useState(() => Number(localStorage.getItem('isv_flash_alt_threshold')) || 5);
+
+  React.useEffect(() => {
+    localStorage.setItem('isv_flash_count', String(flashCount));
+  }, [flashCount]);
+
+  React.useEffect(() => {
+    localStorage.setItem('isv_flash_base_amount', String(flashBaseAmount));
+  }, [flashBaseAmount]);
+
+  React.useEffect(() => {
+    localStorage.setItem('isv_flash_alt_amount', String(flashAltAmount));
+  }, [flashAltAmount]);
+
+  React.useEffect(() => {
+    localStorage.setItem('isv_flash_alt_threshold', String(flashAltThreshold));
+  }, [flashAltThreshold]);
 
   const [isTourRunning, setIsTourRunning] = useState(false);
 
@@ -69,7 +92,29 @@ export default function SimulatorView({ onLog }) {
   }, [env, country]);
 
   // ── Request history ─────────────────────────────────────────────
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState(() => {
+    try {
+      const saved = localStorage.getItem('isv_simulator_history');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+      return [];
+    } catch {
+      return [];
+    }
+  });
+
+  React.useEffect(() => {
+    try {
+      localStorage.setItem('isv_simulator_history', JSON.stringify(history));
+    } catch (e) {
+      console.error('Failed to save simulator history:', e);
+    }
+  }, [history]);
+
   const [selectedHistoryItem, setSelectedHistoryItem] = useState(null);
 
   // ── Auth modal ──────────────────────────────────────────────────
@@ -259,6 +304,33 @@ export default function SimulatorView({ onLog }) {
       const controller = new AbortController();
       setAbortController(controller);
 
+      const updateParamsOnResponse = () => {
+        const isSaleCmd = selectedId === 'c2c_sale' || selectedId === 'sale_promo' || selectedId === 'sale_ar' || selectedId === 'flash_sale';
+        if (isSaleCmd) {
+          setParams((prev) => {
+            const isAr = country === 'ar';
+            if (isAr) {
+              const randomAmount = Math.floor(Math.random() * (85000 - 1500 + 1) + 1500) * 100;
+              const randomTip = Math.floor(Math.random() * (2500 - 0 + 1) + 0) * 100;
+              return {
+                ...prev,
+                amount: randomAmount,
+                tip: randomTip
+              };
+            } else {
+              const base = Math.floor(Math.random() * 99) + 1;
+              const randomAmount = (base * 1000) + 990;
+              const randomTicket = String(parseInt(prev.ticketNumber || "0") + 1);
+              return {
+                ...prev,
+                amount: randomAmount,
+                ticketNumber: randomTicket
+              };
+            }
+          });
+        }
+      };
+
       try {
         let fetchUrl = url;
         const proxyMap = {
@@ -302,7 +374,13 @@ export default function SimulatorView({ onLog }) {
         const ct = res.headers.get('content-type');
         data = ct?.includes('application/json') ? await res.json() : await res.text();
 
+        updateParamsOnResponse();
+
         setResponse(data);
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('es-CL');
+        const timeStr = now.toLocaleTimeString('es-CL', { hour12: false });
+
         setHistory((prev) => [{
           id:       `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           method,
@@ -310,7 +388,7 @@ export default function SimulatorView({ onLog }) {
           status:   res.status,
           request:  bodyToUse,
           response: data,
-          time:     new Date().toLocaleTimeString('es-CL', { hour12: false }),
+          time:     `${dateStr} ${timeStr}`,
         }, ...prev].slice(0, 100)); // Cap history to 100 items to prevent memory leaks
 
         if (res.ok) {
@@ -320,6 +398,8 @@ export default function SimulatorView({ onLog }) {
           if (res.status === 401) setShow401Prompt(true);
         }
       } catch (error) {
+        updateParamsOnResponse();
+
         if (error.name === 'AbortError') {
           if (onLog) onLog(t('requestCancelled'), 'info');
         } else {
@@ -340,24 +420,38 @@ export default function SimulatorView({ onLog }) {
         setIsFlashRunning(true);
         
         let iterParams = { ...params };
+        const totalSales = Number(flashCount) || 1;
+        const threshold = Number(flashAltThreshold) || (totalSales + 1);
         
-        while (flashRef.current) {
+        for (let i = 1; i <= totalSales; i++) {
           if (!flashRef.current) break;
-          const bodyToUse = JSON.stringify(iterParams, null, 2);
+          
+          // Determine amount based on threshold
+          const amountToUse = i >= threshold ? Number(flashAltAmount) : Number(flashBaseAmount);
+          iterParams.amount = amountToUse;
+          
+          // Strip out simulator parameters before sending payload to the API
+          const {
+            flashCount: _,
+            flashBaseAmount: __,
+            flashAltAmount: ___,
+            flashAltThreshold: ____,
+            ...apiParams
+          } = iterParams;
+          
+          const bodyToUse = JSON.stringify(apiParams, null, 2);
           setBody(bodyToUse); 
           setParams(iterParams);
           
           await runRequest(bodyToUse);
           
-          if (flashRef.current) {
-            const nextAmount = Math.floor(Math.random() * (99000 - 1000 + 1) + 1000);
+          if (i < totalSales && flashRef.current) {
             const nextTicket = String(parseInt(iterParams.ticketNumber || "0") + 1);
             const nextCustomId = String(Math.floor(Math.random() * 9999999));
             const nextEmployeeId = (parseInt(iterParams.employeeId || "1") % 99) + 1;
             
             iterParams = {
               ...iterParams,
-              amount: nextAmount,
               ticketNumber: nextTicket,
               customId: nextCustomId,
               employeeId: nextEmployeeId,
@@ -572,6 +666,14 @@ export default function SimulatorView({ onLog }) {
               loading={loading}
               isFlashRunning={isFlashRunning}
               isStopping={isStopping}
+              flashCount={flashCount}
+              setFlashCount={setFlashCount}
+              flashBaseAmount={flashBaseAmount}
+              setFlashBaseAmount={setFlashBaseAmount}
+              flashAltAmount={flashAltAmount}
+              setFlashAltAmount={setFlashAltAmount}
+              flashAltThreshold={flashAltThreshold}
+              setFlashAltThreshold={setFlashAltThreshold}
             />
           </div>
 
@@ -726,6 +828,14 @@ export default function SimulatorView({ onLog }) {
                 loading={loading}
                 isFlashRunning={isFlashRunning}
                 isStopping={isStopping}
+                flashCount={flashCount}
+                setFlashCount={setFlashCount}
+                flashBaseAmount={flashBaseAmount}
+                setFlashBaseAmount={setFlashBaseAmount}
+                flashAltAmount={flashAltAmount}
+                setFlashAltAmount={setFlashAltAmount}
+                flashAltThreshold={flashAltThreshold}
+                setFlashAltThreshold={setFlashAltThreshold}
               />
             </div>
 
@@ -765,25 +875,30 @@ export default function SimulatorView({ onLog }) {
         onClose={() => setSelectedHistoryItem(null)} 
         title={`${t('simTransactionDetail')}: ${selectedHistoryItem?.endpoint?.toUpperCase()}`}
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 grid-rows-2 md:grid-rows-none gap-4 sm:gap-6 h-[60vh] md:h-[58vh]">
-          <div className="space-y-3 flex flex-col min-h-0">
-            <h4 className="text-[10px] font-black text-accent uppercase tracking-widest flex items-center gap-2 px-1">
-              <Code2 className="w-3.5 h-3.5" /> {t('simRequestBody')}
-            </h4>
-            <div className="flex-1 overflow-auto bg-slate-50/80 rounded-2xl p-5 border border-slate-200 custom-scrollbar">
-              <pre className="font-mono text-[11px] text-slate-800 font-bold leading-relaxed whitespace-pre-wrap selection:bg-accent/20">
-                {selectedHistoryItem?.request}
-              </pre>
-            </div>
+        <div className="flex flex-col h-full">
+          {/* Header metadata */}
+          <div className="flex flex-wrap items-center gap-2 pb-3 mb-4 border-b border-slate-200/50 dark:border-accent/10">
+            <span className={`text-[9px] font-black px-2 py-0.5 rounded border ${
+              selectedHistoryItem?.status < 400 
+                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]' 
+                : 'bg-rose-500/10 text-rose-500 border-rose-500/20 shadow-[0_0_8px_rgba(244,63,94,0.1)]'
+            }`}>
+              {selectedHistoryItem?.status}
+            </span>
+            <span className="text-[9px] font-black px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-text-secondary tracking-wider">
+              {selectedHistoryItem?.method}
+            </span>
+            <span className="text-[9px] font-bold text-text-secondary/50 flex items-center gap-1 ml-auto shrink-0">
+              <Clock className="w-3 h-3 opacity-60" /> {selectedHistoryItem?.time}
+            </span>
           </div>
-          <div className="space-y-3 flex flex-col min-h-0">
-            <h4 className="text-[10px] font-black text-sky-500 uppercase tracking-widest flex items-center gap-2 px-1">
-              <Terminal className="w-3.5 h-3.5" /> {t('simResponseData')}
-            </h4>
-            <div className="flex-1 overflow-auto bg-slate-50/80 rounded-2xl p-5 border border-slate-200 custom-scrollbar">
-              <pre className="font-mono text-[11px] text-slate-800 font-bold leading-relaxed whitespace-pre-wrap selection:bg-sky-500/20">
-                {selectedHistoryItem?.response ? JSON.stringify(selectedHistoryItem.response, null, 2) : '{}'}
-              </pre>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 h-[55vh] md:h-[50vh] mt-1">
+            <div className="flex flex-col min-h-0">
+              <CodeBlock code={selectedHistoryItem?.request} filename="request.json" />
+            </div>
+            <div className="flex flex-col min-h-0">
+              <CodeBlock code={selectedHistoryItem?.response ? selectedHistoryItem.response : {}} filename="response.json" />
             </div>
           </div>
         </div>

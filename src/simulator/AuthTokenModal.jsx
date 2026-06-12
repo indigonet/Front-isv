@@ -290,6 +290,7 @@ export default function AuthTokenModal({
               {accessToken ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                   <Box
+                    className="professional-scrollbar"
                     sx={{
                       p: 2,
                       bgcolor: 'background.paper',
@@ -298,11 +299,11 @@ export default function AuthTokenModal({
                       borderRadius: '12px',
                       wordBreak: 'break-all',
                       fontFamily: 'monospace',
-                      fontSize: '10.5px',
+                      fontSize: '10px',
                       color: '#10b981',
                       fontWeight: 700,
-                      maxHeight: '120px',
-                      overflowY: 'auto'
+                      maxHeight: '200px',
+                      overflowY: 'scroll'
                     }}
                   >
                     {accessToken}
