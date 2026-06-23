@@ -5,61 +5,113 @@ import { useLanguage } from '../context/LanguageContext';
 export default function OnboardingTour({ run, onFinish }) {
   const { language, t } = useLanguage();
 
-  const getSidebarTarget = (className) => {
-    return window.innerWidth >= 1024 
-      ? `#desktop-commands-anchor .${className}`
-      : `#mobile-commands-anchor .${className}`;
-  };
+  const [isMobileLayout, setIsMobileLayout] = React.useState(window.innerWidth < 1024);
 
-  const steps = [
-    {
-      target: '#tour-welcome',
-      content: t('tour.welcome'),
-      disableBeacon: true,
-      placement: 'bottom',
-    },
-    {
-      target: '#tour-country-selector',
-      content: t('tour.countrySelector'),
-      placement: 'bottom',
-    },
-    {
-      target: '#tour-auth-btn',
-      content: t('tour.authBtn'),
-      placement: 'bottom',
-    },
-    {
-      target: '#tour-request-response',
-      content: t('tour.requestResponse'),
-      placement: 'top',
-    },
-    {
-      target: '#tour-send-btn',
-      content: t('tour.sendBtn'),
-      placement: 'bottom',
-    },
-    
-    {
-      target: getSidebarTarget('tour-command-selector'),
-      content: t('tour.commandSelector'),
-      placement: 'bottom',
-    },
-    {
-      target: getSidebarTarget('tour-triads'),
-      content: t('tour.triads'),
-      placement: 'bottom',
-    },    
-    {
-      target: getSidebarTarget('tour-params'),
-      content: t('tour.params'),
-      placement: 'top',
-    },
-    {
-      target: '#tour-history',
-      content: t('tour.history'),
-      placement: 'top',
-    }
-  ];
+  React.useEffect(() => {
+    const handleResize = () => {
+      setIsMobileLayout(window.innerWidth < 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const steps = isMobileLayout
+    ? [
+        {
+          target: '#tour-welcome',
+          content: t('tour.welcome'),
+          disableBeacon: true,
+          placement: 'bottom',
+        },
+        {
+          target: '#tour-country-selector',
+          content: t('tour.countrySelector'),
+          placement: 'bottom',
+        },
+        {
+          target: '#tour-auth-btn',
+          content: t('tour.authBtn'),
+          placement: 'bottom',
+        },
+        {
+          target: '#mobile-commands-anchor .tour-command-selector',
+          content: t('tour.commandSelector'),
+          placement: 'bottom',
+        },
+        {
+          target: '#mobile-commands-anchor .tour-triads',
+          content: t('tour.triads'),
+          placement: 'bottom',
+        },
+        {
+          target: '#mobile-commands-anchor .tour-params',
+          content: t('tour.params'),
+          placement: 'top',
+        },
+        {
+          target: window.innerWidth >= 640 ? '#tour-send-btn' : '#tour-mobile-send-btn',
+          content: t('tour.sendBtn'),
+          placement: 'bottom',
+        },
+        {
+          target: '#tour-request-response',
+          content: t('tour.requestResponse'),
+          placement: 'top',
+        },
+        {
+          target: '#tour-history',
+          content: t('tour.history'),
+          placement: 'top',
+        }
+      ]
+    : [
+        {
+          target: '#tour-welcome',
+          content: t('tour.welcome'),
+          disableBeacon: true,
+          placement: 'bottom',
+        },
+        {
+          target: '#tour-country-selector',
+          content: t('tour.countrySelector'),
+          placement: 'bottom',
+        },
+        {
+          target: '#tour-auth-btn',
+          content: t('tour.authBtn'),
+          placement: 'bottom',
+        },
+        {
+          target: '#tour-request-response',
+          content: t('tour.requestResponse'),
+          placement: 'top',
+        },
+        {
+          target: '#tour-send-btn',
+          content: t('tour.sendBtn'),
+          placement: 'bottom',
+        },
+        {
+          target: '#desktop-commands-anchor .tour-command-selector',
+          content: t('tour.commandSelector'),
+          placement: 'bottom',
+        },
+        {
+          target: '#desktop-commands-anchor .tour-triads',
+          content: t('tour.triads'),
+          placement: 'bottom',
+        },
+        {
+          target: '#desktop-commands-anchor .tour-params',
+          content: t('tour.params'),
+          placement: 'top',
+        },
+        {
+          target: '#tour-history',
+          content: t('tour.history'),
+          placement: 'top',
+        }
+      ];
 
   const handleJoyrideCallback = (data) => {
     const { status } = data;

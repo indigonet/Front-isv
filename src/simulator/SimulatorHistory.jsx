@@ -14,7 +14,7 @@ export function CodeBlock({ code, filename }) {
     if (typeof code !== 'string') {
       try {
         cleanCode = JSON.stringify(code, null, 2);
-      } catch (e) {
+      } catch {
         cleanCode = String(code);
       }
     }
@@ -28,7 +28,7 @@ export function CodeBlock({ code, filename }) {
     displayCode = typeof code === 'string'
       ? JSON.stringify(JSON.parse(code), null, 2)
       : JSON.stringify(code, null, 2);
-  } catch (e) {
+  } catch {
     displayCode = typeof code === 'string' ? code : String(code);
   }
 
@@ -72,6 +72,34 @@ export function CodeBlock({ code, filename }) {
     </div>
   );
 }
+
+const getResponseMessages = (response) => {
+  if (!response) return [];
+  let obj = response;
+  if (typeof response === 'string') {
+    try {
+      obj = JSON.parse(response);
+    } catch {
+      return [];
+    }
+  }
+  if (typeof obj !== 'object' || obj === null) return [];
+
+  const msgs = [];
+  
+  if (obj.message && typeof obj.message === 'string') {
+    msgs.push(obj.message);
+  } else if (obj.responseMessage && typeof obj.responseMessage === 'string') {
+    msgs.push(obj.responseMessage);
+  }
+
+  const nestedMsg = obj.data?.response?.responseMessage || obj.response?.responseMessage || obj.data?.responseMessage;
+  if (nestedMsg && typeof nestedMsg === 'string' && !msgs.includes(nestedMsg)) {
+    msgs.push(nestedMsg);
+  }
+
+  return msgs;
+};
 
 export default function SimulatorHistory({ 
   history, 
@@ -119,6 +147,11 @@ export default function SimulatorHistory({
                 <div className="flex flex-col">
                   <span className="text-xs font-black text-text-primary uppercase tracking-tight group-hover:text-accent transition-colors">{h.endpoint}</span>
                   <span className="text-[9px] font-bold text-text-secondary/60">{h.method} · {h.time}</span>
+                  {getResponseMessages(h.response).map((msg, idx) => (
+                    <span key={idx} className="text-[10px] font-bold text-text-secondary/80 mt-0.5 break-all">
+                      {msg}
+                    </span>
+                  ))}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -211,6 +244,11 @@ export default function SimulatorHistory({
                   <div className="flex flex-col">
                     <span className="text-xs font-black text-text-primary uppercase tracking-tight group-hover:text-accent transition-colors">{h.endpoint}</span>
                     <span className="text-[9px] font-bold text-text-secondary/60">{h.method} · {h.time}</span>
+                    {getResponseMessages(h.response).map((msg, idx) => (
+                      <span key={idx} className="text-[10px] font-bold text-text-secondary/80 mt-0.5 break-all">
+                        {msg}
+                      </span>
+                    ))}
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

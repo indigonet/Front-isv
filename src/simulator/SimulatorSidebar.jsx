@@ -703,6 +703,7 @@ export default function SimulatorSidebar({
               </Select>
             </FormControl>
           </div>
+        </div>
 
         {/* Saved Triads Section */}
         <div className="mt-4 tour-triads">
@@ -976,7 +977,6 @@ export default function SimulatorSidebar({
               </span>
             )}
           </div>
-        </div>
 
         {/* Dynamic params */}
         {selected.fields.length > 0 && (
@@ -991,6 +991,7 @@ export default function SimulatorSidebar({
         {/* Send Button (Visible ONLY on small screens for mobile UX) */}
           <div className="sm:hidden pt-2">
            <button
+            id="tour-mobile-send-btn"
             onClick={loading ? onCancel : onSend}
             disabled={!loading && !accessToken}
             className={`w-full py-5 rounded-2xl font-black flex items-center justify-center gap-3 transition-all shadow-xl text-sm uppercase tracking-widest ${

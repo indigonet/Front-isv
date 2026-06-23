@@ -255,6 +255,15 @@ input[type="text"]:focus, input[type="password"]:focus, textarea:focus, select:f
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
 }
 
+/* Disable focus glow and borders for specific textareas (like simulator request JSON editor) */
+textarea.no-focus-glow,
+textarea.no-focus-glow:focus {
+  border: none !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
 /* ===== Professional Scrollbar with outline spacing ===== */
 .professional-scrollbar {
   overflow-y: scroll !important;

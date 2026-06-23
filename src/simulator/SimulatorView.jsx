@@ -774,7 +774,7 @@ export default function SimulatorView({ onLog }) {
               {/* Editor + Response view */}
               <div id="tour-request-response" className="grid grid-cols-1 xl:grid-cols-2 divide-y xl:divide-y-0 xl:divide-x divide-accent/5 flex-1 min-h-0">
                 <div className="flex flex-col bg-accent/1">
-                  <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
+                  <div className="px-6 h-14 bg-white/5 border-b border-white/5 flex items-center justify-between">
                     <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2">
                       <Cpu className="w-3.5 h-3.5 text-accent" /> REQUEST BODY (JSON)
                     </span>
@@ -789,7 +789,7 @@ export default function SimulatorView({ onLog }) {
                   </div>
                   <div className="flex-1 p-6">
                     <textarea
-                      className="w-full h-full min-h-100 bg-transparent outline-none resize-none text-emerald-500 font-mono text-[13px] font-bold leading-relaxed custom-scrollbar selection:bg-accent selection:text-white"
+                      className="w-full h-full min-h-100 bg-transparent outline-none border-none no-focus-glow resize-none text-emerald-500 font-mono text-[13px] font-bold leading-relaxed custom-scrollbar selection:bg-accent selection:text-white"
                       value={body}
                       readOnly
                       spellCheck="false"
@@ -798,7 +798,7 @@ export default function SimulatorView({ onLog }) {
                 </div>
 
                 <div id="response-view" className="flex flex-col bg-accent/1 scroll-mt-20">
-                  <div className="px-6 py-4 bg-white/5 border-b border-white/5 flex items-center justify-between">
+                  <div className="px-6 h-14 bg-white/5 border-b border-white/5 flex items-center justify-between">
                     <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2">
                       <Terminal className="w-3.5 h-3.5 text-sky-400" /> RESPONSE VIEW
                     </span>

@@ -312,7 +312,7 @@ const translations = {
     invalidRut: "RUT inválido (Módulo 11)",
     // Onboarding
     "tour.welcome": "¡Bienvenido al Simulador C2C! Aquí podrás probar y validar comandos sin necesidad de Postman.",
-    "tour.countrySelector": "Primero, elige el País y el Entorno (DEV, UAT, PROD) en el que quieres operar. Esto ajustará la URL de la API automáticamente.",
+    "tour.countrySelector": "Primero, elige el País y el Entorno (DEV, UAT) en el que quieres operar. Esto ajustará la URL de la API automáticamente.",
     "tour.authBtn": "Configura tus credenciales y obtén tu Token. Es esencial para poder autorizar las transacciones.",
     "tour.requestResponse": "Aquí verás el cuerpo de tu petición (JSON) y la respuesta exacta del servidor.",
     "tour.sendBtn": "¡Una vez configurado todo, presiona aquí para enviar el comando!",
