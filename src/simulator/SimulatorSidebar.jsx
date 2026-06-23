@@ -232,24 +232,29 @@ export default function SimulatorSidebar({
 
   const validateTriad = (triad) => {
     const errors = {};
-    if (!triad.name || !triad.name.trim()) {
+    const name = String(triad.name || '').trim();
+    const idTerminal = String(triad.idTerminal || '').trim();
+    const idSucursal = String(triad.idSucursal || '').trim();
+    const serialNumber = String(triad.serialNumber || '').trim();
+
+    if (!name) {
       errors.name = t('triad.nameRequired') || 'El nombre es requerido';
     }
-    if (!triad.idTerminal || !triad.idTerminal.trim()) {
+    if (!idTerminal) {
       errors.idTerminal = t('triad.terminalRequired') || 'ID Terminal es requerido';
-    } else if (triad.idTerminal.length > 20) {
+    } else if (idTerminal.length > 20) {
       errors.idTerminal = t('triad.maxLength') || 'Límite de 20 caracteres';
     }
     
-    if (!triad.idSucursal || !triad.idSucursal.trim()) {
+    if (!idSucursal) {
       errors.idSucursal = t('triad.sucursalRequired') || 'ID Sucursal es requerido';
-    } else if (triad.idSucursal.length > 20) {
+    } else if (idSucursal.length > 20) {
       errors.idSucursal = t('triad.maxLength') || 'Límite de 20 caracteres';
     }
     
-    if (!triad.serialNumber || !triad.serialNumber.trim()) {
+    if (!serialNumber) {
       errors.serialNumber = t('triad.serialRequired') || 'Serial Number es requerido';
-    } else if (triad.serialNumber.length > 20) {
+    } else if (serialNumber.length > 20) {
       errors.serialNumber = t('triad.maxLength') || 'Límite de 20 caracteres';
     }
     
@@ -260,14 +265,19 @@ export default function SimulatorSidebar({
   };
 
   const saveCurrentTriad = () => {
-    const newTriad = { name: `Triada ${savedTriads.length + 1}`, idTerminal: params.idTerminal || '', idSucursal: params.idSucursal || '', serialNumber: params.serialNumber || '' };
+    const newTriad = { 
+      name: `Triada ${savedTriads.length + 1}`, 
+      idTerminal: String(params.idTerminal || ''), 
+      idSucursal: String(params.idSucursal || ''), 
+      serialNumber: String(params.serialNumber || '') 
+    };
     const res = validateTriad(newTriad);
     if (!res.ok) {
       setTriadErrors(res.errors);
       const msg = Object.values(res.errors).join('\n');
       return window.alert(msg);
     }
-    const exists = savedTriads.findIndex((t) => t.idTerminal === newTriad.idTerminal && t.idSucursal === newTriad.idSucursal && t.serialNumber === newTriad.serialNumber);
+    const exists = savedTriads.findIndex((t) => String(t.idTerminal) === newTriad.idTerminal && String(t.idSucursal) === newTriad.idSucursal && String(t.serialNumber) === newTriad.serialNumber);
     if (exists !== -1) { updateSelectedTriadIndex(exists); return window.alert(t('triad.exists')); }
     updateSavedTriads([...savedTriads, newTriad]);
     updateSelectedTriadIndex(savedTriads.length);
@@ -292,15 +302,21 @@ export default function SimulatorSidebar({
   };
 
   const saveEditedTriad = () => {
-    const res = validateTriad(editingTriad);
+    const cleanedTriad = {
+      name: String(editingTriad.name || ''),
+      idTerminal: String(editingTriad.idTerminal || ''),
+      idSucursal: String(editingTriad.idSucursal || ''),
+      serialNumber: String(editingTriad.serialNumber || '')
+    };
+    const res = validateTriad(cleanedTriad);
     if (!res.ok) {
       setTriadErrors(res.errors);
       return;
     }
-    const dup = savedTriads.findIndex((t, i) => i !== editingTriadIndex && t.idTerminal === editingTriad.idTerminal && t.idSucursal === editingTriad.idSucursal && t.serialNumber === editingTriad.serialNumber);
+    const dup = savedTriads.findIndex((t, i) => i !== editingTriadIndex && String(t.idTerminal) === cleanedTriad.idTerminal && String(t.idSucursal) === cleanedTriad.idSucursal && String(t.serialNumber) === cleanedTriad.serialNumber);
     if (dup !== -1) return window.alert(t('triad.duplicate'));
     const copy = [...savedTriads];
-    if (editingTriadIndex === -1) copy.push(editingTriad); else copy[editingTriadIndex] = editingTriad;
+    if (editingTriadIndex === -1) copy.push(cleanedTriad); else copy[editingTriadIndex] = cleanedTriad;
     updateSavedTriads(copy);
     setOpenTriadDialog(false);
     setEditingTriadIndex(-1);
@@ -357,9 +373,9 @@ export default function SimulatorSidebar({
   };
 
   const handleSaveWrittenTriad = () => {
-    const term = params.idTerminal || '';
-    const suc = params.idSucursal || '';
-    const serial = params.serialNumber || '';
+    const term = String(params.idTerminal || '');
+    const suc = String(params.idSucursal || '');
+    const serial = String(params.serialNumber || '');
     
     const name = window.prompt(t('triad.promptName') || 'Ingrese un nombre para la tríada:', `Triada ${savedTriads.length + 1}`);
     if (name === null) return; // cancelled
@@ -378,7 +394,7 @@ export default function SimulatorSidebar({
       return window.alert(msg);
     }
     
-    const exists = savedTriads.findIndex((t) => t.idTerminal === newTriad.idTerminal && t.idSucursal === newTriad.idSucursal && t.serialNumber === newTriad.serialNumber);
+    const exists = savedTriads.findIndex((t) => String(t.idTerminal) === newTriad.idTerminal && String(t.idSucursal) === newTriad.idSucursal && String(t.serialNumber) === newTriad.serialNumber);
     if (exists !== -1) {
       updateSelectedTriadIndex(exists);
       return window.alert(t('triad.exists') || 'La tríada ya existe.');
@@ -658,7 +674,7 @@ export default function SimulatorSidebar({
           <div>
             <FormControl fullWidth variant="outlined" margin="dense">
               <Select
-                value={selectedId}
+                value={COMMAND_METHODS.some((m) => m.id === selectedId) ? selectedId : (COMMAND_METHODS[0]?.id || '')}
                 onChange={(e) => handleCommandChange(e.target.value)}
                 disabled={loading}
                 displayEmpty

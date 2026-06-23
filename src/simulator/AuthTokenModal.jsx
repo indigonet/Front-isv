@@ -100,7 +100,7 @@ export default function AuthTokenModal({
                 {t('simEnv')}
               </Typography>
               <Select
-                value={env}
+                value={env === 'prod' ? 'uat' : env}
                 onChange={(e) => {
                   const newEnv = e.target.value;
                   if (accessToken && !window.confirm(t('confirmClearToken'))) return;
