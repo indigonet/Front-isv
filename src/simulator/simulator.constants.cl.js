@@ -48,6 +48,7 @@ export const FIELD_CONFIG = {
   authType: { label: 'field.authType', type: 'number', span: 1 },
   employeeId: { label: 'field.employeeId', type: 'number', span: 1 },
   saleType: { label: 'field.saleType', type: 'number', span: 1 },
+  paymentCategory: { label: 'field.paymentCategory', type: 'text', span: 1 },
 };
 
 // ─── Templates ─────────────────────────────────────────────────────────────────
@@ -61,6 +62,7 @@ const BODY_C2C_SALE = {
   idTerminal: '', idSucursal: '', serialNumber: '',
   command: 100, amount: 5990, ticketNumber: '12',
   printOnPos: true, saleType: 1, employeeId: 1, customId: '1234',
+  paymentCategory: '',
 };
 
 const BODY_SALE_PROMO = {
@@ -139,7 +141,7 @@ export const COMMAND_METHODS = [
   {
     id: 'c2c_sale', label: 'cmd.c2c_sale', icon: Cloud, color: 'text-accent', bg: 'bg-accent/10',
     endpoint: 'sale',
-    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'ticketNumber', 'customId', 'saleType', 'employeeId', 'printOnPos'],
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'ticketNumber', 'customId', 'saleType', 'employeeId', 'paymentCategory', 'printOnPos'],
     template: BODY_C2C_SALE,
   },
   {
@@ -199,7 +201,7 @@ export const COMMAND_METHODS = [
   {
     id: 'flash_sale', label: 'cmd.flash_sale', icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-400/10',
     endpoint: 'sale',
-    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'ticketNumber', 'customId', 'saleType', 'employeeId', 'printOnPos'],
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'ticketNumber', 'customId', 'saleType', 'employeeId', 'paymentCategory', 'printOnPos'],
     template: BODY_C2C_SALE,
     isIterative: true,
   },

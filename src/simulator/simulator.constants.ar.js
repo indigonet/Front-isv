@@ -46,6 +46,7 @@ export const FIELD_CONFIG = {
   skipReceipt: { label: 'field.skipReceipt', type: 'toggle', span: 2 },
   authorizationCode: { label: 'field.authCode', type: 'text', span: 1 },
   originalTransDate: { label: 'field.originalDate', type: 'date', span: 2 },
+  paymentCategory: { label: 'field.paymentCategory', type: 'text', span: 1 },
 };
 
 const BODY_POLL_AR = {
@@ -80,6 +81,7 @@ const BODY_SALE_AR = {
   operationMode: 0,
   skipConfirmation: false,
   skipReceipt: false,
+  paymentCategory: '',
   customId: "1234"
 };
 
@@ -141,7 +143,7 @@ export const COMMAND_METHODS = [
   {
     id: 'sale_ar', label: 'cmd.sale_ar', icon: Cloud, color: 'text-accent', bg: 'bg-accent/10',
     endpoint: 'sale',
-    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'tip', 'installments', 'planId', 'printOnPos', 'customId'],
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'tip', 'installments', 'planId', 'paymentCategory', 'printOnPos', 'customId'],
     template: BODY_SALE_AR,
   },
   {

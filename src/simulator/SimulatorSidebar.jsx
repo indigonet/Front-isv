@@ -486,6 +486,29 @@ export default function SimulatorSidebar({
       );
     }
 
+    if (field === 'paymentCategory') {
+      return (
+        <label
+          key={field}
+          className={`block space-y-1.5 ${cfg.span === 2 ? 'col-span-2' : ''}`}
+        >
+          <div className="flex items-center justify-between px-1">
+            <span className="text-[10px] font-black text-text-secondary tracking-widest leading-none uppercase">
+              {t(cfg.label)}
+            </span>
+          </div>
+          <select
+            value={value}
+            onChange={(e) => handleParamChange(field, e.target.value)}
+            className="w-full bg-background border border-accent/10 rounded-xl px-3 py-2.5 outline-none focus:border-accent transition-all font-black text-text-primary text-sm shadow-sm cursor-pointer"
+          >
+            <option value="" className="bg-card text-text-primary">{t('paymentCategory.none')}</option>
+            <option value="FOOD_BENEFIT" className="bg-card text-text-primary">FOOD_BENEFIT</option>
+          </select>
+        </label>
+      );
+    }
+
     return (
       <label
         key={field}
