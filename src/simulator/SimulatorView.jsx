@@ -226,7 +226,13 @@ export default function SimulatorView({ onLog }) {
 
   // Sync body and persist triad whenever params change
   React.useEffect(() => {
-    setBody(JSON.stringify(params, null, 2));
+    const displayParams = { ...params };
+    if (displayParams.ticketNumber === '') displayParams.ticketNumber = '0';
+    if (displayParams.customId === '') displayParams.customId = '0';
+    if (displayParams.employeeId === '' || displayParams.employeeId === null || displayParams.employeeId === undefined) {
+      displayParams.employeeId = 0;
+    }
+    setBody(JSON.stringify(displayParams, null, 2));
     
     // Auto-save POS config triad specific to country/env
     const keyPrefix = `isv_pos_${country}_${env}`;
@@ -310,6 +316,11 @@ export default function SimulatorView({ onLog }) {
 
   const handleSend = async () => {
     let currentParams = { ...params };
+    if (currentParams.ticketNumber === '') currentParams.ticketNumber = '0';
+    if (currentParams.customId === '') currentParams.customId = '0';
+    if (currentParams.employeeId === '' || currentParams.employeeId === null || currentParams.employeeId === undefined) {
+      currentParams.employeeId = 0;
+    }
     const currentBodyStr = JSON.stringify(currentParams, null, 2);
 
     if (loading || isFlashRunning) return;
@@ -458,6 +469,11 @@ export default function SimulatorView({ onLog }) {
         setIsFlashRunning(true);
         
         let iterParams = { ...params };
+        if (iterParams.ticketNumber === '') iterParams.ticketNumber = '0';
+        if (iterParams.customId === '') iterParams.customId = '0';
+        if (iterParams.employeeId === '' || iterParams.employeeId === null || iterParams.employeeId === undefined) {
+          iterParams.employeeId = 0;
+        }
         const totalSales = Number(flashCount) || 1;
         const threshold = Number(flashAltThreshold) || (totalSales + 1);
         
@@ -476,6 +492,12 @@ export default function SimulatorView({ onLog }) {
             flashAltThreshold: ____,
             ...apiParams
           } = iterParams;
+
+          if (apiParams.ticketNumber === '') apiParams.ticketNumber = '0';
+          if (apiParams.customId === '') apiParams.customId = '0';
+          if (apiParams.employeeId === '' || apiParams.employeeId === null || apiParams.employeeId === undefined) {
+            apiParams.employeeId = 0;
+          }
           
           const bodyToUse = JSON.stringify(apiParams, null, 2);
           setBody(bodyToUse); 
