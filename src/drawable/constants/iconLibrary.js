@@ -1,0 +1,107 @@
+import {
+  Code,
+  Code2,
+  FileCode,
+  User,
+  Users,
+  UserCheck,
+  UserPlus,
+  Cloud,
+  Database,
+  Server,
+  Cpu,
+  HardDrive,
+  Router,
+  Globe,
+  Wifi,
+  Layers,
+  Boxes,
+  Activity,
+  Flame,
+  Terminal,
+  Receipt,
+  CreditCard,
+  Banknote,
+  Coins,
+  ShoppingBag,
+  ShoppingCart,
+  Store,
+  Printer,
+  QrCode,
+  BadgePercent,
+  BarChart3,
+  Laptop,
+  Smartphone,
+  Tablet,
+  FileText,
+  Folder,
+  Lock,
+  Key,
+  Shield,
+  ShieldCheck,
+} from "lucide-react";
+
+// --- EXPANDED DIAGRAMMING ICON LIBRARY ---
+export const ICON_LIBRARY = [
+  // Programación & Código (</>)
+  { id: "code", icon: Code, label: "Programación (</>)", category: "code" },
+  { id: "code2", icon: Code2, label: "Código Fuente", category: "code" },
+  { id: "filecode", icon: FileCode, label: "Archivo Código", category: "code" },
+
+  // Usuarios & Equipo
+  { id: "user", icon: User, label: "Usuario Individual", category: "users" },
+  { id: "users", icon: Users, label: "Usuarios / Equipo", category: "users" },
+  { id: "usercheck", icon: UserCheck, label: "Usuario Verificado", category: "users" },
+  { id: "userplus", icon: UserPlus, label: "Agregar Usuario", category: "users" },
+
+  // Infraestructura & Red (DevOps / Cloud)
+  { id: "cloud", icon: Cloud, label: "Nube / AWS / Cloud", category: "infra" },
+  { id: "database", icon: Database, label: "BD / SQL / Mongo", category: "infra" },
+  { id: "server", icon: Server, label: "Servidor Principal", category: "infra" },
+  { id: "cpu", icon: Cpu, label: "Microprocesador / CPU", category: "infra" },
+  { id: "harddrive", icon: HardDrive, label: "Disco / Almacenamiento", category: "infra" },
+  { id: "router", icon: Router, label: "Router / Switch Red", category: "infra" },
+  { id: "globe", icon: Globe, label: "Internet / Web", category: "infra" },
+  { id: "wifi", icon: Wifi, label: "Conexión WiFi", category: "infra" },
+  { id: "layers", icon: Layers, label: "Capas / Microservicios", category: "infra" },
+  { id: "boxes", icon: Boxes, label: "Docker / Contenedores", category: "infra" },
+  { id: "activity", icon: Activity, label: "Monitoreo APM / Logs", category: "infra" },
+  { id: "flame", icon: Flame, label: "Firewall / Seguridad", category: "infra" },
+
+  // POS & Comercio (Punto de Venta / Retail / ISV)
+  { id: "pos", icon: Terminal, label: "Terminal POS / Caja", category: "pos" },
+  { id: "receipt", icon: Receipt, label: "Recibo / Factura POS", category: "pos" },
+  { id: "card", icon: CreditCard, label: "Tarjeta de Crédito / Débito", category: "pos" },
+  { id: "banknote", icon: Banknote, label: "Dinero en Efectivo", category: "pos" },
+  { id: "coins", icon: Coins, label: "Monedas / Cambio", category: "pos" },
+  { id: "shoppingbag", icon: ShoppingBag, label: "Bolsa de Compra POS", category: "pos" },
+  { id: "cart", icon: ShoppingCart, label: "Carrito de Compras", category: "pos" },
+  { id: "store", icon: Store, label: "Tienda / Local", category: "pos" },
+  { id: "printer", icon: Printer, label: "Impresora Térmica POS", category: "pos" },
+  { id: "qrcode", icon: QrCode, label: "Código QR de Pago", category: "pos" },
+  { id: "badgepercent", icon: BadgePercent, label: "Descuento / Impuesto POS", category: "pos" },
+  { id: "barchart", icon: BarChart3, label: "Reporte / Ventas POS", category: "pos" },
+
+  // Dispositivos & Archivos
+  { id: "laptop", icon: Laptop, label: "Laptop / PC", category: "devices" },
+  { id: "mobile", icon: Smartphone, label: "Teléfono Móvil", category: "devices" },
+  { id: "tablet", icon: Tablet, label: "Tablet / POS Móvil", category: "devices" },
+  { id: "file", icon: FileText, label: "Documento PDF/Text", category: "devices" },
+  { id: "folder", icon: Folder, label: "Carpeta de Datos", category: "devices" },
+
+  // Seguridad & Acceso
+  { id: "lock", icon: Lock, label: "Candado / Bloqueo", category: "security" },
+  { id: "key", icon: Key, label: "Llave API / Secret", category: "security" },
+  { id: "shield", icon: Shield, label: "Escudo de Protección", category: "security" },
+  { id: "shieldcheck", icon: ShieldCheck, label: "Seguridad Aprobada", category: "security" },
+];
+
+export const ICON_CATEGORIES = [
+  { id: "all", label: "Todos" },
+  { id: "pos", label: "POS & Comercio" },
+  { id: "infra", label: "Infra & Cloud" },
+  { id: "code", label: "Programación (</>)" },
+  { id: "users", label: "Usuarios" },
+  { id: "devices", label: "Dispositivos" },
+  { id: "security", label: "Seguridad" },
+];

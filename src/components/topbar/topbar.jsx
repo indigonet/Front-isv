@@ -9,7 +9,7 @@ import iconDark from "../../assets/icono.png";
 import iconLight from "../../assets/iconoblanco.png";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "../../context/ThemeContext";
-import { Cloud } from "lucide-react";
+import { Cloud, Palette } from "lucide-react";
 
 export default function Topbar() {
   const [open, setOpen] = useState(false);
@@ -161,15 +161,19 @@ export default function Topbar() {
               <span>C2C</span>
             </a>
             <a
-              href="/notes"
+              href="/drawable"
               onClick={(e) => {
                 e.preventDefault();
-                goToNotes();
+                navigate("/drawable");
+                setOpen(false);
+                setShowLanguageDropdown(false);
               }}
-              className="menu-link"
+              className="menu-link diagram-link"
             >
-              Release notes
+              <Palette size={18} />
+              <span>{t("topbar.diagramacion")}</span>
             </a>
+
             <a
               href="#about"
               onClick={(e) => {
@@ -336,15 +340,19 @@ export default function Topbar() {
               <span>C2C</span>
             </a>
             <a
-              href="/notes"
+              href="/drawable"
               onClick={(e) => {
                 e.preventDefault();
-                goToNotes();
+                navigate("/drawable");
+                setOpen(false);
+                setShowLanguageDropdown(false);
               }}
-              className="menu-link"
+              className="menu-link diagram-link"
             >
-              Release notes
+              <Palette size={18} />
+              <span>{t("topbar.diagramacion")}</span>
             </a>
+
             <a
               href="#about"
               onClick={(e) => {

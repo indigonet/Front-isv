@@ -132,7 +132,7 @@ a:hover {
 }
 
 /* ===== Buttons ===== */
-button:not(.btn-reset):not([class*="Mui"]) {
+button:not(.btn-reset):not(.btn-draw):not([class*="Mui"]) {
   appearance: none;
   border: none;
   border-radius: 8px;
@@ -150,16 +150,16 @@ button:not(.btn-reset):not([class*="Mui"]) {
               box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-button:not(.btn-reset):not([class*="Mui"]):hover {
+button:not(.btn-reset):not(.btn-draw):not([class*="Mui"]):hover {
   filter: brightness(1.1);
   box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
 }
 
-button:not(.btn-reset):not([class*="Mui"]):active {
+button:not(.btn-reset):not(.btn-draw):not([class*="Mui"]):active {
   filter: brightness(0.95);
 }
 
-button:not(.btn-reset):not([class*="Mui"]):focus-visible {
+button:not(.btn-reset):not(.btn-draw):not([class*="Mui"]):focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
@@ -181,6 +181,16 @@ button:not(.btn-reset):not([class*="Mui"]):focus-visible {
 
 .btn-reset:hover {
   filter: none;
+  box-shadow: none;
+}
+
+.btn-draw {
+  appearance: none;
+  border: none;
+  margin: 0;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
   box-shadow: none;
 }
 

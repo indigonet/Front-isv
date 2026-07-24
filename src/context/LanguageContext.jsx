@@ -87,6 +87,7 @@ const translations = {
     "topbar.logoText": "ISV Toolkit",
     "topbar.language": "Idioma",
     "topbar.theme": "Tema",
+    "topbar.diagramacion": "Diagramación",
 
     // Hero Section
     heroTitle: "ISV Toolkit",
@@ -373,6 +374,7 @@ const translations = {
     "topbar.logoText": "ISV Toolkit",
     "topbar.language": "Language",
     "topbar.theme": "Theme",
+    "topbar.diagramacion": "Diagramming",
 
     // Hero Section
     heroTitle: "ISV Toolkit",
@@ -654,6 +656,7 @@ const translations = {
     "topbar.logoText": "ISV Toolkit",
     "topbar.language": "Idioma",
     "topbar.theme": "Tema",
+    "topbar.diagramacion": "Diagramação",
     // Hero Section
     heroTitle: "ISV Toolkit",
     heroDescription:

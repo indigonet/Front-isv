@@ -44,20 +44,22 @@
 .topbar-container {
   width: 100%;
   max-width: 1200px;
-  background: var(--bg-primary);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid var(--border-color);
-  border-radius: 18px;
-  padding: 0.75rem 2rem;
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.72) 0%, rgba(30, 41, 59, 0.52) 100%);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 22px;
+  padding: 0.95rem 2.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.12);
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
 }
 
 [data-theme="light"] .topbar-container {
-  box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.08);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(241, 245, 249, 0.72) 100%);
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  box-shadow: 0 20px 40px -15px rgba(15, 23, 42, 0.06), inset 0 1px 0 0 rgba(255, 255, 255, 0.65);
 }
 
 .topbar-row {
@@ -115,17 +117,18 @@
 /* Desktop Menu Links */
 .desktop-menu {
   display: flex;
-  gap: 1rem;
+  gap: 1.75rem;
   align-items: center;
 }
 
+/* Desktop Menu Links */
 .desktop-menu .menu-link {
   color: var(--text-primary);
   text-decoration: none;
-  font-size: 1rem;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  font-size: 0.98rem;
+  font-weight: 600;
+  padding: 0.55rem 1.25rem;
+  border-radius: 10px;
   transition: all 0.3s ease;
   position: relative;
   cursor: pointer;
@@ -158,16 +161,16 @@
 
 /* Special styling for C2C cloud link */
 .menu-link.c2c-cloud {
-  background: rgba(56, 189, 248, 0.1) !important;
-  border: 1px solid rgba(56, 189, 248, 0.2);
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(37, 99, 235, 0.06) 100%) !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
   border-radius: 20px !important;
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0.5rem 1.1rem !important;
+  padding: 0.55rem 1.25rem !important;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 0 12px rgba(56, 189, 248, 0.1);
+  box-shadow: 0 4px 15px rgba(56, 189, 248, 0.08);
   animation: cloud-float 3s ease-in-out infinite;
 }
 
@@ -178,15 +181,15 @@
   left: -50%;
   width: 200%;
   height: 200%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
   opacity: 0;
   transition: opacity 0.3s ease;
 }
 
 .menu-link.c2c-cloud:hover {
-  background: rgba(56, 189, 248, 0.2) !important;
-  border-color: rgba(56, 189, 248, 0.4);
-  box-shadow: 0 0 16px rgba(56, 189, 248, 0.3);
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.22) 0%, rgba(37, 99, 235, 0.16) 100%) !important;
+  border-color: rgba(56, 189, 248, 0.45) !important;
+  box-shadow: 0 4px 20px rgba(56, 189, 248, 0.2);
 }
 
 .menu-link.c2c-cloud:hover::before {
@@ -199,8 +202,55 @@
 }
 
 [data-theme="dark"] .menu-link.c2c-cloud {
-  background: rgba(56, 189, 248, 0.15) !important;
-  border-color: rgba(56, 189, 248, 0.3);
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.16) 0%, rgba(37, 99, 235, 0.1) 100%) !important;
+  border-color: rgba(56, 189, 248, 0.35) !important;
+}
+
+/* Special styling for Diagramacion link */
+.menu-link.diagram-link {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.12) 0%, rgba(124, 58, 237, 0.06) 100%) !important;
+  border: 1px solid rgba(168, 85, 247, 0.3) !important;
+  border-radius: 20px !important;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0.55rem 1.25rem !important;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(168, 85, 247, 0.08);
+  animation: diagram-float 3.5s ease-in-out infinite;
+}
+
+.menu-link.diagram-link::before {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.menu-link.diagram-link:hover {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.22) 0%, rgba(124, 58, 237, 0.16) 100%) !important;
+  border-color: rgba(168, 85, 247, 0.45) !important;
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.25);
+}
+
+.menu-link.diagram-link:hover::before {
+  opacity: 1;
+}
+
+@keyframes diagram-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+[data-theme="dark"] .menu-link.diagram-link {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.16) 0%, rgba(124, 58, 237, 0.1) 100%) !important;
+  border-color: rgba(168, 85, 247, 0.35) !important;
 }
 
 /* Desktop Actions panel */
