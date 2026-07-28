@@ -30,6 +30,9 @@ import {
   Circle,
   Triangle,
   Diamond,
+  ArrowUpRight,
+  CornerDownRight,
+  TrendingUp,
   Sparkles,
   X,
   Search,
@@ -44,16 +47,128 @@ import {
   Target,
   Eye,
   EyeOff,
+  Type,
 } from "lucide-react";
+import ShareModal from "./components/ShareModal";
+import { decompressData, fetchProjectById } from "./utils/shareUtils";
+import LiveCursors from "./components/LiveCursors";
+import { usePeerCollaboration } from "./hooks/usePeerCollaboration";
 
-// Helper to accurately compute text bounding box dimensions based on font size and lines
-const computeTextDimensions = (text, fontSize, fontFamily) => {
-  const lines = (text || "").split("\n");
-  const maxChars = Math.max(...lines.map((l) => l.length), 1);
-  const multiplier = fontFamily === "mono" ? 0.6 : fontFamily === "sans" ? 0.55 : fontFamily === "serif" ? 0.54 : 0.52;
-  const width = Math.max(40, Math.round(maxChars * (fontSize * multiplier) + 16));
-  const height = Math.max(Math.round(fontSize * 1.3), Math.round(lines.length * (fontSize * 1.35)));
-  return { width, height };
+
+// Canvas 2D context for 100% pixel-accurate text measurement across all fonts and wide characters ('w', 'M', '@')
+let measureCanvasCtx = null;
+const getTextPixelWidth = (str, fontSize = 24, fontFamily = "sans") => {
+  if (!measureCanvasCtx) {
+    measureCanvasCtx = document.createElement("canvas").getContext("2d");
+  }
+  const fontCss = `600 ${fontSize}px ${
+    fontFamily === "mono"
+      ? "'Fira Code', 'Courier New', monospace"
+      : fontFamily === "serif"
+      ? "Georgia, 'Times New Roman', serif"
+      : fontFamily === "hand"
+      ? "'Architects Daughter', 'Caveat', cursive"
+      : "'Inter', system-ui, sans-serif"
+  }`;
+  measureCanvasCtx.font = fontCss;
+  return measureCanvasCtx.measureText(str || "").width;
+};
+
+// Helper to wrap text strings & paragraphs with 100% exact pixel precision to fit inside boxWidth
+const wrapTextLines = (text, fontSize = 24, fontFamily = "sans", boxWidth = 280) => {
+  const rawLines = (text || "").split("\n");
+  const maxAllowedWidth = Math.max(30, boxWidth - 28); // Generous 14px padding on each side
+
+  const result = [];
+  rawLines.forEach((line) => {
+    if (!line) {
+      result.push("");
+      return;
+    }
+    const words = line.split(" ");
+    let currentLine = "";
+
+    words.forEach((word) => {
+      const candidate = currentLine ? currentLine + " " + word : word;
+      if (getTextPixelWidth(candidate, fontSize, fontFamily) <= maxAllowedWidth) {
+        currentLine = candidate;
+      } else {
+        if (currentLine) {
+          result.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = word;
+        }
+
+        // Break single long words (like "wwwwwwwwwwwwwwwwwwww...") at exact pixel boundary
+        while (currentLine && getTextPixelWidth(currentLine, fontSize, fontFamily) > maxAllowedWidth) {
+          let breakIdx = currentLine.length - 1;
+          while (breakIdx > 1 && getTextPixelWidth(currentLine.slice(0, breakIdx), fontSize, fontFamily) > maxAllowedWidth) {
+            breakIdx--;
+          }
+          result.push(currentLine.slice(0, breakIdx));
+          currentLine = currentLine.slice(breakIdx);
+        }
+      }
+    });
+    if (currentLine) result.push(currentLine);
+  });
+
+  return result.length > 0 ? result : [""];
+};
+
+// Symmetrical, proportional text box dimension calculation (Figma/Miro style)
+const computeTextDimensions = (text, fontSize = 24, fontFamily = "sans", targetWidth = null) => {
+  const lines = (text || "Escribe tu texto...").split("\n");
+  
+  // Measure exact max pixel width of all lines using 2D Canvas context
+  let maxLineWidth = 0;
+  lines.forEach((line) => {
+    const w = getTextPixelWidth(line || "Escribe tu texto...", fontSize, fontFamily);
+    if (w > maxLineWidth) maxLineWidth = w;
+  });
+
+  const paddingH = Math.max(36, fontSize * 1.2);
+  const paddingV = Math.max(20, fontSize * 0.8);
+  const lineHeight = fontSize * 1.35;
+
+  // Natural symmetrical width & height that grows fluidly with font size and text length
+  const naturalWidth = Math.max(180, Math.round(maxLineWidth + paddingH));
+  const naturalHeight = Math.max(60, Math.round(lines.length * lineHeight + paddingV));
+
+  // If targetWidth is provided (e.g. user manually resized box), wrap lines to fit box
+  if (targetWidth && targetWidth > 120) {
+    const wrappedLines = wrapTextLines(text, fontSize, fontFamily, targetWidth);
+    const wrappedHeight = Math.max(60, Math.round(wrappedLines.length * lineHeight + paddingV));
+    return {
+      width: Math.max(targetWidth, naturalWidth),
+      height: Math.max(wrappedHeight, naturalHeight),
+      lines: wrappedLines,
+    };
+  }
+
+  return {
+    width: naturalWidth,
+    height: naturalHeight,
+    lines,
+  };
+};
+
+// Helper to scale font size down if text height exceeds box height, guaranteeing text fits inside box boundaries
+const getFittedText = (text, fontSize = 24, fontFamily = "sans", boxWidth = 280, boxHeight = 60) => {
+  let fs = fontSize || 24;
+  const targetW = Math.max(40, boxWidth);
+  const targetH = Math.max(30, boxHeight);
+
+  let lines = wrapTextLines(text, fs, fontFamily, targetW);
+
+  // Scale fontSize down if wrapped lines height exceeds boxHeight
+  while (fs > 10 && lines.length * (fs * 1.35) > Math.max(20, targetH - 16)) {
+    fs -= 1;
+    lines = wrapTextLines(text, fs, fontFamily, targetW);
+  }
+
+  return { fittedFontSize: fs, lines };
 };
 
 // Helper to compute exact bounding box for any element (rectangle, circle, line, freedraw, text, custom icon, triangle)
@@ -457,17 +572,71 @@ const sketchCustomIcon = (x, y, w, h, iconName, roughness = 1) => {
   return "";
 };
 
-// Generates a bold, prominent, large arrow path string
-const sketchArrow = (x1, y1, x2, y2, roughness = 1) => {
-  const linePath = sketchLine(x1, y1, x2, y2, roughness);
-  const angle = Math.atan2(y2 - y1, x2 - x1);
-  const arrowLength = 28; // Prominent large arrowhead length (was 16)
-  const arrowAngle = Math.PI / 5.5; // 32 degrees sharp arrowhead angle
+// Generates an arrow path string with customizable arrowhead size and routing (straight, elbow 90°, curved)
+const sketchArrow = (
+  x1,
+  y1,
+  x2,
+  y2,
+  roughness = 1,
+  arrowHeadSize = "medium",
+  arrowType = "straight",
+  elbowOffsetPx = null
+) => {
+  let linePath = "";
+  let finalAngle = Math.atan2(y2 - y1, x2 - x1);
 
-  const xLeft = x2 - arrowLength * Math.cos(angle - arrowAngle);
-  const yLeft = y2 - arrowLength * Math.sin(angle - arrowAngle);
-  const xRight = x2 - arrowLength * Math.cos(angle + arrowAngle);
-  const yRight = y2 - arrowLength * Math.sin(angle + arrowAngle);
+  if (arrowType === "elbow" || arrowType === "angular" || arrowType === "esquina") {
+    // Check vertical or horizontal alignment
+    const isVert = Math.abs(x2 - x1) < 8;
+    const isHoriz = Math.abs(y2 - y1) < 8;
+
+    if (isVert) {
+      const stepX = x1 + (elbowOffsetPx !== undefined && elbowOffsetPx !== null ? elbowOffsetPx : 50);
+      const seg1 = sketchLine(x1, y1, stepX, y1, roughness);
+      const seg2 = sketchLine(stepX, y1, stepX, y2, roughness);
+      const seg3 = sketchLine(stepX, y2, x2, y2, roughness);
+      linePath = `${seg1} ${seg2} ${seg3}`;
+      finalAngle = Math.atan2(0, x2 - stepX);
+    } else if (isHoriz) {
+      const stepY = y1 + (elbowOffsetPx !== undefined && elbowOffsetPx !== null ? elbowOffsetPx : 50);
+      const seg1 = sketchLine(x1, y1, x1, stepY, roughness);
+      const seg2 = sketchLine(x1, stepY, x2, stepY, roughness);
+      const seg3 = sketchLine(x2, stepY, x2, y2, roughness);
+      linePath = `${seg1} ${seg2} ${seg3}`;
+      finalAngle = Math.atan2(y2 - stepY, 0);
+    } else {
+      const midX = x1 + (elbowOffsetPx !== undefined && elbowOffsetPx !== null ? elbowOffsetPx : (x2 - x1) / 2);
+      const seg1 = sketchLine(x1, y1, midX, y1, roughness);
+      const seg2 = sketchLine(midX, y1, midX, y2, roughness);
+      const seg3 = sketchLine(midX, y2, x2, y2, roughness);
+      linePath = `${seg1} ${seg2} ${seg3}`;
+      finalAngle = Math.abs(x2 - midX) > 1 ? Math.atan2(0, x2 - midX) : Math.atan2(y2 - y1, x2 - x1);
+    }
+  } else if (arrowType === "curved") {
+    const midX = (x1 + x2) / 2;
+    const midY = (y1 + y2) / 2;
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const off = 0.25;
+    const cx = midX - dy * off;
+    const cy = midY + dx * off;
+    linePath = `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
+    finalAngle = Math.atan2(y2 - cy, x2 - cx);
+  } else {
+    linePath = sketchLine(x1, y1, x2, y2, roughness);
+  }
+
+  let arrowLength = 26;
+  if (arrowHeadSize === "small") arrowLength = 14;
+  else if (arrowHeadSize === "large") arrowLength = 38;
+
+  const arrowAngle = Math.PI / 5.5;
+
+  const xLeft = x2 - arrowLength * Math.cos(finalAngle - arrowAngle);
+  const yLeft = y2 - arrowLength * Math.sin(finalAngle - arrowAngle);
+  const xRight = x2 - arrowLength * Math.cos(finalAngle + arrowAngle);
+  const yRight = y2 - arrowLength * Math.sin(finalAngle + arrowAngle);
 
   const leftPath = sketchLine(x2, y2, xLeft, yLeft, roughness * 0.8);
   const rightPath = sketchLine(x2, y2, xRight, yRight, roughness * 0.8);
@@ -495,6 +664,7 @@ export default function DrawableView() {
 
   // Canvas State
   const [elements, setElements] = useState([]);
+  const [clipboardElements, setClipboardElements] = useState([]);
   const [history, setHistory] = useState([[]]);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [selectedIds, setSelectedIds] = useState([]);
@@ -506,6 +676,8 @@ export default function DrawableView() {
   const [fillStyle, setFillStyle] = useState("none");
   const [strokeWidth, setStrokeWidth] = useState(2);
   const [strokeStyle, setStrokeStyle] = useState("solid");
+  const [arrowHeadSize, setArrowHeadSize] = useState("medium");
+  const [arrowType, setArrowType] = useState("straight");
   const [fontFamily, setFontFamily] = useState("arial");
   const [fontSize, setFontSize] = useState(24);
   const [textAlign, setTextAlign] = useState("left");
@@ -526,11 +698,13 @@ export default function DrawableView() {
   const [textInputValue, setTextInputValue] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activeLibraryIcon, setActiveLibraryIcon] = useState("cloud");
-  const [isLibraryDropdownOpen, setIsLibraryDropdownOpen] = useState(false);
   const [isShapeDropdownOpen, setIsShapeDropdownOpen] = useState(false);
+  const [isLibraryDropdownOpen, setIsLibraryDropdownOpen] = useState(false);
+  const [isArrowDropdownOpen, setIsArrowDropdownOpen] = useState(false);
   const [iconCategory, setIconCategory] = useState("all");
   const [iconSearch, setIconSearch] = useState("");
   const [isZenMode, setIsZenMode] = useState(false);
+  const [snapRotationGuide, setSnapRotationGuide] = useState(null);
 
   // Reset tool styling parameters back to standard pristine defaults when switching tools
   const resetDefaultStyles = () => {
@@ -542,6 +716,8 @@ export default function DrawableView() {
     setFontFamily("arial");
     setFontSize(24);
     setTextAlign("left");
+    setArrowHeadSize("medium");
+    setArrowType("straight");
   };
 
   // Persistence, Auto-Save & Toast State
@@ -551,6 +727,25 @@ export default function DrawableView() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [hoverCoords, setHoverCoords] = useState(null);
+
+  // Real-time P2P Collaboration State (Figma-style live cursors & canvas sync)
+  const [activeProjectId, setActiveProjectId] = useState(() => {
+    const match = window.location.href.match(/id=([^&#]+)/);
+    return match ? decodeURIComponent(match[1]) : "";
+  });
+  const isRemoteUpdatingRef = useRef(false);
+
+  const {
+    remoteCursors,
+    connectedCount,
+    broadcastCursor,
+    broadcastElements,
+  } = usePeerCollaboration({
+    projectId: activeProjectId,
+    elements,
+    setElements,
+    isRemoteUpdatingRef,
+  });
 
   const svgRef = useRef(null);
   const textInputRef = useRef(null);
@@ -579,78 +774,125 @@ export default function DrawableView() {
     }
 
     // Check URL share parameter
-    const fullUrl = window.location.href;
-    let sharedData = null;
+    const loadSharedOrSavedData = async () => {
+      const fullUrl = window.location.href;
 
-    if (fullUrl.includes("share=")) {
-      try {
-        const match = fullUrl.match(/share=([^&#]+)/);
-        if (match && match[1]) {
-          sharedData = decodeURIComponent(match[1]);
+      // 1. Check short ID parameter (#id=... or ?id=...)
+      let shortId = null;
+      if (fullUrl.includes("id=")) {
+        try {
+          const match = fullUrl.match(/id=([^&#]+)/);
+          if (match && match[1]) {
+            shortId = decodeURIComponent(match[1]);
+          }
+        } catch (e) {
+          console.error("Failed to parse id URL param", e);
         }
-      } catch (e) {
-        console.error("Failed to parse share URL param", e);
       }
-    }
 
-    if (sharedData) {
-      try {
-        const decodedJson = decodeURIComponent(escape(atob(sharedData)));
-        const parsed = JSON.parse(decodedJson);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setElements(parsed);
-          setHistory([parsed]);
-          setHistoryIndex(0);
-          const nowIso = new Date().toISOString();
-          localStorage.setItem("isv_whiteboard_elements", JSON.stringify(parsed));
-          localStorage.setItem("isv_whiteboard_last_saved", nowIso);
-          setLastSavedTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
-          showToast(`✨ Proyecto compartido cargado con éxito (${parsed.length} elementos)`, "success", 5000);
+      if (shortId) {
+        setActiveProjectId(shortId);
+        try {
+          const parsed = await fetchProjectById(shortId);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setElements(parsed);
+            setHistory([parsed]);
+            setHistoryIndex(0);
+            const nowIso = new Date().toISOString();
+            localStorage.setItem("isv_whiteboard_elements", JSON.stringify(parsed));
+            localStorage.setItem("isv_whiteboard_last_saved", nowIso);
+            setLastSavedTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+            showToast(`✨ Proyecto compartido cargado con éxito (${parsed.length} elementos)`, "success", 5000);
 
-          const cleanUrl = window.location.pathname + window.location.search.replace(/[?&]share=[^&]+/, "");
-          window.history.replaceState(null, "", cleanUrl || "/drawable");
-          return;
+            const cleanUrl = window.location.pathname + window.location.search.replace(/[?&]id=[^&]+/, "");
+            window.history.replaceState(null, "", cleanUrl || "/drawable");
+            return;
+          }
+        } catch (err) {
+          console.error("Failed to fetch project by short ID", err);
         }
-      } catch (err) {
-        console.error("Failed to decode shared diagram data", err);
       }
-    }
 
-    // LocalStorage fallback
-    const saved = localStorage.getItem("isv_whiteboard_elements");
-    const lastSaved = localStorage.getItem("isv_whiteboard_last_saved");
-
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setElements(parsed);
-          setHistory([parsed]);
-          setHistoryIndex(0);
-          const formattedTime = lastSaved
-            ? new Date(lastSaved).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-            : new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-          setLastSavedTime(formattedTime);
-          showToast(
-            `📥 Proyecto guardado cargado automáticamente (${parsed.length} elemento${parsed.length !== 1 ? "s" : ""})`,
-            "info",
-            4000
-          );
-        } else {
-          showToast("🎨 Lienzo nuevo listo para diagramar", "info", 3000);
+      // 2. Check legacy share parameter (#share=...)
+      let sharedData = null;
+      if (fullUrl.includes("share=")) {
+        try {
+          const match = fullUrl.match(/share=([^&#]+)/);
+          if (match && match[1]) {
+            sharedData = decodeURIComponent(match[1]);
+          }
+        } catch (e) {
+          console.error("Failed to parse share URL param", e);
         }
-      } catch (e) {
-        console.error("Failed to restore elements from local storage", e);
       }
-    } else {
-      showToast("🎨 Lienzo nuevo listo para diagramar", "info", 3000);
-    }
+
+      if (sharedData) {
+        try {
+          const decodedJson = await decompressData(sharedData);
+          if (decodedJson) {
+            const parsed = JSON.parse(decodedJson);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setElements(parsed);
+              setHistory([parsed]);
+              setHistoryIndex(0);
+              const nowIso = new Date().toISOString();
+              localStorage.setItem("isv_whiteboard_elements", JSON.stringify(parsed));
+              localStorage.setItem("isv_whiteboard_last_saved", nowIso);
+              setLastSavedTime(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+              showToast(`✨ Proyecto compartido cargado con éxito (${parsed.length} elementos)`, "success", 5000);
+
+              const cleanUrl = window.location.pathname + window.location.search.replace(/[?&]share=[^&]+/, "");
+              window.history.replaceState(null, "", cleanUrl || "/drawable");
+              return;
+            }
+          }
+        } catch (err) {
+          console.error("Failed to decode shared diagram data", err);
+        }
+      }
+
+      // LocalStorage fallback
+      const saved = localStorage.getItem("isv_whiteboard_elements");
+      const lastSaved = localStorage.getItem("isv_whiteboard_last_saved");
+
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setElements(parsed);
+            setHistory([parsed]);
+            setHistoryIndex(0);
+            const formattedTime = lastSaved
+              ? new Date(lastSaved).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+            setLastSavedTime(formattedTime);
+            showToast(
+              `📥 Proyecto guardado cargado automáticamente (${parsed.length} elemento${parsed.length !== 1 ? "s" : ""})`,
+              "info",
+              4000
+            );
+          } else {
+            showToast("🎨 Lienzo nuevo listo para diagramar", "info", 3000);
+          }
+        } catch (e) {
+          console.error("Failed to restore elements from local storage", e);
+        }
+      } else {
+        showToast("🎨 Lienzo nuevo listo para diagramar", "info", 3000);
+      }
+    };
+
+    loadSharedOrSavedData();
   }, []);
 
   // Sync & Auto-save to LocalStorage on element change
   const updateElementsAndHistory = (newElements) => {
     setElements(newElements);
     setAutoSaveStatus("saving");
+
+    if (!isRemoteUpdatingRef.current && activeProjectId) {
+      broadcastElements(newElements);
+    }
 
     const nowIso = new Date().toISOString();
     const formattedTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
@@ -668,23 +910,25 @@ export default function DrawableView() {
     setHistoryIndex(nextHistory.length);
   };
 
-  // Keep selected values in sync with sidebar if an element is selected
+  // Keep selected values in sync with sidebar if an element is selected; reset to default black when deselected
   useEffect(() => {
     if (selectedIds.length === 1) {
       const el = elements.find((e) => e.id === selectedIds[0]);
       if (el) {
-        setStrokeColor(el.strokeColor || "black");
+        setStrokeColor(el.strokeColor || "#1e293b");
         setFillColor(el.fillColor || "transparent");
         setFillStyle(el.fillStyle || "none");
         setStrokeWidth(el.strokeWidth || 2);
         setStrokeStyle(el.strokeStyle || "solid");
-        setFontFamily(el.fontFamily || "hand");
+        setFontFamily(el.fontFamily || "arial");
         setFontSize(el.fontSize || 24);
         setTextAlign(el.textAlign || "left");
-        setRoughness(el.roughness || 1);
+        setRoughness(el.roughness !== undefined ? el.roughness : 1);
       }
+    } else if (selectedIds.length === 0) {
+      resetDefaultStyles();
     }
-  }, [selectedIds, elements]);
+  }, [selectedIds]);
 
   // Apply style updates to selected elements (auto recalculating dimensions for text)
   const updateSelectedStyle = (key, value) => {
@@ -717,6 +961,73 @@ export default function DrawableView() {
     };
   };
 
+  // Clipboard operations (Copy, Cut, Paste, Duplicate) with Toast Notifications
+  const handleCopySelection = () => {
+    if (selectedIds.length > 0) {
+      const selected = elements.filter((el) => selectedIds.includes(el.id));
+      if (selected.length > 0) {
+        setClipboardElements(selected);
+        showToast(`📋 ${selected.length} elemento${selected.length > 1 ? "s" : ""} copiado${selected.length > 1 ? "s" : ""} al portapapeles`, "success");
+      }
+    }
+  };
+
+  const handleCutSelection = () => {
+    if (selectedIds.length > 0) {
+      const selected = elements.filter((el) => selectedIds.includes(el.id));
+      if (selected.length > 0) {
+        setClipboardElements(selected);
+        const remaining = elements.filter((el) => !selectedIds.includes(el.id));
+        updateElementsAndHistory(remaining);
+        setSelectedIds([]);
+        showToast(`✂️ ${selected.length} elemento${selected.length > 1 ? "s" : ""} cortado${selected.length > 1 ? "s" : ""}`, "info");
+      }
+    }
+  };
+
+  const handlePasteSelection = () => {
+    if (clipboardElements.length > 0) {
+      const pasted = [];
+      const updatedElements = [...elements];
+      clipboardElements.forEach((el) => {
+        const copy = {
+          ...el,
+          id: `elem-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          x: el.x + 20,
+          y: el.y + 20,
+        };
+        pasted.push(copy);
+        updatedElements.push(copy);
+      });
+      updateElementsAndHistory(updatedElements);
+      setSelectedIds(pasted.map((el) => el.id));
+      showToast(`📋 ${pasted.length} elemento${pasted.length > 1 ? "s" : ""} pegado${pasted.length > 1 ? "s" : ""} en el lienzo`, "success");
+    }
+  };
+
+  const handleDuplicateSelection = () => {
+    if (selectedIds.length > 0) {
+      const duplicated = [];
+      const updatedElements = [...elements];
+      selectedIds.forEach((id) => {
+        const original = elements.find((el) => el.id === id);
+        if (original) {
+          const copy = {
+            ...original,
+            id: `elem-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+            x: original.x + 20,
+            y: original.y + 20,
+          };
+          duplicated.push(copy);
+          updatedElements.push(copy);
+        }
+      });
+      updateElementsAndHistory(updatedElements);
+      setSelectedIds(duplicated.map((el) => el.id));
+      showToast(`✨ ${duplicated.length} elemento${duplicated.length > 1 ? "s" : ""} duplicado${duplicated.length > 1 ? "s" : ""}`, "success");
+    }
+  };
+
   // Keyboard events
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -732,6 +1043,15 @@ export default function DrawableView() {
           updateElementsAndHistory(remaining);
           setSelectedIds([]);
         }
+      } else if (cmdCtrl && e.key.toLowerCase() === "c") {
+        e.preventDefault();
+        handleCopySelection();
+      } else if (cmdCtrl && e.key.toLowerCase() === "x") {
+        e.preventDefault();
+        handleCutSelection();
+      } else if (cmdCtrl && e.key.toLowerCase() === "v") {
+        e.preventDefault();
+        handlePasteSelection();
       } else if (cmdCtrl && e.key.toLowerCase() === "z") {
         e.preventDefault();
         handleUndo();
@@ -743,25 +1063,7 @@ export default function DrawableView() {
         setSelectedIds(elements.map((el) => el.id));
       } else if (cmdCtrl && e.key.toLowerCase() === "d") {
         e.preventDefault();
-        if (selectedIds.length > 0) {
-          const duplicated = [];
-          const updatedElements = [...elements];
-          selectedIds.forEach((id) => {
-            const original = elements.find((el) => el.id === id);
-            if (original) {
-              const copy = {
-                ...original,
-                id: `elem-${Date.now()}-${Math.random()}`,
-                x: original.x + 20,
-                y: original.y + 20,
-              };
-              duplicated.push(copy);
-              updatedElements.push(copy);
-            }
-          });
-          updateElementsAndHistory(updatedElements);
-          setSelectedIds(duplicated.map((el) => el.id));
-        }
+        handleDuplicateSelection();
       } else if (e.key === "Escape") {
         setSelectedIds([]);
         setActiveElement(null);
@@ -787,7 +1089,7 @@ export default function DrawableView() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [elements, selectedIds, editingTextId, historyIndex, history, isShareModalOpen]);
+  }, [elements, selectedIds, editingTextId, historyIndex, history, isShareModalOpen, clipboardElements]);
 
   // Undo / Redo mechanics
   const handleUndo = () => {
@@ -954,6 +1256,33 @@ export default function DrawableView() {
     );
   };
 
+  // Group / Ungroup Selection Handler
+  const handleGroupSelection = () => {
+    if (selectedIds.length < 2) return;
+    const newGroupId = `group-${Date.now()}`;
+    const updated = elements.map((el) => {
+      if (selectedIds.includes(el.id)) {
+        return { ...el, groupId: newGroupId };
+      }
+      return el;
+    });
+    updateElementsAndHistory(updated);
+    showToast("📦 Elementos agrupados", "success");
+  };
+
+  const handleUngroupSelection = () => {
+    if (selectedIds.length === 0) return;
+    const updated = elements.map((el) => {
+      if (selectedIds.includes(el.id)) {
+        const { groupId, ...rest } = el;
+        return rest;
+      }
+      return el;
+    });
+    updateElementsAndHistory(updated);
+    showToast("🔓 Elementos desagrupados", "info");
+  };
+
   // Generate Shareable Link
   const generateShareUrl = () => {
     try {
@@ -983,10 +1312,16 @@ export default function DrawableView() {
 
 
 
-  // Double Click Handler (Only edit existing text, never insert text on empty canvas double-click)
+  // Double Click Handler: Edit existing text OR double-click anywhere in Select/Text mode to create text & start typing!
   const handleDoubleClick = (e) => {
+    if (editingTextId) {
+      saveTextEdit();
+      return;
+    }
+
     const { x, y } = getCanvasCoords(e);
 
+    // 1. If double-clicked an existing text element: edit it
     const clickedText = [...elements].reverse().find(
       (el) => el.type === "text" && isPointInElement(x, y, el)
     );
@@ -1000,7 +1335,40 @@ export default function DrawableView() {
       }, 50);
       return;
     }
+
+    // 2. In select mode (or text tool mode), double clicking anywhere creates a text box right at (x, y) and activates editing!
+    if (tool === "select" || tool === "text") {
+      const newTextEl = {
+        id: `elem-${Date.now()}`,
+        type: "text",
+        x: Math.round(x - 100),
+        y: Math.round(y - 30),
+        width: 200,
+        height: Math.max(60, fontSize * 1.8),
+        text: "",
+        strokeColor,
+        fillColor: "transparent",
+        fillStyle: "none",
+        strokeWidth: 2,
+        strokeStyle: "solid",
+        fontFamily,
+        fontSize,
+        textAlign: textAlign || "center",
+        roughness: 1,
+        opacity: 1,
+      };
+
+      setElements((prev) => [...prev, newTextEl]);
+      setSelectedIds([newTextEl.id]);
+      setEditingTextId(newTextEl.id);
+      setTextInputValue("");
+      setTimeout(() => {
+        if (textInputRef.current) textInputRef.current.focus();
+      }, 50);
+    }
   };
+
+
 
   // Mouse pointer down handler on SVG
   const handlePointerDown = (e) => {
@@ -1022,6 +1390,94 @@ export default function DrawableView() {
     if (selectedIds.length > 0 && tool === "select") {
       const selectedEls = elements.filter((e) => selectedIds.includes(e.id));
       if (selectedEls.length > 0) {
+        // Dedicated 2-Point Anchor Handle detection for single Arrow element
+        // Single Line or Arrow Anchor Handle detection (Points A, B, and C)
+        if (selectedEls.length === 1 && (selectedEls[0].type === "arrow" || selectedEls[0].type === "line")) {
+          const arrowEl = selectedEls[0];
+          const x1 = arrowEl.x;
+          const y1 = arrowEl.y;
+          const x2 = arrowEl.x + arrowEl.width;
+          const y2 = arrowEl.y + arrowEl.height;
+          const aType = arrowEl.arrowType || "straight";
+
+          const hitR = 18 / zoom;
+          const distA = Math.hypot(x - x1, y - y1);
+          const distB = Math.hypot(x - x2, y - y2);
+
+          if (distA <= hitR) {
+            setResizeHandle("arrow-anchor-a");
+            setIsDrawing(true);
+            setStartMouse({ x, y });
+            setElements((prev) =>
+              prev.map((e) =>
+                e.id === arrowEl.id
+                  ? {
+                      ...e,
+                      startResizeX: e.x,
+                      startResizeY: e.y,
+                      startResizeWidth: e.width,
+                      startResizeHeight: e.height,
+                    }
+                  : e
+              )
+            );
+            return;
+          }
+
+          if (distB <= hitR) {
+            setResizeHandle("arrow-anchor-b");
+            setIsDrawing(true);
+            setStartMouse({ x, y });
+            setElements((prev) =>
+              prev.map((e) =>
+                e.id === arrowEl.id
+                  ? {
+                      ...e,
+                      startResizeX: e.x,
+                      startResizeY: e.y,
+                      startResizeWidth: e.width,
+                      startResizeHeight: e.height,
+                    }
+                  : e
+              )
+            );
+            return;
+          }
+
+          if (aType === "elbow" || aType === "esquina" || aType === "angular") {
+            const isVert = Math.abs(x2 - x1) < 8;
+            const isHoriz = Math.abs(y2 - y1) < 8;
+            let cx = x1 + (arrowEl.elbowOffsetPx !== undefined && arrowEl.elbowOffsetPx !== null ? arrowEl.elbowOffsetPx : (x2 - x1) / 2);
+            let cy = (y1 + y2) / 2;
+            if (isVert) {
+              cx = x1 + (arrowEl.elbowOffsetPx !== undefined && arrowEl.elbowOffsetPx !== null ? arrowEl.elbowOffsetPx : 50);
+              cy = (y1 + y2) / 2;
+            } else if (isHoriz) {
+              cx = (x1 + x2) / 2;
+              cy = y1 + (arrowEl.elbowOffsetPx !== undefined && arrowEl.elbowOffsetPx !== null ? arrowEl.elbowOffsetPx : 50);
+            }
+
+            if (Math.hypot(x - cx, y - cy) <= hitR) {
+              setResizeHandle("arrow-anchor-c");
+              setIsDrawing(true);
+              setStartMouse({ x, y });
+              setElements((prev) =>
+                prev.map((e) =>
+                  e.id === arrowEl.id
+                    ? {
+                        ...e,
+                        startResizeX: e.x,
+                        startResizeY: e.y,
+                        startResizeWidth: e.width,
+                        startResizeHeight: e.height,
+                      }
+                    : e
+                )
+              );
+              return;
+            }
+          }
+        }
         let gBounds = null;
         if (selectedEls.length === 1) {
           const b = getElementBounds(selectedEls[0]);
@@ -1066,15 +1522,8 @@ export default function DrawableView() {
       const candidateEls = elements.filter((el) => isPointInElement(x, y, el));
       let clickedElement = null;
       if (candidateEls.length > 0) {
-        // Sort candidate elements by distance from click (x,y) to element center for pixel-perfect precision when icons are close together
-        candidateEls.sort((a, b) => {
-          const bA = getElementBounds(a);
-          const bB = getElementBounds(b);
-          const distA = Math.hypot(x - (bA.minX + bA.maxX) / 2, y - (bA.minY + bA.maxY) / 2);
-          const distB = Math.hypot(x - (bB.minX + bB.maxX) / 2, y - (bB.minY + bB.maxY) / 2);
-          return distA - distB;
-        });
-        clickedElement = candidateEls[0];
+        // Precise Z-index selection: topmost element in rendering order (last drawn or brought to front)
+        clickedElement = candidateEls[candidateEls.length - 1];
       }
 
       if (clickedElement) {
@@ -1147,6 +1596,7 @@ export default function DrawableView() {
       };
       setActiveElement(newText);
     } else {
+      setSelectedIds([]);
       const defaultIconWidth = tool === "custom-icon" ? 64 : 0;
       const defaultIconHeight = tool === "custom-icon" ? 64 : 0;
 
@@ -1167,6 +1617,8 @@ export default function DrawableView() {
         textAlign,
         roughness,
         opacity: 1,
+        arrowHeadSize: tool === "arrow" ? arrowHeadSize : "medium",
+        arrowType: tool === "arrow" ? arrowType : "straight",
         points: tool === "freedraw" ? [{ x, y }] : [],
         ...(tool === "custom-icon" ? { iconName: activeLibraryIcon } : {}),
       };
@@ -1177,6 +1629,9 @@ export default function DrawableView() {
   // Mouse move handler
   const handlePointerMove = (e) => {
     const { x, y } = getCanvasCoords(e);
+    if (activeProjectId) {
+      broadcastCursor(x, y);
+    }
 
     if (tool === "eraser") {
       setHoverCoords({ x, y });
@@ -1211,6 +1666,74 @@ export default function DrawableView() {
     const dx = x - startMouse.x;
     const dy = y - startMouse.y;
 
+    // Arrow 2-Point Clock-Hand & Corner Offset Vector Dragging
+    if (resizeHandle && (resizeHandle === "arrow-anchor-a" || resizeHandle === "arrow-anchor-b" || resizeHandle === "arrow-anchor-c") && selectedIds.length === 1) {
+      const el = elements.find((e) => e.id === selectedIds[0]);
+      if (el) {
+        const sX1 = el.startResizeX !== undefined ? el.startResizeX : el.x;
+        const sY1 = el.startResizeY !== undefined ? el.startResizeY : el.y;
+        const sW = el.startResizeWidth !== undefined ? el.startResizeWidth : el.width;
+        const sH = el.startResizeHeight !== undefined ? el.startResizeHeight : el.height;
+        const sX2 = sX1 + sW;
+        const sY2 = sY1 + sH;
+
+        if (resizeHandle === "arrow-anchor-a") {
+          let newX1 = x;
+          let newY1 = y;
+          if (e.shiftKey) {
+            const angle = Math.atan2(sY2 - newY1, sX2 - newX1);
+            const dist = Math.hypot(sX2 - newX1, sY2 - newY1);
+            const snappedAngle = Math.round(angle / (Math.PI / 12)) * (Math.PI / 12);
+            newX1 = sX2 - dist * Math.cos(snappedAngle);
+            newY1 = sY2 - dist * Math.sin(snappedAngle);
+          }
+          const updated = {
+            ...el,
+            x: newX1,
+            y: newY1,
+            width: sX2 - newX1,
+            height: sY2 - newY1,
+          };
+          setElements((prev) => prev.map((item) => (item.id === el.id ? updated : item)));
+          return;
+        }
+
+        if (resizeHandle === "arrow-anchor-b") {
+          let newX2 = x;
+          let newY2 = y;
+          if (e.shiftKey) {
+            const angle = Math.atan2(newY2 - sY1, newX2 - sX1);
+            const dist = Math.hypot(newX2 - sX1, newY2 - sY1);
+            const snappedAngle = Math.round(angle / (Math.PI / 12)) * (Math.PI / 12);
+            newX2 = sX1 + dist * Math.cos(snappedAngle);
+            newY2 = sY1 + dist * Math.sin(snappedAngle);
+          }
+          const updated = {
+            ...el,
+            width: newX2 - sX1,
+            height: newY2 - sY1,
+          };
+          setElements((prev) => prev.map((item) => (item.id === el.id ? updated : item)));
+          return;
+        }
+
+        if (resizeHandle === "arrow-anchor-c") {
+          const isVert = Math.abs(sW) < 8;
+          const isHoriz = Math.abs(sH) < 8;
+          let newOffset = x - sX1;
+          if (isHoriz) {
+            newOffset = y - sY1;
+          }
+          const updated = {
+            ...el,
+            elbowOffsetPx: newOffset,
+          };
+          setElements((prev) => prev.map((item) => (item.id === el.id ? updated : item)));
+          return;
+        }
+      }
+    }
+
     if (resizeHandle && selectedIds.length > 0) {
       if (resizeHandle === "rotate") {
         const selectedEls = elements.filter((e) => selectedIds.includes(e.id));
@@ -1220,7 +1743,30 @@ export default function DrawableView() {
         const angleRad = Math.atan2(y - cy, x - cx);
         let angleDeg = Math.round(angleRad * (180 / Math.PI) + 90);
         if (angleDeg < 0) angleDeg += 360;
-        if (e.shiftKey) angleDeg = Math.round(angleDeg / 15) * 15;
+
+        // Orthogonal Straight Line Snapping (0°, 90°, 180°, 270°, 360°)
+        const orthogonalAngles = [0, 90, 180, 270, 360];
+        let isStraight = false;
+        let straightAngle = angleDeg;
+
+        for (const orth of orthogonalAngles) {
+          if (Math.abs(angleDeg - orth) <= 5) {
+            angleDeg = orth % 360;
+            straightAngle = angleDeg;
+            isStraight = true;
+            break;
+          }
+        }
+
+        if (e.shiftKey) {
+          angleDeg = Math.round(angleDeg / 15) * 15;
+        }
+
+        if (isStraight) {
+          setSnapRotationGuide({ isStraight: true, angle: straightAngle, cx, cy });
+        } else {
+          setSnapRotationGuide(null);
+        }
 
         const updated = elements.map((el) => {
           if (selectedIds.includes(el.id)) {
@@ -1324,29 +1870,19 @@ export default function DrawableView() {
           if (resizeHandle.includes("w")) updated.x = sX + (sW - finalW);
           if (resizeHandle.includes("n")) updated.y = sY + (sH - finalH);
         } else if (el.type === "text") {
-          // Dynamic Proportional Scaling for Text Elements
-          const sFS = el.startResizeFontSize || el.fontSize || 24;
-          let nextWidth = sW;
-          let nextHeight = sH;
+          // Resizing text adjusts box width & height without changing font size
+          let nextW = sW;
+          let nextH = sH;
+          if (resizeHandle.includes("e")) nextW = Math.max(50, sW + dx);
+          if (resizeHandle.includes("s")) nextH = Math.max(30, sH + dy);
+          if (resizeHandle.includes("w")) nextW = Math.max(50, sW - dx);
+          if (resizeHandle.includes("n")) nextH = Math.max(30, sH - dy);
 
-          if (resizeHandle.includes("e")) nextWidth = Math.max(20, sW + dx);
-          if (resizeHandle.includes("s")) nextHeight = Math.max(20, sH + dy);
-          if (resizeHandle.includes("w")) nextWidth = Math.max(20, sW - dx);
-          if (resizeHandle.includes("n")) nextHeight = Math.max(20, sH - dy);
+          updated.width = nextW;
+          updated.height = nextH;
 
-          const scaleX = nextWidth / Math.max(1, sW);
-          const scaleY = nextHeight / Math.max(1, sH);
-          const scale = Math.max(scaleX, scaleY);
-
-          const nextFontSize = Math.max(10, Math.min(140, Math.round(sFS * scale)));
-          const dims = computeTextDimensions(el.text, nextFontSize, el.fontFamily);
-
-          updated.fontSize = nextFontSize;
-          updated.width = dims.width;
-          updated.height = dims.height;
-
-          if (resizeHandle.includes("w")) updated.x = sX + (sW - dims.width);
-          if (resizeHandle.includes("n")) updated.y = sY + (sH - dims.height);
+          if (resizeHandle.includes("w")) updated.x = sX + (sW - nextW);
+          if (resizeHandle.includes("n")) updated.y = sY + (sH - nextH);
         } else {
           if (resizeHandle.includes("e")) {
             updated.width = Math.max(10, sW + dx);
@@ -1492,6 +2028,7 @@ export default function DrawableView() {
   // Mouse up handler
   const handlePointerUp = () => {
     setIsPanning(false);
+    setSnapRotationGuide(null);
 
     if (!isDrawing) return;
     setIsDrawing(false);
@@ -1571,6 +2108,9 @@ export default function DrawableView() {
         setTimeout(() => {
           if (textInputRef.current) textInputRef.current.focus();
         }, 50);
+      } else if (finalElement.type === "freedraw") {
+        // Continuous pencil mode: keep pencil tool active, don't auto-select stroke or show edit contour box
+        setSelectedIds([]);
       } else {
         // Automatically select newly placed shape/element and display contour handles for instant sizing & modification
         setSelectedIds([finalElement.id]);
@@ -1749,30 +2289,58 @@ export default function DrawableView() {
     const yMin = b.minY;
     const yMax = b.maxY;
 
+    if (el.type === "text") {
+      const textMargin = Math.max(16, 24 / zoom);
+      return testX >= xMin - textMargin && testX <= xMax + textMargin && testY >= yMin - textMargin && testY <= yMax + textMargin;
+    }
+
     if (
       el.type === "rectangle" ||
       el.type === "ellipse" ||
       el.type === "diamond" ||
       el.type === "triangle" ||
       el.type === "custom-icon" ||
-      el.type === "image" ||
-      el.type === "text"
+      el.type === "image"
     ) {
       return testX >= xMin - margin && testX <= xMax + margin && testY >= yMin - margin && testY <= yMax + margin;
     }
 
     if (el.type === "line" || el.type === "arrow") {
+      const hitMargin = Math.max(14, 22 / zoom);
+      const x1 = el.x;
+      const y1 = el.y;
       const x2 = el.x + el.width;
       const y2 = el.y + el.height;
-      const l2 = Math.pow(x2 - el.x, 2) + Math.pow(y2 - el.y, 2);
-      if (l2 === 0) return Math.hypot(testX - el.x, testY - el.y) < margin;
+      const aType = el.arrowType || "straight";
 
-      let t = ((testX - el.x) * (x2 - el.x) + (testY - el.y) * (y2 - el.y)) / l2;
-      t = Math.max(0, Math.min(1, t));
-      const projX = el.x + t * (x2 - el.x);
-      const projY = el.y + t * (y2 - el.y);
+      const distToSeg = (px, py, ax, ay, bx, by) => {
+        const l2 = Math.pow(bx - ax, 2) + Math.pow(by - ay, 2);
+        if (l2 === 0) return Math.hypot(px - ax, py - ay);
+        let t = Math.max(0, Math.min(1, ((px - ax) * (bx - ax) + (py - ay) * (by - ay)) / l2));
+        return Math.hypot(px - (ax + t * (bx - ax)), py - (ay + t * (by - ay)));
+      };
 
-      return Math.hypot(testX - projX, testY - projY) < margin;
+      if (aType === "elbow" || aType === "angular" || aType === "esquina") {
+        const midX = x1 + (x2 - x1) / 2;
+        const d1 = distToSeg(testX, testY, x1, y1, midX, y1);
+        const d2 = distToSeg(testX, testY, midX, y1, midX, y2);
+        const d3 = distToSeg(testX, testY, midX, y2, x2, y2);
+        return Math.min(d1, d2, d3) < hitMargin;
+      }
+
+      if (aType === "curved") {
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const cx = midX - dy * 0.25;
+        const cy = midY + dx * 0.25;
+        const d1 = distToSeg(testX, testY, x1, y1, cx, cy);
+        const d2 = distToSeg(testX, testY, cx, cy, x2, y2);
+        return Math.min(d1, d2) < hitMargin;
+      }
+
+      return distToSeg(testX, testY, x1, y1, x2, y2) < hitMargin;
     }
 
     if (el.type === "freedraw" && el.points) {
@@ -1953,7 +2521,7 @@ export default function DrawableView() {
     canvas.width = rect.width;
     canvas.height = rect.height;
 
-    ctx.fillStyle = darkMode ? "#0f172a" : "#ffffff";
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, rect.width, rect.height);
 
     const serializer = new XMLSerializer();
@@ -2006,7 +2574,7 @@ export default function DrawableView() {
     else if (el.type === "ellipse") pathD = sketchEllipse(el.x, el.y, el.width, el.height, el.roughness || roughness);
     else if (el.type === "triangle") pathD = sketchTriangle(el.x, el.y, el.width, el.height, el.roughness || roughness);
     else if (el.type === "line") pathD = sketchLine(el.x, el.y, el.x + el.width, el.y + el.height, el.roughness || roughness);
-    else if (el.type === "arrow") pathD = sketchArrow(el.x, el.y, el.x + el.width, el.y + el.height, el.roughness || roughness);
+    else if (el.type === "arrow") pathD = sketchArrow(el.x, el.y, el.x + el.width, el.y + el.height, el.roughness || roughness, el.arrowHeadSize || "medium", el.arrowType || "straight", el.elbowOffsetPx);
     else if (el.type === "custom-icon") {
       const iconObj = ICON_LIBRARY.find((i) => i.id === el.iconName) || ICON_LIBRARY[0];
       const IconComp = iconObj?.icon || Cloud;
@@ -2015,11 +2583,14 @@ export default function DrawableView() {
       const iconLineColor = (fillHex !== "transparent" && fillHex === strokeHex) ? "#ffffff" : strokeHex;
 
       const bounds = getElementBounds(el);
+      const isWithBg = fillHex !== "transparent";
+      const iconScaleRatio = isWithBg ? 0.86 : 0.96;
+      const iconScalePercent = isWithBg ? "86%" : "96%";
 
       return (
         <g key={el.id} transform={transform}>
-          {/* Full 100% Solid Fill Container for Custom Icon */}
-          {fillHex !== "transparent" && (
+          {/* Full Solid Fill Container for Custom Icon */}
+          {isWithBg && (
             <rect
               x={bounds.minX}
               y={bounds.minY}
@@ -2027,7 +2598,7 @@ export default function DrawableView() {
               height={bounds.height}
               fill={fillHex}
               rx={bounds.width * 0.16}
-              style={{ pointerEvents: "all", cursor: "pointer" }}
+              style={{ pointerEvents: "all", cursor: tool === "select" ? "move" : "default" }}
             />
           )}
           <foreignObject
@@ -2035,18 +2606,18 @@ export default function DrawableView() {
             y={bounds.minY}
             width={bounds.width}
             height={bounds.height}
-            style={{ overflow: "visible", pointerEvents: "all", cursor: "pointer" }}
+            style={{ overflow: "visible", pointerEvents: "all", cursor: tool === "select" ? "move" : "default" }}
           >
             <div
               xmlns="http://www.w3.org/1999/xhtml"
-              className="w-full h-full flex items-center justify-center pointer-events-none p-1.5"
+              className="w-full h-full flex items-center justify-center pointer-events-none p-0.5"
             >
               <IconComp
-                size={bounds.width * 0.8}
+                size={bounds.width * iconScaleRatio}
                 color={iconLineColor}
-                fill={fillHex !== "transparent" ? fillHex : "none"}
+                fill={isWithBg ? fillHex : "none"}
                 strokeWidth={el.strokeWidth || 2}
-                style={{ width: "80%", height: "80%" }}
+                style={{ width: iconScalePercent, height: iconScalePercent }}
               />
             </div>
           </foreignObject>
@@ -2066,14 +2637,37 @@ export default function DrawableView() {
             height={el.height}
             preserveAspectRatio="none"
             opacity={el.opacity || 1}
-            style={{ pointerEvents: "all", cursor: "pointer" }}
+            style={{ pointerEvents: "all", cursor: tool === "select" ? "move" : "default" }}
+          />
+        </g>
+      );
+    }
+
+    if (el.type === "line" || el.type === "arrow" || el.type === "freedraw") {
+      return (
+        <g key={el.id} transform={transform} style={{ pointerEvents: "all", cursor: tool === "select" ? "move" : "crosshair" }}>
+          {/* Invisible thick hit target for instant, super precise clicking on arrows and lines */}
+          {(el.type === "line" || el.type === "arrow") && (
+            <path
+              d={pathD}
+              fill="none"
+              stroke="transparent"
+              strokeWidth={Math.max(18, (el.strokeWidth || 2) * 4)}
+              style={{ pointerEvents: "stroke", cursor: tool === "select" ? "move" : "crosshair" }}
+            />
+          )}
+          <path
+            d={pathD}
+            {...styleProps}
+            fill="none"
+            style={{ pointerEvents: "stroke", cursor: tool === "select" ? "move" : "crosshair" }}
           />
         </g>
       );
     }
 
     if (el.type === "text") {
-      // Hide SVG text representation when actively editing in overlay to prevent ghosting/double text
+      // Hide SVG text representation when actively editing in overlay to prevent ghosting
       if (editingTextId === el.id) return null;
 
       const font =
@@ -2087,9 +2681,17 @@ export default function DrawableView() {
           ? "Georgia, 'Times New Roman', serif"
           : "'Inter', system-ui, sans-serif";
 
-      const align = el.textAlign || "left";
+      const align = el.textAlign || "center";
       const anchor = align === "center" ? "middle" : align === "right" ? "end" : "start";
-      const textX = align === "center" ? el.x + el.width / 2 : align === "right" ? el.x + el.width : el.x;
+      const textX = align === "center" ? el.x + el.width / 2 : align === "right" ? el.x + el.width - 10 : el.x + 10;
+
+      const boxWidth = Math.max(40, el.width || 200);
+      const boxHeight = Math.max(30, el.height || 60);
+
+      const { fittedFontSize, lines } = getFittedText(el.text, el.fontSize, el.fontFamily, boxWidth, boxHeight);
+      const lineHeight = fittedFontSize * 1.35;
+      const totalTextHeight = lines.length * lineHeight;
+      const startY = el.y + Math.max(4, (boxHeight - totalTextHeight) / 2) + fittedFontSize * 0.85;
 
       return (
         <g
@@ -2103,30 +2705,42 @@ export default function DrawableView() {
               if (textInputRef.current) textInputRef.current.focus();
             }, 50);
           }}
+          style={{ pointerEvents: "all", cursor: tool === "select" ? "move" : "text" }}
         >
+          {/* Invisible expanded hit area for broad double clicking */}
+          <rect
+            x={el.x - 16}
+            y={el.y - 16}
+            width={el.width + 32}
+            height={el.height + 32}
+            fill="transparent"
+            style={{ pointerEvents: "all", cursor: tool === "select" ? "move" : "text" }}
+          />
+
+          {/* Background fill box if present */}
           {el.fillColor && el.fillColor !== "transparent" && (
             <rect
-              x={el.x - 6}
-              y={el.y - 6}
-              width={el.width + 12}
-              height={el.height + 12}
+              x={el.x}
+              y={el.y}
+              width={el.width}
+              height={el.height}
               fill={COLORS[el.fillColor] || el.fillColor}
-              rx={10}
-              opacity={0.3}
+              rx={8}
             />
           )}
+
           <text
             x={textX}
-            y={el.y + el.fontSize * 0.88}
+            y={startY}
             fill={hex}
-            fontSize={el.fontSize}
+            fontSize={fittedFontSize}
             fontFamily={font}
             fontWeight="600"
             textAnchor={anchor}
-            style={{ whiteSpace: "pre-wrap", wordBreak: "break-word", pointerEvents: "all", cursor: "pointer" }}
+            style={{ pointerEvents: "all", cursor: tool === "select" ? "move" : "text" }}
           >
-            {el.text.split("\n").map((line, i) => (
-              <tspan key={i} x={textX} dy={i === 0 ? 0 : el.fontSize * 1.35}>
+            {lines.map((line, i) => (
+              <tspan key={i} x={textX} dy={i === 0 ? 0 : lineHeight}>
                 {line}
               </tspan>
             ))}
@@ -2141,12 +2755,12 @@ export default function DrawableView() {
     const rh = Math.abs(el.height);
 
     return (
-      <g key={el.id} transform={transform}>
+      <g key={el.id} transform={transform} style={{ pointerEvents: "all", cursor: tool === "select" ? "move" : "crosshair" }}>
         {/* Underlay SVG Fill Shape for Solid / Hatch Fill */}
         {fillHex !== "none" && (
           <>
             {el.type === "rectangle" && (
-              <rect x={rx} y={ry} width={rw} height={rh} fill={fillHex} pointerEvents="all" />
+              <rect x={rx} y={ry} width={rw} height={rh} fill={fillHex} pointerEvents="all" rx={4} />
             )}
             {el.type === "ellipse" && (
               <ellipse cx={rx + rw / 2} cy={ry + rh / 2} rx={rw / 2} ry={rh / 2} fill={fillHex} pointerEvents="all" />
@@ -2168,25 +2782,23 @@ export default function DrawableView() {
           </>
         )}
 
-        <path d={pathD} {...styleProps} fill={hatchUrl !== "none" ? hatchUrl : "none"} pointerEvents="stroke" />
-        
-        {(el.type === "line" || el.type === "arrow" || el.type === "freedraw") && (
-          <path
-            d={pathD}
-            stroke="transparent"
-            strokeWidth={15}
-            fill="none"
-            pointerEvents="stroke"
-            style={{ cursor: tool === "select" ? "move" : "default" }}
-          />
-        )}
+        <path
+          d={pathD}
+          stroke={hex}
+          strokeWidth={el.strokeWidth}
+          strokeDasharray={el.strokeStyle === "dashed" ? "10 6" : el.strokeStyle === "dotted" ? "2 6" : "none"}
+          opacity={el.opacity || 1}
+          fill={hatchUrl !== "none" ? hatchUrl : "none"}
+          pointerEvents="stroke"
+          style={{ cursor: tool === "select" ? "move" : "crosshair" }}
+        />
         
         {(el.type === "rectangle" || el.type === "ellipse" || el.type === "diamond" || el.type === "triangle" || el.type === "custom-icon") && (
           <path
             d={pathD}
             fill="transparent"
             pointerEvents="all"
-            style={{ cursor: tool === "select" ? "move" : "default" }}
+            style={{ cursor: tool === "select" ? "move" : "crosshair" }}
           />
         )}
       </g>
@@ -2215,19 +2827,17 @@ export default function DrawableView() {
 
   return (
     <div
-      className={`relative w-full h-screen flex overflow-hidden select-none transition-colors duration-300 ${
-        darkMode ? "bg-slate-900 text-slate-100" : "bg-slate-50 text-slate-900"
-      }`}
+      className="relative w-full h-screen flex overflow-hidden select-none bg-white text-slate-900"
     >
       {/* Floating Notification Toast Banner (Positioned at bottom-right above share bar) */}
       {toast.visible && (
-        <div className="absolute bottom-20 right-4 z-50 px-4 py-2.5 backdrop-blur-md bg-slate-900/95 dark:bg-slate-100/95 text-white dark:text-slate-900 rounded-2xl shadow-2xl border border-slate-700/50 dark:border-slate-300/50 text-xs font-semibold flex items-center gap-2.5 animate-fade-in transition-all">
+        <div className="absolute bottom-20 right-4 z-50 px-3 py-1.5 backdrop-blur-xl bg-white/95 text-slate-800 rounded-xl shadow-lg border border-slate-200/80 text-[11px] font-medium flex items-center gap-2 animate-fade-in transition-all">
           <span>{toast.message}</span>
           <button
             onClick={() => setToast((prev) => ({ ...prev, visible: false }))}
-            className="hover:opacity-75 cursor-pointer p-0.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-white dark:hover:text-black"
+            className="p-0.5 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer shrink-0"
           >
-            <X size={14} />
+            <X size={13} />
           </button>
         </div>
       )}
@@ -2240,13 +2850,13 @@ export default function DrawableView() {
             <button
               onClick={() => navigate(-1)}
               title="Volver"
-              className="btn-draw p-2.5 backdrop-blur-md bg-white/80 dark:bg-slate-800/80 rounded-xl shadow-lg border border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 hover:scale-105 transition-all duration-200 cursor-pointer flex items-center justify-center"
+              className="btn-draw p-2.5 backdrop-blur-xl bg-white/85 rounded-xl shadow-lg border border-slate-200/80 hover:bg-slate-100 text-slate-700 hover:scale-105 transition-all duration-200 cursor-pointer flex items-center justify-center"
             >
               <ChevronLeft size={20} />
             </button>
 
             {/* Real-time Auto-Save Badge */}
-            <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border border-slate-200/50 dark:border-slate-700/50 shadow-lg text-xs font-medium text-slate-600 dark:text-slate-300">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl bg-white/85 backdrop-blur-xl border border-slate-200/80 shadow-lg text-xs font-medium text-slate-600">
               {autoSaveStatus === "saving" ? (
                 <>
                   <RefreshCw size={14} className="animate-spin text-purple-500" />
@@ -2258,9 +2868,9 @@ export default function DrawableView() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                   </span>
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">Autoguardado</span>
+                  <span className="font-semibold text-emerald-600">Autoguardado</span>
                   {lastSavedTime && (
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                    <span className="text-[10px] text-slate-400 font-mono">
                       {lastSavedTime}
                     </span>
                   )}
@@ -2289,6 +2899,8 @@ export default function DrawableView() {
             setIsLibraryDropdownOpen={setIsLibraryDropdownOpen}
             isShapeDropdownOpen={isShapeDropdownOpen}
             setIsShapeDropdownOpen={setIsShapeDropdownOpen}
+            isArrowDropdownOpen={isArrowDropdownOpen}
+            setIsArrowDropdownOpen={setIsArrowDropdownOpen}
             imageInputRef={imageInputRef}
             undo={handleUndo}
             redo={handleRedo}
@@ -2296,18 +2908,67 @@ export default function DrawableView() {
             canRedo={historyIndex < history.length - 1}
             clearCanvas={handleClear}
             resetDefaultStyles={resetDefaultStyles}
+            connectedCount={connectedCount}
           />
+
+          {/* Floating Arrow Type Dropdown Popover */}
+          {isArrowDropdownOpen && (
+            <div className="absolute top-[76px] left-[calc(50%-90px)] -translate-x-1/2 z-40 p-2.5 backdrop-blur-xl bg-white/95 rounded-2xl shadow-2xl border border-slate-200/80 flex flex-col gap-1 w-56 animate-fade-in text-slate-800">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-100 mb-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-1 flex items-center gap-1">
+                  <ArrowUpRight size={13} className="text-sky-500" /> Variantes de Flechas
+                </span>
+                <button
+                  onClick={() => setIsArrowDropdownOpen(false)}
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+              {[
+                { id: "straight", icon: ArrowUpRight, label: "Flecha Directa / Recta" },
+                { id: "elbow", icon: CornerDownRight, label: "Flecha con Esquina (90°)" },
+                { id: "curved", icon: TrendingUp, label: "Flecha Curva" },
+              ].map((at) => {
+                const ArrowIconComp = at.icon;
+                const isSel = tool === "arrow" && arrowType === at.id;
+                return (
+                  <button
+                    key={at.id}
+                    onClick={() => {
+                      setArrowType(at.id);
+                      if (selectedIds.length > 0) {
+                        updateSelectedStyle("arrowType", at.id);
+                      } else {
+                        setTool("arrow");
+                      }
+                      setIsArrowDropdownOpen(false);
+                    }}
+                    className={`btn-draw px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-all cursor-pointer ${
+                      isSel
+                        ? "bg-sky-500 text-white shadow-md shadow-sky-500/20"
+                        : "text-slate-700 hover:bg-sky-50 hover:text-sky-700 font-semibold"
+                    }`}
+                  >
+                    <ArrowIconComp size={16} />
+                    <span className="flex-1 text-left">{at.label}</span>
+                    {isSel && <span className="text-[10px] font-black">✓</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Floating Shape Dropdown Popover (Aligned directly under Formas button) */}
           {isShapeDropdownOpen && (
-            <div className="absolute top-[76px] left-[calc(50%-140px)] -translate-x-1/2 z-40 p-2.5 backdrop-blur-xl bg-white/95 dark:bg-slate-900/95 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-slate-800/80 flex flex-col gap-1 w-52 animate-fade-in">
-              <div className="flex items-center justify-between pb-1 border-b border-slate-100 dark:border-slate-800 mb-1">
-                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 px-1 flex items-center gap-1">
+            <div className="absolute top-[76px] left-[calc(50%-170px)] -translate-x-1/2 z-40 p-2.5 backdrop-blur-xl bg-white/95 rounded-2xl shadow-2xl border border-slate-200/80 flex flex-col gap-1 w-52 animate-fade-in text-slate-800">
+              <div className="flex items-center justify-between pb-1 border-b border-slate-100 mb-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-1 flex items-center gap-1">
                   <Shapes size={13} className="text-emerald-500" /> Formas Básicas
                 </span>
                 <button
                   onClick={() => setIsShapeDropdownOpen(false)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 cursor-pointer"
                 >
                   <X size={13} />
                 </button>
@@ -2324,15 +2985,18 @@ export default function DrawableView() {
                   <button
                     key={st.id}
                     onClick={() => {
-                      setTool(st.id);
-                      setSelectedIds([]);
-                      resetDefaultStyles();
+                      if (selectedIds.length > 0) {
+                        updateSelectedStyle("type", st.id);
+                      } else {
+                        setTool(st.id);
+                        resetDefaultStyles();
+                      }
                       setIsShapeDropdownOpen(false);
                     }}
                     className={`btn-draw px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2.5 transition-all cursor-pointer ${
                       isSel
                         ? "bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
-                        : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        : "text-slate-700 hover:bg-emerald-50 hover:text-emerald-700 font-semibold"
                     }`}
                   >
                     <ShapeIcon size={16} />
@@ -2344,10 +3008,10 @@ export default function DrawableView() {
           )}
 
           {/* Floating Library Dropdown Popover (Aligned directly under Custom Icon button) */}
-          {isLibraryDropdownOpen && tool === "custom-icon" && (
-            <div className="absolute top-[76px] left-[calc(50%-80px)] -translate-x-1/2 z-40 w-84 sm:w-96 p-4 backdrop-blur-xl bg-white/95 dark:bg-slate-900/95 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-slate-800/80 flex flex-col gap-3 animate-fade-in max-h-[75vh] overflow-hidden">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                <div className="text-xs font-black uppercase tracking-wider text-purple-600 dark:text-purple-300 flex items-center gap-1.5 font-extrabold">
+          {isLibraryDropdownOpen && (
+            <div className="absolute top-[76px] left-[calc(50%-80px)] -translate-x-1/2 z-40 w-84 sm:w-96 p-4 backdrop-blur-xl bg-white/95 rounded-2xl shadow-2xl border border-slate-200/80 flex flex-col gap-3 animate-fade-in max-h-[75vh] overflow-hidden text-slate-800">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <div className="text-xs font-black uppercase tracking-wider text-purple-600 flex items-center gap-1.5 font-extrabold">
                   <Sparkles size={15} className="text-purple-500" />
                   <span>Biblioteca de Iconos ({ICON_LIBRARY.length})</span>
                 </div>
@@ -2366,19 +3030,19 @@ export default function DrawableView() {
                   placeholder="Buscar icono..."
                   value={iconSearch}
                   onChange={(e) => setIconSearch(e.target.value)}
-                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200/40 dark:border-slate-700/40 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                  className="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-100/90 rounded-xl border border-slate-200/80 text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500 font-medium"
                 />
               </div>
 
-              <div className="flex gap-1 overflow-x-auto scrollbar-none pb-1 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex gap-1 overflow-x-auto scrollbar-none pb-1 border-b border-slate-100">
                 {ICON_CATEGORIES.map((cat) => (
                   <button
                     key={cat.id}
                     onClick={() => setIconCategory(cat.id)}
                     className={`btn-draw px-2.5 py-1 text-[11px] font-semibold rounded-lg transition-all cursor-pointer whitespace-nowrap ${
                       iconCategory === cat.id
-                        ? "bg-purple-100 dark:bg-purple-950/50 text-purple-600 dark:text-purple-300 font-bold"
-                        : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                        ? "bg-purple-600 text-white font-bold shadow-sm"
+                        : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"
                     }`}
                   >
                     {cat.label}
@@ -2395,14 +3059,18 @@ export default function DrawableView() {
                       key={lib.id}
                       onClick={() => {
                         setActiveLibraryIcon(lib.id);
+                        if (selectedIds.length > 0) {
+                          updateSelectedStyle("iconName", lib.id);
+                        } else {
+                          setTool("custom-icon");
+                        }
                         setIsLibraryDropdownOpen(false);
-                        if (resetDefaultStyles) resetDefaultStyles();
                       }}
                       title={lib.label}
                       className={`btn-draw p-2.5 rounded-xl transition-all duration-150 hover:scale-108 flex flex-col items-center justify-center gap-1 cursor-pointer ${
                         isSel
-                          ? "bg-purple-100 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 font-bold border border-purple-500/30 ring-2 ring-purple-500/20"
-                          : "hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400"
+                          ? "bg-purple-100 text-purple-700 font-bold border border-purple-300 ring-2 ring-purple-500/20"
+                          : "hover:bg-slate-100 text-slate-700 hover:text-purple-600 border border-transparent"
                       }`}
                     >
                       <LibIcon size={18} />
@@ -2431,6 +3099,10 @@ export default function DrawableView() {
             setStrokeWidth={setStrokeWidth}
             strokeStyle={strokeStyle}
             setStrokeStyle={setStrokeStyle}
+            arrowHeadSize={arrowHeadSize}
+            setArrowHeadSize={setArrowHeadSize}
+            arrowType={arrowType}
+            setArrowType={setArrowType}
             fontFamily={fontFamily}
             setFontFamily={setFontFamily}
             fontSize={fontSize}
@@ -2447,10 +3119,16 @@ export default function DrawableView() {
             imageInputRef={imageInputRef}
             activeIconObj={activeIconObj}
             setIsLibraryDropdownOpen={setIsLibraryDropdownOpen}
-            handleRotateSelection={handleRotateSelection}
-            handleGroupToggle={handleGroupToggle}
             handleToggleFreeMove={handleToggleFreeMove}
             handleCenterView={handleCenterView}
+            handleCopySelection={handleCopySelection}
+            handleCutSelection={handleCutSelection}
+            handlePasteSelection={handlePasteSelection}
+            handleDuplicateSelection={handleDuplicateSelection}
+            selectedCount={selectedIds.length}
+            isGrouped={selectedIds.length > 0 && elements.filter((e) => selectedIds.includes(e.id)).some((e) => !!e.groupId)}
+            handleGroupSelection={handleGroupSelection}
+            handleUngroupSelection={handleUngroupSelection}
           />
 
           {/* Floating Expand Sidebar Button */}
@@ -2458,14 +3136,14 @@ export default function DrawableView() {
             <button
               onClick={() => setIsSidebarOpen(true)}
               title="Mostrar Estilos"
-              className="btn-draw absolute top-20 left-4 z-20 p-2.5 backdrop-blur-md bg-white/80 dark:bg-slate-800/80 rounded-xl shadow-lg border border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 hover:scale-105 transition-all duration-200 cursor-pointer flex items-center justify-center animate-fade-in"
+              className="btn-draw absolute top-18 sm:top-20 left-4 z-20 p-2.5 backdrop-blur-xl bg-white/85 rounded-xl shadow-lg border border-slate-200/80 hover:bg-slate-100 text-slate-700 hover:scale-105 transition-all duration-200 cursor-pointer flex items-center justify-center animate-fade-in"
             >
               <ChevronRight size={20} />
             </button>
           )}
 
           {/* Floating Canvas Save, Share & Export Control Panel */}
-          <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1.5 p-1.5 sm:p-2 backdrop-blur-xl bg-white/95 dark:bg-slate-900/95 rounded-2xl shadow-2xl border border-slate-200/80 dark:border-slate-800/80 transition-all duration-300 max-w-[calc(100vw-1rem)]">
+          <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1.5 p-1.5 sm:p-2 backdrop-blur-xl bg-white/85 rounded-2xl shadow-xl border border-slate-200/80 transition-all duration-300 max-w-[calc(100vw-1rem)]">
             <button
               onClick={() => setIsShareModalOpen(true)}
               title="Compartir enlace de proyecto"
@@ -2482,7 +3160,7 @@ export default function DrawableView() {
                 showToast("🧘 Modo Zen activo — Interfaz ocultada. Pulsa Esc o el botón para volver", "info", 3500);
               }}
               title="Modo Zen / Presentación (Limpiar pantalla y ocultar interfaz)"
-              className="btn-draw inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs font-bold rounded-xl bg-slate-800 dark:bg-slate-100 hover:bg-slate-900 dark:hover:bg-white text-white dark:text-slate-900 shadow-md hover:scale-105 transition-all cursor-pointer whitespace-nowrap shrink-0"
+              className="btn-draw inline-flex items-center justify-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-900 text-white shadow-md hover:scale-105 transition-all cursor-pointer whitespace-nowrap shrink-0"
             >
               <EyeOff size={15} />
               <span className="hidden sm:inline">Modo Zen</span>
@@ -2496,12 +3174,12 @@ export default function DrawableView() {
               className="hidden"
             />
 
-            <div className="w-[1px] h-6 bg-slate-200 dark:bg-slate-700 mx-0.5 shrink-0" />
+            <div className="w-[1px] h-6 bg-slate-200 mx-0.5 shrink-0" />
 
             <button
               onClick={handleSVGExport}
               title="Exportar como SVG (vectorial)"
-              className="btn-draw inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-xs font-bold rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200/60 dark:border-slate-700/60 transition-all hover:scale-105 cursor-pointer whitespace-nowrap shrink-0"
+              className="btn-draw inline-flex items-center justify-center gap-1 px-2.5 py-1.5 sm:px-3.5 sm:py-2 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200/80 transition-all hover:scale-105 cursor-pointer whitespace-nowrap shrink-0"
             >
               <span>SVG</span>
             </button>
@@ -2517,34 +3195,34 @@ export default function DrawableView() {
 
           {/* Floating Canvas Zoom and coordinates info indicators */}
           <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2">
-            <div className="flex p-1.5 backdrop-blur-md bg-white/80 dark:bg-slate-800/80 rounded-2xl shadow-xl border border-slate-200/50 dark:border-slate-700/50 items-center gap-1.5">
+            <div className="flex p-1.5 backdrop-blur-xl bg-white/85 rounded-2xl shadow-xl border border-slate-200/80 items-center gap-1.5">
               <button
                 onClick={() => handleZoom("out")}
                 title="Alejar"
-                className="btn-draw p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+                className="btn-draw p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
               >
                 <ZoomOut size={14} />
               </button>
-              <span className="text-xs font-bold text-slate-500 w-12 text-center">
+              <span className="text-xs font-bold text-slate-600 w-12 text-center">
                 {Math.round(zoom * 100)}%
               </span>
               <button
                 onClick={() => handleZoom("in")}
                 title="Acercar"
-                className="btn-draw p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+                className="btn-draw p-1.5 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer"
               >
                 <ZoomIn size={14} />
               </button>
               <button
                 onClick={() => handleZoom("reset")}
                 title="Resetear Zoom (100%)"
-                className="btn-draw p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
+                className="btn-draw p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer"
               >
                 <RotateCcw size={12} />
               </button>
 
               {/* Preset Zoom Levels */}
-              <div className="hidden md:flex items-center gap-1 pl-1 border-l border-slate-200/50 dark:border-slate-700/50">
+              <div className="hidden md:flex items-center gap-1 pl-1 border-l border-slate-200">
                 {[0.5, 1, 1.5, 2].map((zVal) => (
                   <button
                     key={zVal}
@@ -2563,7 +3241,7 @@ export default function DrawableView() {
                     className={`btn-draw px-1.5 py-0.5 text-[10px] font-mono font-bold rounded-md transition-all cursor-pointer ${
                       Math.abs(zoom - zVal) < 0.05
                         ? "bg-purple-600 text-white shadow-sm"
-                        : "text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                        : "text-slate-400 hover:text-slate-700 hover:bg-slate-100"
                     }`}
                   >
                     {Math.round(zVal * 100)}%
@@ -2576,13 +3254,13 @@ export default function DrawableView() {
             <button
               onClick={handleCenterView}
               title="Centrar lienzo en mi trabajo (Enfocar elementos)"
-              className="btn-draw px-3 py-2 rounded-2xl backdrop-blur-md bg-white/80 dark:bg-slate-800/80 hover:bg-purple-50 dark:hover:bg-purple-950/40 text-purple-600 dark:text-purple-400 border border-slate-200/50 dark:border-slate-700/50 text-xs font-bold transition-all hover:scale-105 cursor-pointer flex items-center gap-1.5 shadow-xl"
+              className="btn-draw px-3 py-2 rounded-2xl backdrop-blur-xl bg-white/85 hover:bg-purple-50 text-purple-600 border border-slate-200/80 text-xs font-bold transition-all hover:scale-105 cursor-pointer flex items-center gap-1.5 shadow-xl"
             >
-              <Target size={16} className="text-purple-600 dark:text-purple-400" />
+              <Target size={16} className="text-purple-600" />
               <span className="hidden sm:inline">Centrar Trabajo</span>
             </button>
 
-            <div className="hidden md:flex px-3 py-2 backdrop-blur-md bg-white/80 dark:bg-slate-800/80 rounded-2xl shadow-xl border border-slate-200/50 dark:border-slate-700/50 text-xs font-bold text-slate-400 gap-3 items-center">
+            <div className="hidden md:flex px-3 py-2 backdrop-blur-xl bg-white/85 rounded-2xl shadow-xl border border-slate-200/80 text-xs font-bold text-slate-500 gap-3 items-center">
               <span className="flex items-center gap-1">
                 <Info size={12} /> Elementos: {elements.length}
               </span>
@@ -2597,12 +3275,15 @@ export default function DrawableView() {
         <button
           onClick={() => setIsZenMode(false)}
           title="Mostrar Interfaz (o presiona Esc)"
-          className="absolute bottom-4 right-4 z-50 px-4 py-2.5 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white shadow-2xl hover:scale-105 transition-all cursor-pointer flex items-center gap-2 font-extrabold text-xs animate-bounce"
+          className="btn-draw absolute bottom-4 right-4 z-50 px-3.5 py-2 rounded-xl backdrop-blur-xl bg-white/90 hover:bg-purple-50 text-purple-700 border border-slate-200/80 shadow-xl hover:scale-105 transition-all cursor-pointer flex items-center gap-2 font-bold text-xs"
         >
-          <Eye size={18} />
+          <Eye size={16} className="text-purple-600" />
           <span>Mostrar Interfaz (Esc)</span>
         </button>
       )}
+
+      {/* Live Multiplayer Cursors (Figma Style) */}
+      <LiveCursors remoteCursors={remoteCursors} zoom={zoom} pan={pan} />
 
       {/* Actual Drawing SVG Canvas Area */}
       <svg
@@ -2611,9 +3292,19 @@ export default function DrawableView() {
         onMouseDown={handlePointerDown}
         onMouseMove={handlePointerMove}
         onMouseUp={handlePointerUp}
+        onMouseLeave={handlePointerUp}
         onDoubleClick={handleDoubleClick}
         style={{
-          cursor: tool === "hand" ? (isPanning ? "grabbing" : "grab") : tool === "select" ? "default" : "crosshair",
+          cursor:
+            tool === "hand"
+              ? isPanning
+                ? "grabbing"
+                : "grab"
+              : tool === "select"
+              ? isDrawing && !resizeHandle && !selectionMarquee
+                ? "move"
+                : "default"
+              : "crosshair",
         }}
       >
         <defs>
@@ -2625,7 +3316,7 @@ export default function DrawableView() {
             x={pan.x}
             y={pan.y}
           >
-            <circle cx={1} cy={1} r={1} fill={darkMode ? "#334155" : "#cbd5e1"} />
+            <circle cx={1} cy={1} r={1} fill="#cbd5e1" />
           </pattern>
           {Object.entries(COLORS).map(([name, hex]) => (
             <pattern
@@ -2644,6 +3335,30 @@ export default function DrawableView() {
         <rect width="100%" height="100%" fill="url(#grid)" pointerEvents="none" />
 
         <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
+          {/* Magnetic Straight Rotation Alignment Guide Line (Línea de lentitud trazada para dejar recto) */}
+          {snapRotationGuide?.isStraight && (
+            <g pointerEvents="none">
+              <line
+                x1={snapRotationGuide.cx - 3000 / zoom}
+                y1={snapRotationGuide.cy}
+                x2={snapRotationGuide.cx + 3000 / zoom}
+                y2={snapRotationGuide.cy}
+                stroke="#10b981"
+                strokeWidth={2.5 / zoom}
+                strokeDasharray={`${6 / zoom} ${4 / zoom}`}
+              />
+              <line
+                x1={snapRotationGuide.cx}
+                y1={snapRotationGuide.cy - 3000 / zoom}
+                x2={snapRotationGuide.cx}
+                y2={snapRotationGuide.cy + 3000 / zoom}
+                stroke="#10b981"
+                strokeWidth={2.5 / zoom}
+                strokeDasharray={`${6 / zoom} ${4 / zoom}`}
+              />
+            </g>
+          )}
+
           {elements.map((el) => renderElement(el))}
           {activeElement && renderElement(activeElement)}
 
@@ -2695,10 +3410,164 @@ export default function DrawableView() {
           )}
 
           {/* Multi and Single Selection Highlight Bounding Box & Interactive Rotation Handle */}
-          {!isZenMode && tool === "select" && selectedIds.length > 0 && (
+          {!isZenMode && tool === "select" && selectedIds.length > 0 && !editingTextId && (
             (() => {
               const selectedElements = elements.filter((el) => selectedIds.includes(el.id));
               if (selectedElements.length === 0) return null;
+
+              // Dedicated 2-Point & Corner Handle Selection Overlay for single Arrow or Line element
+              if (selectedElements.length === 1 && (selectedElements[0].type === "arrow" || selectedElements[0].type === "line")) {
+                const arrowEl = selectedElements[0];
+                const x1 = arrowEl.x;
+                const y1 = arrowEl.y;
+                const x2 = arrowEl.x + arrowEl.width;
+                const y2 = arrowEl.y + arrowEl.height;
+                const aType = arrowEl.arrowType || "straight";
+
+                const isVert = Math.abs(x2 - x1) < 8;
+                const isHoriz = Math.abs(y2 - y1) < 8;
+
+                let guidePath = `M ${x1} ${y1} L ${x2} ${y2}`;
+                let handleCx = (x1 + x2) / 2;
+                let handleCy = (y1 + y2) / 2;
+
+                if (aType === "elbow" || aType === "esquina" || aType === "angular") {
+                  if (isVert) {
+                    const stepX = x1 + (arrowEl.elbowOffsetPx !== undefined && arrowEl.elbowOffsetPx !== null ? arrowEl.elbowOffsetPx : 50);
+                    guidePath = `M ${x1} ${y1} L ${stepX} ${y1} L ${stepX} ${y2} L ${x2} ${y2}`;
+                    handleCx = stepX;
+                    handleCy = (y1 + y2) / 2;
+                  } else if (isHoriz) {
+                    const stepY = y1 + (arrowEl.elbowOffsetPx !== undefined && arrowEl.elbowOffsetPx !== null ? arrowEl.elbowOffsetPx : 50);
+                    guidePath = `M ${x1} ${y1} L ${x1} ${stepY} L ${x2} ${stepY} L ${x2} ${y2}`;
+                    handleCx = (x1 + x2) / 2;
+                    handleCy = stepY;
+                  } else {
+                    const midX = x1 + (arrowEl.elbowOffsetPx !== undefined && arrowEl.elbowOffsetPx !== null ? arrowEl.elbowOffsetPx : (x2 - x1) / 2);
+                    guidePath = `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
+                    handleCx = midX;
+                    handleCy = (y1 + y2) / 2;
+                  }
+                } else if (aType === "curved") {
+                  const midX = (x1 + x2) / 2;
+                  const midY = (y1 + y2) / 2;
+                  const dx = x2 - x1;
+                  const dy = y2 - y1;
+                  const off = arrowEl.elbowOffsetPx !== undefined && arrowEl.elbowOffsetPx !== null ? arrowEl.elbowOffsetPx / 100 : 0.25;
+                  const cx = midX - dy * off;
+                  const cy = midY + dx * off;
+                  guidePath = `M ${x1} ${y1} Q ${cx} ${cy} ${x2} ${y2}`;
+                  handleCx = cx;
+                  handleCy = cy;
+                }
+
+                const angleRad = Math.atan2(y2 - y1, x2 - x1);
+                let angleDeg = Math.round((angleRad * 180) / Math.PI);
+                if (angleDeg < 0) angleDeg += 360;
+
+                const sw = Math.max(1.5, 2.2 / zoom);
+                const handleR = Math.max(7, 10 / zoom);
+
+                return (
+                  <g pointerEvents="all">
+                    {/* Vector Guide Path */}
+                    <path
+                      d={guidePath}
+                      fill="none"
+                      stroke="#8b5cf6"
+                      strokeWidth={sw}
+                      strokeDasharray={`${5 / zoom} ${4 / zoom}`}
+                      pointerEvents="none"
+                    />
+
+                    {/* Anchor Handle A (Start - Origen) */}
+                    <g style={{ cursor: "crosshair" }} pointerEvents="all">
+                      <circle
+                        cx={x1}
+                        cy={y1}
+                        r={handleR}
+                        fill="#ffffff"
+                        stroke="#8b5cf6"
+                        strokeWidth={sw * 1.3}
+                      />
+                      <foreignObject
+                        x={x1 - handleR}
+                        y={y1 - handleR}
+                        width={handleR * 2}
+                        height={handleR * 2}
+                        style={{ pointerEvents: "none" }}
+                      >
+                        <div className="w-full h-full flex items-center justify-center text-purple-700 font-extrabold text-[10px]">
+                          A
+                        </div>
+                      </foreignObject>
+                    </g>
+
+                    {/* Anchor Handle B (End - Punta) */}
+                    <g style={{ cursor: "crosshair" }} pointerEvents="all">
+                      <circle
+                        cx={x2}
+                        cy={y2}
+                        r={handleR}
+                        fill="#8b5cf6"
+                        stroke="#ffffff"
+                        strokeWidth={sw * 1.3}
+                      />
+                      <foreignObject
+                        x={x2 - handleR}
+                        y={y2 - handleR}
+                        width={handleR * 2}
+                        height={handleR * 2}
+                        style={{ pointerEvents: "none" }}
+                      >
+                        <div className="w-full h-full flex items-center justify-center text-white font-extrabold text-[10px]">
+                          B
+                        </div>
+                      </foreignObject>
+                    </g>
+
+                    {/* Anchor Handle C (Elbow / Corner Offset Control) */}
+                    {(aType === "elbow" || aType === "esquina" || aType === "angular") && (
+                      <g style={{ cursor: isHoriz ? "ns-resize" : "ew-resize" }} pointerEvents="all">
+                        <circle
+                          cx={handleCx}
+                          cy={handleCy}
+                          r={handleR}
+                          fill="#06b6d4"
+                          stroke="#ffffff"
+                          strokeWidth={sw * 1.3}
+                        />
+                        <foreignObject
+                          x={handleCx - handleR}
+                          y={handleCy - handleR}
+                          width={handleR * 2}
+                          height={handleR * 2}
+                          style={{ pointerEvents: "none" }}
+                        >
+                          <div className="w-full h-full flex items-center justify-center text-white font-extrabold text-[10px]">
+                            C
+                          </div>
+                        </foreignObject>
+                      </g>
+                    )}
+
+                    {/* Live Clock Hand Angle Badge */}
+                    <foreignObject
+                      x={x2 + 12 / zoom}
+                      y={y2 - 12 / zoom}
+                      width={100 / zoom}
+                      height={24 / zoom}
+                      style={{ pointerEvents: "none" }}
+                    >
+                      <div className="flex items-center">
+                        <span className="px-2 py-0.5 rounded-md bg-purple-900/90 text-white font-mono font-bold text-[10px] shadow-md border border-purple-400/40 whitespace-nowrap">
+                          🧭 {angleDeg}°
+                        </span>
+                      </div>
+                    </foreignObject>
+                  </g>
+                );
+              }
 
               let groupMinX = Infinity;
               let groupMaxX = -Infinity;
@@ -2854,105 +3723,93 @@ export default function DrawableView() {
         </g>
       </svg>
 
-      {/* Inline PowerPoint-Style Text Frame Overlay Editor */}
+      {/* Inline Text Editor Overlay Matching Box Dimensions & Centered Over Text Element */}
       {editingTextId && (
         (() => {
           const el = elements.find((e) => e.id === editingTextId);
           if (!el) return null;
 
+          const currentText = textInputValue;
+          const dims = computeTextDimensions(currentText || "Escribe tu texto...", el.fontSize, el.fontFamily, el.width);
+          const realW = Math.max(200, Math.max(el.width || 0, dims.width));
+          const realH = Math.max(70, Math.max(el.height || 0, dims.height));
+
+          const boxWidth = Math.max(200, Math.round(realW * zoom));
+          const boxHeight = Math.max(60, Math.round(realH * zoom));
+
           const screenX = el.x * zoom + pan.x;
           const screenY = el.y * zoom + pan.y;
-          const hex = COLORS[el.strokeColor] || el.strokeColor || "#000";
-          const font =
-            el.fontFamily === "arial" || el.fontFamily === "sans" || !el.fontFamily
-              ? "Arial, Helvetica, sans-serif"
-              : el.fontFamily === "hand"
-              ? "'Architects Daughter', cursive"
-              : el.fontFamily === "mono"
-              ? "monospace"
-              : el.fontFamily === "serif"
-              ? "Georgia, serif"
-              : "Arial, Helvetica, sans-serif";
 
-          const align = el.textAlign || "left";
-          const currentDims = computeTextDimensions(textInputValue || "Escribe tu texto...", el.fontSize, el.fontFamily);
-          const boxWidth = Math.max(140 * zoom, (currentDims.width + 20) * zoom);
-          const boxHeight = Math.max((el.fontSize * 1.3 + 8) * zoom, (currentDims.height + 8) * zoom);
-
-          let leftPos = screenX - 6 * zoom;
+          const align = el.textAlign || "center";
+          let leftPos = screenX;
           if (align === "center") {
             leftPos = screenX + (el.width * zoom) / 2 - boxWidth / 2;
           } else if (align === "right") {
-            leftPos = screenX + el.width * zoom - boxWidth + 6 * zoom;
+            leftPos = screenX + el.width * zoom - boxWidth;
           }
-          const topPos = screenY - 4 * zoom;
+          const topPos = screenY + (el.height * zoom) / 2 - boxHeight / 2;
+
+          const hex = COLORS[el.strokeColor] || el.strokeColor || "#000";
+          const font =
+            el.fontFamily === "arial" || el.fontFamily === "sans" || !el.fontFamily
+              ? "'Inter', system-ui, -apple-system, sans-serif"
+              : el.fontFamily === "hand"
+              ? "'Architects Daughter', 'Caveat', cursive"
+              : el.fontFamily === "mono"
+              ? "'Fira Code', 'Courier New', monospace"
+              : el.fontFamily === "serif"
+              ? "Georgia, 'Times New Roman', serif"
+              : "'Inter', system-ui, sans-serif";
 
           return (
             <div
-              className="absolute z-40 flex flex-col gap-1 pointer-events-auto animate-fade-in"
+              className="absolute z-50 flex items-center justify-center pointer-events-auto border-2 border-purple-500 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl p-3 text-slate-800"
               style={{
                 left: `${leftPos}px`,
                 top: `${topPos}px`,
                 width: `${boxWidth}px`,
+                height: `${boxHeight}px`,
+                boxSizing: "border-box",
+                overflow: "hidden",
               }}
             >
-              <div
-                className="relative border-2 border-dashed border-purple-500/90 dark:border-purple-400/90 rounded-lg ring-4 ring-purple-500/15 p-1 flex flex-col transition-all duration-75"
-                style={{
-                  width: "100%",
-                  minHeight: `${boxHeight}px`,
-                  backgroundColor: "transparent",
+              <textarea
+                ref={textInputRef}
+                value={textInputValue}
+                placeholder="Escribe tu texto..."
+                autoFocus
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setTextInputValue(val);
+                  const updatedDims = computeTextDimensions(val, el.fontSize, el.fontFamily, el.width);
+                  setElements((prev) =>
+                    prev.map((item) =>
+                      item.id === el.id
+                        ? { ...item, text: val, width: Math.max(item.width, updatedDims.width), height: Math.max(item.height, updatedDims.height) }
+                        : item
+                    )
+                  );
                 }}
-              >
-                {/* PowerPoint Corner Handles */}
-                <div className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-white dark:bg-slate-900 border-2 border-purple-600 dark:border-purple-400 rounded-sm pointer-events-none shadow-sm" />
-                <div className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-white dark:bg-slate-900 border-2 border-purple-600 dark:border-purple-400 rounded-sm pointer-events-none shadow-sm" />
-                <div className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-white dark:bg-slate-900 border-2 border-purple-600 dark:border-purple-400 rounded-sm pointer-events-none shadow-sm" />
-                <div className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-white dark:bg-slate-900 border-2 border-purple-600 dark:border-purple-400 rounded-sm pointer-events-none shadow-sm" />
-
-                <textarea
-                  ref={textInputRef}
-                  value={textInputValue}
-                  placeholder="Escribe tu texto..."
-                  autoFocus
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setTextInputValue(val);
-                    const dims = computeTextDimensions(val || "Escribe tu texto...", el.fontSize, el.fontFamily);
-                    setElements(
-                      elements.map((item) =>
-                        item.id === el.id ? { ...item, text: val, width: dims.width, height: dims.height } : item
-                      )
-                    );
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape" || (e.key === "Enter" && (e.ctrlKey || e.metaKey))) {
-                      e.preventDefault();
-                      saveTextEdit();
-                    }
-                  }}
-                  onBlur={saveTextEdit}
-                  className="w-full bg-transparent focus:outline-none caret-purple-600 dark:caret-purple-400 resize-none overflow-hidden p-0 m-0 border-none font-medium placeholder-purple-400/40 dark:placeholder-purple-400/40"
-                  style={{
-                    fontSize: `${el.fontSize * zoom}px`,
-                    lineHeight: "1.3",
-                    fontFamily: font,
-                    textAlign: el.textAlign || "left",
-                    width: "100%",
-                    height: `${Math.max(el.fontSize * zoom * 1.3, (currentDims.height + 4) * zoom)}px`,
-                    color: hex,
-                    whiteSpace: "pre-wrap",
-                    wordBreak: "break-word",
-                    overflowWrap: "break-word",
-                  }}
-                />
-              </div>
-
-              {/* Status Hint Badge */}
-              <div className="mt-1 self-start px-2 py-0.5 backdrop-blur-md bg-purple-900/90 text-white text-[10px] font-bold rounded-md shadow-md flex items-center gap-1.5 pointer-events-none whitespace-nowrap opacity-80">
-                <span className="w-1.5 h-1.5 rounded-full bg-purple-400 animate-pulse" />
-                <span>Escribe libremente | Esc para finalizar</span>
-              </div>
+                onKeyDown={(e) => {
+                  if (e.key === "Escape" || (e.key === "Enter" && (e.ctrlKey || e.metaKey))) {
+                    e.preventDefault();
+                    saveTextEdit();
+                  }
+                }}
+                onBlur={saveTextEdit}
+                className="w-full h-full bg-transparent focus:outline-none caret-purple-600 resize-none p-0 m-0 border-none font-semibold leading-relaxed placeholder-slate-400 flex items-center justify-center"
+                style={{
+                  fontSize: `${Math.max(14, Math.round(el.fontSize * zoom))}px`,
+                  lineHeight: "1.35",
+                  fontFamily: font,
+                  textAlign: el.textAlign || "center",
+                  color: hex || "#1e293b",
+                  whiteSpace: "pre-wrap",
+                  wordBreak: "break-word",
+                  overflowWrap: "anywhere",
+                  overflow: "hidden",
+                }}
+              />
             </div>
           );
         })()
@@ -2961,110 +3818,15 @@ export default function DrawableView() {
 
 
       {/* SHARE PROJECT MODAL */}
-      {isShareModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-md bg-slate-900/60 animate-fade-in">
-          <div className="relative w-full max-w-lg p-6 bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col gap-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2.5 rounded-2xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400">
-                  <Share2 size={22} />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
-                    Compartir Proyecto
-                  </h3>
-                  <p className="text-xs text-slate-400 dark:text-slate-500">
-                    Enlace interactivo y autocomprimido para colaboraciones.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsShareModalOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Direct URL Share Box */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                Enlace Directo del Diagrama
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  readOnly
-                  value={generateShareUrl()}
-                  className="flex-1 px-3.5 py-2.5 text-xs bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/50 dark:border-slate-700/50 text-slate-600 dark:text-slate-300 font-mono focus:outline-none select-all truncate"
-                />
-                <button
-                  onClick={handleCopyShareLink}
-                  className={`btn-draw px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-                    isLinkCopied
-                      ? "bg-emerald-600 text-white"
-                      : "bg-purple-600 hover:bg-purple-700 text-white shadow-md hover:shadow-purple-500/20"
-                  }`}
-                >
-                  {isLinkCopied ? (
-                    <>
-                      <CheckCircle2 size={16} />
-                      <span>¡Copiado!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={16} />
-                      <span>Copiar Enlace</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-
-            {/* Quick Export Options */}
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <button
-                onClick={handleCopyJSON}
-                className="btn-draw p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 hover:bg-purple-50 dark:hover:bg-purple-950/30 text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer"
-              >
-                <CodeIcon size={16} />
-                <span>Copiar JSON</span>
-              </button>
-
-              <button
-                onClick={() => {
-                  handleJSONExport();
-                  setIsShareModalOpen(false);
-                }}
-                className="btn-draw p-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 hover:bg-purple-50 dark:hover:bg-purple-950/30 text-slate-700 dark:text-slate-300 hover:text-purple-600 dark:hover:text-purple-400 flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer"
-              >
-                <Upload size={16} />
-                <span>Descargar .json</span>
-              </button>
-            </div>
-
-            {/* Diagram Summary Card */}
-            <div className="p-3.5 rounded-2xl bg-slate-100/70 dark:bg-slate-800/40 border border-slate-200/40 dark:border-slate-700/40 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-              <div className="flex items-center gap-2">
-                <Info size={16} className="text-purple-500" />
-                <span>Total de Elementos: <strong className="text-slate-800 dark:text-slate-200">{elements.length}</strong></span>
-              </div>
-              <div>
-                <span>Autoguardado: <strong className="text-emerald-600 dark:text-emerald-400">Activo</strong></span>
-              </div>
-            </div>
-
-            <div className="pt-2 flex justify-end">
-              <button
-                onClick={() => setIsShareModalOpen(false)}
-                className="px-5 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-              >
-                Cerrar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ShareModal
+        isOpen={isShareModalOpen}
+        onClose={() => setIsShareModalOpen(false)}
+        elements={elements}
+        onCopyJSON={handleCopyJSON}
+        onDownloadJSON={handleJSONExport}
+        showToast={showToast}
+        onProjectCreated={(id) => setActiveProjectId(id)}
+      />
     </div>
   );
 }

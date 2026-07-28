@@ -24,6 +24,10 @@ import {
   Group,
   Target,
   Sparkles,
+  Copy,
+  Scissors,
+  Clipboard,
+  CopyPlus,
 } from "lucide-react";
 
 const COLORS = {
@@ -68,6 +72,10 @@ export default function StyleSidebar({
   setStrokeWidth,
   strokeStyle,
   setStrokeStyle,
+  arrowHeadSize = "medium",
+  setArrowHeadSize,
+  arrowType = "straight",
+  setArrowType,
   fontFamily,
   setFontFamily,
   fontSize,
@@ -88,6 +96,14 @@ export default function StyleSidebar({
   handleGroupToggle,
   handleToggleFreeMove,
   handleCenterView,
+  handleCopySelection,
+  handleCutSelection,
+  handlePasteSelection,
+  handleDuplicateSelection,
+  selectedCount = 0,
+  isGrouped = false,
+  handleGroupSelection,
+  handleUngroupSelection,
 }) {
   if (!isSidebarOpen) return null;
 
@@ -98,77 +114,124 @@ export default function StyleSidebar({
   const isConnectorTool = ["line", "arrow"].includes(tool);
 
   return (
-    <div className="absolute top-4 left-4 z-30 w-[calc(100vw-2rem)] sm:w-76 backdrop-blur-xl bg-white/95 dark:bg-slate-900/95 rounded-2xl shadow-2xl border border-slate-200/70 dark:border-slate-800/70 p-4 transition-all duration-300 max-h-[calc(100vh-6rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 animate-fade-in">
+    <div className="absolute top-18 sm:top-20 left-4 z-30 w-[calc(100vw-2rem)] sm:w-76 backdrop-blur-xl bg-white/85 rounded-2xl shadow-2xl border border-slate-200/80 p-4 transition-all duration-300 max-h-[calc(100vh-6.5rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 animate-fade-in">
       {/* Dynamic Header per Tool Page */}
-      <div className="flex items-center justify-between mb-4 border-b border-slate-200/50 dark:border-slate-800/50 pb-3">
+      <div className="flex items-center justify-between mb-4 border-b border-slate-200/60 pb-3">
         <div className="flex items-center gap-2.5">
           <div className={`p-2 rounded-xl bg-gradient-to-r ${toolMeta.color} text-white shadow-md shadow-purple-500/20`}>
             <ActiveIcon size={18} />
           </div>
           <div>
-            <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-100">
+            <h3 className="text-xs font-black uppercase tracking-wider text-slate-800">
               {hasSelection && tool === "select" ? "Inspector de Selección" : toolMeta.title}
             </h3>
-            <p className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
+            <p className="text-[10px] font-medium text-slate-500">
               {hasSelection ? "Modificando elemento seleccionado" : `Ajustes para modo ${tool}`}
             </p>
           </div>
         </div>
         <button
           onClick={() => setIsSidebarOpen(false)}
-          className="p-1.5 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
+          className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
           title="Ocultar panel"
         >
-          <ChevronLeft size={18} />
+          <ChevronLeft size={20} />
         </button>
       </div>
 
       <div className="space-y-4">
         {/* Selection Tools Page Actions */}
         {(hasSelection || tool === "select") && (
-          <div className="p-2.5 rounded-xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200/50 dark:border-purple-800/40 space-y-2">
-            <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300 block uppercase tracking-wide">
+          <div className="p-2.5 rounded-xl bg-purple-50/80 border border-purple-200/70 space-y-2">
+            <span className="text-[11px] font-bold text-purple-700 block uppercase tracking-wide">
               Acciones de Selección
             </span>
             <div className="grid grid-cols-2 gap-1.5">
-              {handleRotateSelection && (
+              {bringToFront && (
                 <button
-                  onClick={handleRotateSelection}
-                  className="btn-draw p-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm border border-slate-200/60 dark:border-slate-700/60"
+                  onClick={bringToFront}
+                  disabled={!hasSelection}
+                  title="Traer elementos al Frente"
+                  className="btn-draw p-2 rounded-lg bg-white hover:bg-purple-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm border border-slate-200/80 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  <RotateCw size={14} className="text-purple-600" />
-                  <span>Rotar 45°</span>
+                  <BringToFront size={14} className="text-purple-600" />
+                  <span>Al Frente</span>
                 </button>
               )}
-              {handleToggleFreeMove && (
+              {sendToBack && (
                 <button
-                  onClick={handleToggleFreeMove}
-                  className="btn-draw p-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm border border-slate-200/60 dark:border-slate-700/60"
+                  onClick={sendToBack}
+                  disabled={!hasSelection}
+                  title="Enviar elementos al Fondo"
+                  className="btn-draw p-2 rounded-lg bg-white hover:bg-purple-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm border border-slate-200/80 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  <Lock size={14} className="text-amber-500" />
-                  <span>Bloquear</span>
+                  <SendToBack size={14} className="text-purple-600" />
+                  <span>Al Fondo</span>
                 </button>
               )}
             </div>
-            {handleGroupToggle && (
-              <button
-                onClick={handleGroupToggle}
-                className="btn-draw w-full p-2 rounded-lg bg-white dark:bg-slate-800 hover:bg-purple-100 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 text-xs font-bold flex items-center justify-center gap-1.5 shadow-sm border border-purple-200/60 dark:border-purple-800/60"
-              >
-                <Group size={14} />
-                <span>Agrupar / Desagrupar</span>
-              </button>
-            )}
+            <div className="grid grid-cols-2 gap-1.5 pt-1">
+              {handleToggleFreeMove && (
+                <button
+                  onClick={handleToggleFreeMove}
+                  disabled={!hasSelection}
+                  className="btn-draw p-2 rounded-lg bg-white hover:bg-purple-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm border border-slate-200/80 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <Lock size={13} className="text-amber-500" />
+                  <span>Bloquear</span>
+                </button>
+              )}
+              {isGrouped ? (
+                <button
+                  onClick={handleUngroupSelection}
+                  title="Desagrupar elementos seleccionados"
+                  className="btn-draw p-2 rounded-lg bg-white hover:bg-purple-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm border border-slate-200/80 cursor-pointer"
+                >
+                  <Group size={13} className="text-purple-600" />
+                  <span>Desagrupar</span>
+                </button>
+              ) : (
+                <button
+                  onClick={handleGroupSelection}
+                  disabled={!hasSelection || (selectedCount !== undefined && selectedCount < 2)}
+                  title="Agrupar 2 o más elementos seleccionados"
+                  className="btn-draw p-2 rounded-lg bg-white hover:bg-purple-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm border border-slate-200/80 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <Group size={13} className="text-purple-600" />
+                  <span>Agrupar</span>
+                </button>
+              )}
+              {handleCopySelection && (
+                <button
+                  onClick={handleCopySelection}
+                  disabled={!hasSelection}
+                  title="Copiar elementos seleccionados (Ctrl+C)"
+                  className="btn-draw p-2 rounded-lg bg-white hover:bg-purple-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm border border-slate-200/80 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <Copy size={13} className="text-blue-500" />
+                  <span>Copiar</span>
+                </button>
+              )}
+              {handleCutSelection && (
+                <button
+                  onClick={handleCutSelection}
+                  disabled={!hasSelection}
+                  title="Cortar elementos seleccionados (Ctrl+X)"
+                  className="btn-draw p-2 rounded-lg bg-white hover:bg-purple-50 text-slate-700 text-xs font-semibold flex items-center justify-center gap-1.5 shadow-sm border border-slate-200/80 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                >
+                  <Scissors size={13} className="text-rose-500" />
+                  <span>Cortar</span>
+                </button>
+              )}
+            </div>
           </div>
         )}
-
-
 
         {/* Quick Image Import Button on Image tool */}
         {tool === "image" && (
           <button
             onClick={() => imageInputRef?.current?.click()}
-            className="btn-draw w-full p-2.5 rounded-xl border border-purple-200 dark:border-purple-800/50 bg-purple-50/60 dark:bg-purple-950/30 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-purple-700 dark:text-purple-300 flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer shadow-sm"
+            className="btn-draw w-full p-2.5 rounded-xl border border-purple-200 bg-purple-50/80 hover:bg-purple-100 text-purple-700 flex items-center justify-center gap-2 text-xs font-bold transition-all cursor-pointer shadow-sm"
           >
             <ImageIcon size={16} />
             <span>Importar Imagen (PNG / JPG)</span>
@@ -178,7 +241,7 @@ export default function StyleSidebar({
         {/* Hand / Pan Canvas Page Controls */}
         {tool === "hand" && !hasSelection && (
           <div className="space-y-3">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-xs text-slate-500">
               Modo Mano activo. Haz clic y arrastra sobre el lienzo para navegar libremente sin seleccionar elementos.
             </p>
             {handleCenterView && (
@@ -195,7 +258,7 @@ export default function StyleSidebar({
 
         {/* Eraser Info Box */}
         {tool === "eraser" && !hasSelection && (
-          <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/40 text-xs text-red-600 dark:text-red-400 font-medium">
+          <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600 font-medium">
             <p>🧹 Haz clic o arrastra sobre cualquier forma o trazo para eliminarlo al instante.</p>
           </div>
         )}
@@ -224,7 +287,7 @@ export default function StyleSidebar({
             </div>
             {/* Custom Color Input */}
             <div className="flex items-center gap-1.5 mt-2">
-              <div className="relative w-8 h-8 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer shrink-0">
+              <div className="relative w-8 h-8 rounded-xl overflow-hidden shadow-sm border border-slate-200 cursor-pointer shrink-0">
                 <input
                   type="color"
                   value={strokeColor.startsWith("#") ? strokeColor : COLORS[strokeColor] || "#1e293b"}
@@ -246,8 +309,70 @@ export default function StyleSidebar({
                   updateSelectedStyle("strokeColor", val);
                 }}
                 placeholder="#HEX..."
-                className="flex-1 px-2.5 py-1 text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                className="flex-1 px-2.5 py-1 text-xs font-mono font-bold bg-slate-100 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500"
               />
+            </div>
+          </div>
+        )}
+
+        {/* Arrow Type & Routing Controls (Recta, Esquina 90°, Curva) */}
+        {(tool === "arrow" || selectedElementType === "arrow") && (
+          <div>
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">
+              Tipo / Trazado de Flecha
+            </label>
+            <div className="grid grid-cols-3 gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 mb-3">
+              {[
+                { id: "straight", name: "Directa" },
+                { id: "elbow", name: "Esquina (90°)" },
+                { id: "curved", name: "Curva" },
+              ].map((typeObj) => (
+                <button
+                  key={typeObj.id}
+                  onClick={() => {
+                    if (setArrowType) setArrowType(typeObj.id);
+                    updateSelectedStyle("arrowType", typeObj.id);
+                  }}
+                  className={`btn-draw py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                    (arrowType || "straight") === typeObj.id
+                      ? "bg-white text-purple-700 shadow-sm font-bold border border-purple-200/80"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                  }`}
+                >
+                  {typeObj.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Arrowhead Size Controls (Pequeña, Mediana, Grande) */}
+        {(tool === "arrow" || selectedElementType === "arrow") && (
+          <div>
+            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">
+              Tamaño de Punta (Cabezal)
+            </label>
+            <div className="grid grid-cols-3 gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80">
+              {[
+                { id: "small", name: "Pequeña" },
+                { id: "medium", name: "Mediana" },
+                { id: "large", name: "Grande" },
+              ].map((sizeObj) => (
+                <button
+                  key={sizeObj.id}
+                  onClick={() => {
+                    if (setArrowHeadSize) setArrowHeadSize(sizeObj.id);
+                    updateSelectedStyle("arrowHeadSize", sizeObj.id);
+                  }}
+                  className={`btn-draw py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                    (arrowHeadSize || "medium") === sizeObj.id
+                      ? "bg-white text-purple-700 shadow-sm font-bold border border-purple-200/80"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
+                  }`}
+                >
+                  {sizeObj.name}
+                </button>
+              ))}
             </div>
           </div>
         )}
@@ -259,7 +384,7 @@ export default function StyleSidebar({
               Estilo de Relleno
             </label>
 
-            <div className="flex bg-slate-100 dark:bg-slate-800/50 p-0.5 rounded-xl border border-slate-200/20 dark:border-slate-700/20 mb-2">
+            <div className="flex bg-slate-100/90 p-1 rounded-xl border border-slate-200/80 mb-2">
               {[
                 { id: "none", name: "Transparente" },
                 { id: "solid", name: "Sólido" },
@@ -272,8 +397,8 @@ export default function StyleSidebar({
                   }}
                   className={`btn-draw flex-1 text-center py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                     fillStyle === style.id
-                      ? "bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm font-bold border border-slate-200/10 dark:border-slate-700/10"
-                      : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                      ? "bg-white text-purple-700 shadow-sm font-bold border border-purple-200/80"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
                   }`}
                 >
                   {style.name}
@@ -301,7 +426,7 @@ export default function StyleSidebar({
                 </div>
                 {/* Custom Fill Color Input */}
                 <div className="flex items-center gap-1.5 mt-2">
-                  <div className="relative w-8 h-8 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700 cursor-pointer shrink-0">
+                  <div className="relative w-8 h-8 rounded-xl overflow-hidden shadow-sm border border-slate-200 cursor-pointer shrink-0">
                     <input
                       type="color"
                       value={fillColor.startsWith("#") ? fillColor : COLORS[fillColor] || "#8b5cf6"}
@@ -323,7 +448,7 @@ export default function StyleSidebar({
                       updateSelectedStyle("fillColor", val);
                     }}
                     placeholder="#HEX..."
-                    className="flex-1 px-2.5 py-1 text-xs font-mono font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                    className="flex-1 px-2.5 py-1 text-xs font-mono font-bold bg-slate-100 border border-slate-200 rounded-xl text-slate-800 focus:outline-none focus:ring-1 focus:ring-purple-500"
                   />
                 </div>
               </>
@@ -338,7 +463,7 @@ export default function StyleSidebar({
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">
                 Fuente del Texto
               </label>
-              <div className="grid grid-cols-4 gap-1 bg-slate-100 dark:bg-slate-800/50 p-0.5 rounded-xl border border-slate-200/20 dark:border-slate-700/20">
+              <div className="grid grid-cols-4 gap-1 bg-slate-100/90 p-1 rounded-xl border border-slate-200/80">
                 {[
                   { id: "arial", name: "Arial" },
                   { id: "hand", name: "Boceto" },
@@ -353,8 +478,8 @@ export default function StyleSidebar({
                     }}
                     className={`btn-draw py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                       fontFamily === font.id
-                        ? "bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm font-bold border border-slate-200/10 dark:border-slate-700/10"
-                        : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                        ? "bg-white text-purple-700 shadow-sm font-bold border border-purple-200/80"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
                     }`}
                   >
                     {font.name}
@@ -378,7 +503,7 @@ export default function StyleSidebar({
                     setFontSize(val);
                     updateSelectedStyle("fontSize", val);
                   }}
-                  className="w-12 text-center text-xs font-bold bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg py-0.5 text-purple-600 dark:text-purple-400 focus:outline-none"
+                  className="w-12 text-center text-xs font-bold bg-slate-100 border border-slate-200 rounded-lg py-0.5 text-purple-700 focus:outline-none"
                 />
               </div>
 
@@ -393,7 +518,7 @@ export default function StyleSidebar({
                   setFontSize(val);
                   updateSelectedStyle("fontSize", val);
                 }}
-                className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-600 mb-2"
+                className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600 mb-2"
               />
 
               <div className="grid grid-cols-5 gap-1">
@@ -407,7 +532,7 @@ export default function StyleSidebar({
                     className={`btn-draw py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
                       fontSize === size
                         ? "bg-purple-600 text-white shadow-sm"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                     }`}
                   >
                     {size}
@@ -420,7 +545,7 @@ export default function StyleSidebar({
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">
                 Alineación del Texto
               </label>
-              <div className="flex bg-slate-100 dark:bg-slate-800/50 p-0.5 rounded-xl border border-slate-200/20 dark:border-slate-700/20">
+              <div className="flex bg-slate-100/90 p-1 rounded-xl border border-slate-200/80">
                 {[
                   { id: "left", icon: AlignLeft, label: "Izquierda" },
                   { id: "center", icon: AlignCenter, label: "Centro" },
@@ -438,8 +563,8 @@ export default function StyleSidebar({
                       title={item.label}
                       className={`btn-draw flex-1 text-center py-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
                         isSel
-                          ? "bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm font-bold"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                          ? "bg-white text-purple-700 shadow-sm font-bold border border-purple-200/80"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
                       }`}
                     >
                       <IconComp size={16} />
@@ -458,7 +583,7 @@ export default function StyleSidebar({
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">
                 Grosor del Trazo
               </label>
-              <div className="flex bg-slate-100 dark:bg-slate-800/50 p-0.5 rounded-xl border border-slate-200/20 dark:border-slate-700/20">
+              <div className="flex bg-slate-100/90 p-1 rounded-xl border border-slate-200/80">
                 {[
                   { val: 2, name: "Fino" },
                   { val: 4, name: "Medio" },
@@ -472,8 +597,8 @@ export default function StyleSidebar({
                     }}
                     className={`btn-draw flex-1 text-center py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                       strokeWidth === thick.val
-                        ? "bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm font-bold border border-slate-200/10 dark:border-slate-700/10"
-                        : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                        ? "bg-white text-purple-700 shadow-sm font-bold border border-purple-200/80"
+                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
                     }`}
                   >
                     {thick.name}
@@ -487,7 +612,7 @@ export default function StyleSidebar({
                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">
                   Tipo de Línea
                 </label>
-                <div className="flex bg-slate-100 dark:bg-slate-800/50 p-0.5 rounded-xl border border-slate-200/20 dark:border-slate-700/20">
+                <div className="flex bg-slate-100/90 p-1 rounded-xl border border-slate-200/80">
                   {[
                     { id: "solid", name: "Sólido" },
                     { id: "dashed", name: "Guiones" },
@@ -501,8 +626,8 @@ export default function StyleSidebar({
                       }}
                       className={`btn-draw flex-1 text-center py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
                         strokeStyle === style.id
-                          ? "bg-white dark:bg-slate-700 text-purple-600 dark:text-purple-400 shadow-sm font-bold border border-slate-200/10 dark:border-slate-700/10"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                          ? "bg-white text-purple-700 shadow-sm font-bold border border-purple-200/80"
+                          : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
                       }`}
                     >
                       {style.name}
@@ -528,7 +653,7 @@ export default function StyleSidebar({
                     setRoughness(val);
                     updateSelectedStyle("roughness", val);
                   }}
-                  className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                  className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
                 />
                 <span className="text-xs font-bold text-slate-500 w-6 text-right">{roughness}x</span>
               </div>
@@ -536,32 +661,6 @@ export default function StyleSidebar({
           </>
         )}
 
-        {/* Layer Ordering Panel */}
-        {hasSelection && (
-          <div>
-            <label className="text-xs font-semibold text-slate-400 uppercase tracking-wide block mb-1.5">
-              Organizar Capas
-            </label>
-            <div className="flex bg-slate-100 dark:bg-slate-800/50 p-0.5 rounded-xl border border-slate-200/20 dark:border-slate-700/20 gap-0.5">
-              <button
-                onClick={bringToFront}
-                title="Traer al Frente"
-                className="btn-draw flex-1 text-center py-1.5 text-xs font-semibold rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <BringToFront size={14} className="text-purple-500" />
-                <span>Al Frente</span>
-              </button>
-              <button
-                onClick={sendToBack}
-                title="Enviar al Fondo"
-                className="btn-draw flex-1 text-center py-1.5 text-xs font-semibold rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white dark:hover:bg-slate-700 transition-all cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <SendToBack size={14} className="text-purple-500" />
-                <span>Al Fondo</span>
-              </button>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
