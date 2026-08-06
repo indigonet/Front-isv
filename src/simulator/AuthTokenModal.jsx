@@ -54,9 +54,9 @@ export default function AuthTokenModal({
       }}
     >
       {/* Title Header */}
-      <DialogTitle sx={{ px: { xs: 3, sm: 4 }, pt: { xs: 3.5, sm: 4 }, pb: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <DialogTitle sx={{ px: { xs: 2.5, sm: 3.5 }, py: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, alignItems: { xs: 'flex-start', sm: 'center' }, gap: { xs: 1, sm: 2 } }}>
-          <Typography sx={{ fontWeight: 950, textTransform: 'uppercase', fontSize: { xs: '1.1rem', sm: '1.3rem' }, letterSpacing: '-0.01em', color: 'text.primary' }}>
+          <Typography sx={{ fontWeight: 950, textTransform: 'uppercase', fontSize: { xs: '1rem', sm: '1.2rem' }, letterSpacing: '-0.01em', color: 'text.primary' }}>
             {t('tokenConfigBtn')}
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, px: 1.5, py: 0.5, borderRadius: '8px', border: '1px solid', borderColor: 'divider', bgcolor: 'action.hover' }}>
@@ -90,13 +90,13 @@ export default function AuthTokenModal({
       </DialogTitle>
 
       {/* Content Body */}
-      <DialogContent sx={{ px: { xs: 3, sm: 4 }, py: 4 }}>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.1fr 0.9fr' }, gap: 4 }}>
+      <DialogContent sx={{ px: { xs: 2.5, sm: 3.5 }, py: 2.5 }}>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.1fr 0.9fr' }, gap: 3 }}>
           {/* Column 1: Credentials */}
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {/* Environment selection */}
             <FormControl fullWidth variant="outlined">
-              <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 0.5, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 {t('simEnv')}
               </Typography>
               <Select
@@ -125,7 +125,7 @@ export default function AuthTokenModal({
 
             {/* Client ID */}
             <FormControl fullWidth variant="outlined">
-              <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 0.5, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 {t('clientIdLabel')}
               </Typography>
               <OutlinedInput
@@ -144,7 +144,7 @@ export default function AuthTokenModal({
 
             {/* Client Secret */}
             <FormControl fullWidth variant="outlined">
-              <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 0.5, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 {t('clientSecretLabel')}
               </Typography>
               <OutlinedInput
@@ -193,12 +193,12 @@ export default function AuthTokenModal({
                 }
               }}
               sx={{
-                py: 1.5,
+                py: 1.25,
                 borderRadius: '12px',
                 fontWeight: 900,
                 fontSize: '0.85rem',
                 textTransform: 'none',
-                mt: 1,
+                mt: 0.5,
                 transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
                 boxShadow: (theme) => `0 8px 20px -4px ${theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.4)' : 'rgba(79,70,229,0.3)'}`,
                 background: (theme) => theme.palette.mode === 'dark'
@@ -241,8 +241,8 @@ export default function AuthTokenModal({
           {/* Column 2: Token Status */}
           <Box
             sx={{
-              borderRadius: '20px',
-              p: 3,
+              borderRadius: '16px',
+              p: 2.5,
               border: '1px solid',
               borderColor: accessToken ? 'rgba(16,185,129,0.2)' : 'rgba(14,165,233,0.2)',
               bgcolor: accessToken ? 'rgba(16,185,129,0.04)' : 'rgba(14,165,233,0.04)',
@@ -250,11 +250,11 @@ export default function AuthTokenModal({
               flexDirection: 'column',
               justifyContent: 'space-between',
               height: '100%',
-              minHeight: { xs: '200px', md: 'auto' },
-              gap: 3
+              minHeight: { xs: '160px', md: 'auto' },
+              gap: 2
             }}
           >
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {/* Status indicator */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                 <Box
@@ -302,7 +302,7 @@ export default function AuthTokenModal({
                       fontSize: '10px',
                       color: '#10b981',
                       fontWeight: 700,
-                      maxHeight: '200px',
+                      maxHeight: '160px',
                       overflowY: 'scroll'
                     }}
                   >
@@ -313,8 +313,8 @@ export default function AuthTokenModal({
                   </Typography>
                 </Box>
               ) : (
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: { xs: 4, md: 6 }, gap: 2, opacity: 0.4 }}>
-                  <ShieldCheck size={36} style={{ color: 'text.secondary', margin: '0 auto' }} />
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: 2.5, gap: 1.5, opacity: 0.5 }}>
+                  <ShieldCheck size={32} style={{ color: 'text.secondary', margin: '0 auto' }} />
                   <Typography sx={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center', color: 'text.secondary' }}>
                     {t('tokenGuide')}
                   </Typography>
@@ -331,7 +331,7 @@ export default function AuthTokenModal({
                 fullWidth
                 sx={{
                   borderRadius: '10px',
-                  py: 1.25,
+                  py: 1,
                   fontWeight: 900,
                   fontSize: '9px',
                   letterSpacing: '0.05em',
@@ -354,11 +354,11 @@ export default function AuthTokenModal({
         </Box>
 
         {/* Privacy Note */}
-        <Box sx={{ pt: 3, mt: 4, borderTop: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 2, opacity: 0.6 }}>
-          <Box sx={{ p: 1, bgcolor: 'rgba(16,185,129,0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', shrink: 0 }}>
-            <Lock size={16} style={{ color: '#10b981' }} />
+        <Box sx={{ pt: 2, mt: 2.5, borderTop: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', gap: 1.5, opacity: 0.7 }}>
+          <Box sx={{ p: 0.75, bgcolor: 'rgba(16,185,129,0.1)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', shrink: 0 }}>
+            <Lock size={15} style={{ color: '#10b981' }} />
           </Box>
-          <Typography sx={{ fontSize: '11px', color: 'text.secondary', fontWeight: 500 }}>
+          <Typography sx={{ fontSize: '10.5px', color: 'text.secondary', fontWeight: 500 }}>
             {t('token.privacyNote')}
           </Typography>
         </Box>

@@ -9,14 +9,14 @@ import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 
 
-import { Zap, Shield, Wrench, Key, Download, Github } from "lucide-react";
+import { Zap, Shield, Wrench, Key, Download, Github, Terminal } from "lucide-react";
 
 export default function Content() {
   const { t } = useLanguage();
   const [downloading, setDownloading] = useState(false);
 
   const DOWNLOAD_URL =
-    "https://github.com/indigonet/ISV_Toolkit_Flutter/releases/download/ISVTOOLKIT/ISV_Toolkit_Setup.exe";
+    "https://github.com/indigonet/ISV_Toolkit_Flutter/releases/download/ISVTOOLKIT/ISV_Toolkit_1.0.5_Setup.exe";
 
   const handleDownload = () => {
     if (downloading) return;
@@ -104,8 +104,12 @@ export default function Content() {
         <div className="hero-container-v2">
           {/* Left Column: Information */}
           <div className="hero-text-content">
-            <div className="hero-badge">{t("topbar.logoText")} v1.0.3</div>
-            <h1 className="hero-title-v2">{t("heroTitle")}</h1>
+            <div className="hero-badge">
+              <span>ISV Toolkit v1.0.5</span>
+            </div>
+            <h1 className="hero-title-v2">
+              <span className="hero-title-gradient">{t("heroTitle")}</span>
+            </h1>
             <p className="hero-description-v2">{t("heroDescription")}</p>
             
             <div className="hero-actions">
@@ -113,7 +117,7 @@ export default function Content() {
                 className={`cta-button primary btn-reset ${downloading ? "loading" : ""}`}
                 onClick={handleDownload}
               >
-                <Download size={20} />
+                <Download size={20} className="cta-icon-animate" />
                 {downloading ? t("downloading") : t("topbar.download") + " Toolkit"}
               </button>
               <button 
@@ -135,10 +139,16 @@ export default function Content() {
                 alt="ISV Toolkit Logo" 
                 loading="eager"
               />
-              {/* Floating elements for extra depth */}
-              <div className="floating-element f1">⚡</div>
-              <div className="floating-element f2">🛡️</div>
-              <div className="floating-element f3">📊</div>
+              {/* Floating SVG icons for extra depth without emojis */}
+              <div className="floating-element f1">
+                <Zap className="w-5 h-5 text-indigo-400" />
+              </div>
+              <div className="floating-element f2">
+                <Shield className="w-5 h-5 text-sky-400" />
+              </div>
+              <div className="floating-element f3">
+                <Terminal className="w-5 h-5 text-emerald-400" />
+              </div>
             </div>
           </div>
         </div>

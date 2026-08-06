@@ -13,6 +13,32 @@ import { Tooltip }                         from '@mui/material';
 
 
 
+export const cleanParamsForJson = (paramsObj) => {
+  if (!paramsObj || typeof paramsObj !== 'object') return paramsObj;
+  
+  const {
+    flashCount,
+    flashBaseAmount,
+    flashAltAmount,
+    flashAltThreshold,
+    ...cleaned
+  } = paramsObj;
+
+  if (cleaned.customId === '' || cleaned.customId === undefined) {
+    cleaned.customId = '0';
+  }
+  if (cleaned.employeeId === '' || cleaned.employeeId === null || cleaned.employeeId === undefined) {
+    cleaned.employeeId = 0;
+  }
+
+  // Omit paymentCategory if empty, whitespace, null, or undefined
+  if (!cleaned.paymentCategory || (typeof cleaned.paymentCategory === 'string' && cleaned.paymentCategory.trim() === '')) {
+    delete cleaned.paymentCategory;
+  }
+
+  return cleaned;
+};
+
 export default function SimulatorView({ onLog }) {
   const { t } = useLanguage();
   const [country,         setCountry]         = useState(() => localStorage.getItem('isv_simulator_country') || 'cl'); // cl | ar
@@ -41,7 +67,7 @@ export default function SimulatorView({ onLog }) {
     const savedCmd = localStorage.getItem(`isv_selected_command_${country}`);
     const methods = CONFIG[country].COMMAND_METHODS;
     const activeMethod = (savedCmd && methods.find(m => m.id === savedCmd)) || methods[0];
-    return JSON.stringify(activeMethod.template, null, 2);
+    return JSON.stringify(cleanParamsForJson(activeMethod.template), null, 2);
   });
   const [loading,  setLoading]  = useState(false);
   const [response, setResponse] = useState(null);
@@ -226,11 +252,7 @@ export default function SimulatorView({ onLog }) {
 
   // Sync body and persist triad whenever params change
   React.useEffect(() => {
-    const displayParams = { ...params };
-    if (displayParams.customId === '') displayParams.customId = '0';
-    if (displayParams.employeeId === '' || displayParams.employeeId === null || displayParams.employeeId === undefined) {
-      displayParams.employeeId = 0;
-    }
+    const displayParams = cleanParamsForJson(params);
     setBody(JSON.stringify(displayParams, null, 2));
     
     // Auto-save POS config triad specific to country/env
@@ -238,7 +260,7 @@ export default function SimulatorView({ onLog }) {
     if (params.idTerminal)   localStorage.setItem(`${keyPrefix}_idTerminal`,   params.idTerminal);
     if (params.idSucursal)   localStorage.setItem(`${keyPrefix}_idSucursal`,   params.idSucursal);
     if (params.serialNumber) localStorage.setItem(`${keyPrefix}_idSerialNumber`, params.serialNumber);
-  }, [params]);
+  }, [params, country, env]);
 
   const lastScrollYRef = useRef(0);
   React.useEffect(() => {
@@ -314,11 +336,7 @@ export default function SimulatorView({ onLog }) {
   }, []);
 
   const handleSend = async () => {
-    let currentParams = { ...params };
-    if (currentParams.customId === '') currentParams.customId = '0';
-    if (currentParams.employeeId === '' || currentParams.employeeId === null || currentParams.employeeId === undefined) {
-      currentParams.employeeId = 0;
-    }
+    let currentParams = cleanParamsForJson(params);
     const currentBodyStr = JSON.stringify(currentParams, null, 2);
 
     if (loading || isFlashRunning) return;
@@ -481,20 +499,8 @@ export default function SimulatorView({ onLog }) {
           const amountToUse = isAmountStatic ? iterParams.amount : (i >= threshold ? Number(flashAltAmount) : Number(flashBaseAmount));
           iterParams.amount = amountToUse;
           
-          // Strip out simulator parameters before sending payload to the API
-          const {
-            flashCount: _,
-            flashBaseAmount: __,
-            flashAltAmount: ___,
-            flashAltThreshold: ____,
-            ...apiParams
-          } = iterParams;
-
-          if (apiParams.customId === '') apiParams.customId = '0';
-          if (apiParams.employeeId === '' || apiParams.employeeId === null || apiParams.employeeId === undefined) {
-            apiParams.employeeId = 0;
-          }
-          
+          // Strip out simulator parameters and clean JSON payload before sending API request
+          const apiParams = cleanParamsForJson(iterParams);
           const bodyToUse = JSON.stringify(apiParams, null, 2);
           setBody(bodyToUse); 
           setParams(iterParams);
@@ -675,7 +681,7 @@ export default function SimulatorView({ onLog }) {
             <button
               id="tour-auth-btn"
               onClick={() => setIsAuthModalOpen(true)}
-              className="px-6 py-3 bg-indigo-600 text-white hover:bg-indigo-700 rounded-lg transition-all font-black uppercase tracking-widest text-[11px] flex items-center gap-2.5 shadow-[0_8px_20px_-4px_rgba(79,70,229,0.4)] cursor-pointer ring-1 ring-white/10"
+              className="px-6 py-3 bg-accent hover:bg-accent-warm text-white rounded-lg transition-all font-black uppercase tracking-widest text-[11px] flex items-center gap-2.5 shadow-[0_8px_20px_-4px_rgba(14,165,233,0.4)] cursor-pointer ring-1 ring-white/10"
             >
               <ShieldCheck className="w-4 h-4" /> TOKEN
             </button>

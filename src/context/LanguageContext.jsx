@@ -3,6 +3,17 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 export const releaseNotes = {
   es: [
     {
+      version: "v1.0.5",
+      changes: [
+        "Nuevo diseño UI/UX totalmente renovado",
+        "Herramientas JDK y Platform Tools integradas nativamente",
+        "Mejoras y optimización en métodos y comandos ADB",
+        "Nuevas inspecciones en el APK con detección de librerías utilizadas y más",
+        "Suite de simuladores unificada en un solo punto",
+        "Simuladores de integración: Simulador SDK, protocolo simplificado y conexión por puertos COM",
+      ],
+    },
+    {
       version: "v1.0.3",
       changes: [
         "Carpeta en el proceso de firma y guardado de directorio",
@@ -26,6 +37,17 @@ export const releaseNotes = {
 
   en: [
     {
+      version: "v1.0.5",
+      changes: [
+        "Brand new UI/UX design experience",
+        "Natively integrated JDK and Platform Tools",
+        "Improvements and optimization in ADB methods and commands",
+        "New APK inspections including used libraries detection and extra insights",
+        "Unified simulator suite all in one place",
+        "Integration simulators: SDK simulator, simplified protocol, and COM port connection",
+      ],
+    },
+    {
       version: "v1.0.3",
       changes: [
         "Folder selection in signing process and directory saving",
@@ -48,6 +70,17 @@ export const releaseNotes = {
   ],
 
   pt: [
+    {
+      version: "v1.0.5",
+      changes: [
+        "Novo design de UI/UX totalmente renovado",
+        "Ferramentas JDK e Platform Tools integradas nativamente",
+        "Melhorias e otimizações nos métodos e comandos ADB",
+        "Novas inspeções no APK com detecção de bibliotecas utilizadas e mais",
+        "Suite de simuladores unificada em um único ponto",
+        "Simuladores de integração: Simulador SDK, protocolo simplificado e conexão por portas COM",
+      ],
+    },
     {
       version: "v1.0.3",
       changes: [
@@ -158,6 +191,14 @@ const translations = {
     management2: "Modo Oscuro y Claro",
     management3: "Reboot remoto del terminal",
     management4: "Persistencia de preferencias",
+
+    integrationSimTitle: "Simuladores de Integración",
+    integrationSimDesc:
+      "Suite completa de simuladores diseñada para integradores. Prueba y valida la comunicación mediante simulador SDK, protocolo simplificado y conexión por puertos COM.",
+    integrationSim1: "Simulador SDK y entorno de pruebas",
+    integrationSim2: "Soporte para protocolo simplificado",
+    integrationSim3: "Conexión e inspección por puertos COM (Serie/USB)",
+    integrationSim4: "Validación de comunicación en tiempo real para integradores",
 
     // Download Section
     downloadTitle: "Descarga ISV Toolkit",
@@ -451,6 +492,14 @@ const translations = {
     management3: "Remote terminal reboot",
     management4: "Preference persistence",
 
+    integrationSimTitle: "Integration Simulators",
+    integrationSimDesc:
+      "Complete simulator suite designed for integrators. Test and validate communication using SDK simulator, simplified protocol, and COM port connection.",
+    integrationSim1: "SDK Simulator and testing environment",
+    integrationSim2: "Support for simplified protocol",
+    integrationSim3: "COM port connection and inspection (Serial/USB)",
+    integrationSim4: "Real-time communication validation for integrators",
+
     // Download Section
     downloadTitle: "Download ISV Toolkit",
     downloadSubtitle:
@@ -732,6 +781,14 @@ const translations = {
     management2: "Modo Escuro e Claro",
     management3: "Reboot remoto do terminal",
     management4: "Persistência de preferências",
+
+    integrationSimTitle: "Simuladores de Integração",
+    integrationSimDesc:
+      "Suíte completa de simuladores projetada para integradores. Teste e valide a comunicação via simulador SDK, protocolo simplificado e conexão por portas COM.",
+    integrationSim1: "Simulador SDK e ambiente de testes",
+    integrationSim2: "Suporte para protocolo simplificado",
+    integrationSim3: "Conexão e inspeção por portas COM (Serial/USB)",
+    integrationSim4: "Validação de comunicação em tempo real para integradores",
 
     // Download Section
     downloadTitle: "Baixar ISV Toolkit",

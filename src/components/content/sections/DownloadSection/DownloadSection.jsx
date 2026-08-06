@@ -10,17 +10,17 @@ export default function DownloadSection() {
   const [isDownloading, setIsDownloading] = useState(false);
 
   const DOWNLOAD_URL =
-    "https://github.com/indigonet/ISV_Toolkit_Flutter/releases/download/ISVTOOLKIT/ISV_Toolkit_Setup.exe";
-  const RELEASES_PAGE = "https://github.com/indigonet/Front-isv/releases/tag/1.0.3";
+    "https://github.com/indigonet/ISV_Toolkit_Flutter/releases/download/ISVTOOLKIT/ISV_Toolkit_1.0.5_Setup.exe";
+  const RELEASES_PAGE = "https://github.com/indigonet/Front-isv/releases/tag/1.0.5";
 
   const downloadOptions = [
     {
       id: 1,
       os: t("windows"),
       icon: "🪟",
-      version: "v1.0.3",
-      fileSize: "14 MB",
-      fileName: "ISV_Toolkit_Setup.1.0.3.exe",
+      version: "v1.0.5",
+      fileSize: "185 MB",
+      fileName: "ISV_Toolkit_1.0.5_Setup.exe",
       requirements: t("ADB PlatformTools"),
     },
   ];
@@ -71,7 +71,7 @@ export default function DownloadSection() {
         <div>
           <strong>¡Descarga iniciada!</strong>
           <div style="font-size: 0.9em; margin-top: 5px;">
-            <strong>ISV_Toolkit_Setup.1.0.3.exe</strong> (14 MB)
+            <strong>ISV_Toolkit_1.0.5_Setup.exe</strong> (185 MB)
           </div>
           <div style="font-size: 0.8em; margin-top: 8px; opacity: 0.9;">
             Si no se descarga automáticamente,<br>
