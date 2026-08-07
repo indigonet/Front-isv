@@ -9,7 +9,7 @@ import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 
 
-import { Zap, Shield, Wrench, Key, Download, Github, Terminal } from "lucide-react";
+import { Zap, Shield, Wrench, Key, Download, Terminal } from "lucide-react";
 
 export default function Content() {
   const { t } = useLanguage();

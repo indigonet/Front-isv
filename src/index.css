@@ -171,7 +171,6 @@ button:not(.btn-reset):not(.btn-draw):not([class*="Mui"]):focus-visible {
   padding: 0;
   box-shadow: none;
   color: inherit;
-  font-size: inherit;
   font-weight: inherit;
   line-height: inherit;
   border-radius: 0;

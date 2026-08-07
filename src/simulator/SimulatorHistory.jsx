@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { History, Trash2, ChevronRight, ArrowLeft, Copy, Check, Clock, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft } from 'lucide-react';
+import { History, Trash2, ChevronRight, ArrowLeft, Copy, Check, Clock, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, Search, Maximize2, ArrowRight } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { Tooltip } from '@mui/material';
 import Modal from '../components/modal/Modal';
@@ -135,79 +135,118 @@ export default function SimulatorHistory({
   const paginatedHistory = sortedHistory.slice((safeCurrentPage - 1) * pageSize, safeCurrentPage * pageSize);
 
   return (
-    <div className="bg-card rounded-[1rem] border border-accent/10 p-4 sm:p-6 lg:p-8 shadow-xl overflow-hidden relative">
-      <div className="absolute top-0 right-0 p-8 opacity-5">
-        <History className="w-24 h-24" />
-      </div>
-      <div className="flex items-center justify-between mb-6 relative z-10">
-        <div className="flex items-center gap-2">
-          <h3 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">
-            {t('simHistory')}
-          </h3>
+    <>
+      <div className="bg-card rounded-[2rem] border border-accent/10 p-5 shadow-2xl overflow-hidden relative flex flex-col backdrop-blur-3xl transition-all">
+        {/* Header Bar */}
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-accent/10 select-none relative z-10">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 bg-accent/10 rounded-xl border border-accent/20 text-accent">
+              <History className="w-4 h-4" />
+            </div>
+            <h3 className="text-xs font-black text-text-primary uppercase tracking-widest flex items-center gap-2">
+              {t('simHistory') || 'Historial'}
+              {history.length > 0 && (
+                <span className="px-2.5 py-0.5 text-[10px] font-black rounded-full bg-accent/10 text-accent border border-accent/20 font-mono">
+                  {history.length}
+                </span>
+              )}
+            </h3>
+          </div>
           {history.length > 0 && (
-            <span className="px-2 py-0.5 text-[9px] font-black rounded-full bg-accent/10 text-accent border border-accent/20">
-              {history.length}
+            <span className="text-[10px] font-bold text-text-secondary/50 uppercase tracking-wider font-mono">
+              {history.length} {history.length === 1 ? (t('simTransaction') || 'transacción') : (t('simTransactions') || 'transacciones')}
             </span>
           )}
         </div>
-        {history.length > 0 && (
-          <Tooltip title={t('simClearHistory') || 'Limpiar Historial'} arrow placement="top">
-            <button 
-              onClick={onClearHistory}
-              className="btn-reset p-1.5 hover:bg-rose-500/10 rounded-lg text-text-secondary/40 hover:text-rose-500 transition-all cursor-pointer flex items-center justify-center border border-transparent hover:border-rose-500/20"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          </Tooltip>
-        )}
-      </div>
-      <div className="space-y-3 relative z-10">
-        {history.length === 0 ? (
-          <p className="text-[10px] text-text-secondary/40 font-bold uppercase tracking-widest text-center py-6">
-            {t('simNoHistory')}
-          </p>
-        ) : (
-          history.slice(0, 5).map((h) => (
-            <div 
-              key={h.id} 
-              onClick={() => onSelectHistory?.(h)}
-              className="flex items-center justify-between hover:bg-accent/5 p-3 rounded-2xl border border-transparent hover:border-accent/10 transition-all cursor-pointer group"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${h.status < 400 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-rose-500'}`} />
-                <div className="flex flex-col">
-                  <span className="text-xs font-black text-text-primary uppercase tracking-tight group-hover:text-accent transition-colors">{h.endpoint}</span>
-                  <span className="text-[9px] font-bold text-text-secondary/60">{h.method} · {h.time}</span>
-                  {getResponseMessages(h.response).map((msg, idx) => (
-                    <span key={idx} className="text-[10px] font-bold text-text-secondary/80 mt-0.5 break-all">
-                      {msg}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-black tracking-widest ${h.status < 400 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                  {h.status}
-                </span>
-                <ChevronRight className="w-3 h-3 text-text-secondary/20" />
-              </div>
-            </div>
-          ))
-        )}
 
-        {history.length > 5 && (
-          <div className="mt-4 pt-2 border-t border-accent/5 flex flex-col items-center">
-            <span
+        {/* 4 Cards Symmetrical Responsive Grid */}
+        <div className="relative z-10">
+          {history.length === 0 ? (
+            <div className="py-10 flex flex-col items-center justify-center rounded-2xl border border-dashed border-accent/15 bg-background/20 text-text-secondary/40 gap-2">
+              <History className="w-8 h-8 opacity-25" />
+              <p className="text-[11px] font-black uppercase tracking-widest text-center">
+                {t('simNoHistory') || 'Sin transacciones en el historial'}
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+              {history.slice(0, 4).map((h, idx) => {
+                const itemNum = history.length - idx;
+                const responseMsgs = getResponseMessages(h.response);
+                const isSuccess = h.status < 400;
+
+                return (
+                  <div
+                    key={h.id || idx}
+                    onClick={() => onSelectHistory?.(h)}
+                    className={`p-4 rounded-2xl border bg-white/80 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-900 hover:-translate-y-1 transition-all duration-300 cursor-pointer group flex flex-col justify-between relative overflow-hidden backdrop-blur-xl min-h-[96px] ${
+                      isSuccess 
+                        ? 'border-emerald-500/30 hover:border-emerald-500/60 shadow-[0_6px_22px_-4px_rgba(16,185,129,0.25)] hover:shadow-[0_10px_30px_-2px_rgba(16,185,129,0.45)]' 
+                        : 'border-rose-500/30 hover:border-rose-500/60 shadow-[0_6px_22px_-4px_rgba(244,63,94,0.25)] hover:shadow-[0_10px_30px_-2px_rgba(244,63,94,0.45)]'
+                    }`}
+                  >
+                    {/* Glowing Left Accent Line */}
+                    <div className={`absolute left-0 top-0 bottom-0 w-1.5 ${isSuccess ? 'bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.8)]' : 'bg-rose-500 shadow-[0_0_12px_rgba(244,63,94,0.8)]'}`} />
+
+                    {/* Top Row: Index Badge, Endpoint Name, Method & Status */}
+                    <div className="flex items-center justify-between gap-2 pl-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-accent/15 text-accent border border-accent/25 shrink-0">
+                          #{itemNum}
+                        </span>
+                        <span className="text-xs font-black text-text-primary uppercase tracking-tight group-hover:text-accent transition-colors truncate">
+                          {h.endpoint}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="px-2 py-0.5 text-[9px] font-black uppercase rounded-lg bg-indigo-500/15 text-indigo-500 border border-indigo-500/25">
+                          {h.method}
+                        </span>
+                        <span className={`text-[10px] font-black tracking-wider px-2.5 py-0.5 rounded-lg border ${
+                          isSuccess
+                            ? 'bg-emerald-500/15 text-emerald-500 border-emerald-500/35'
+                            : 'bg-rose-500/15 text-rose-500 border-rose-500/35'
+                        }`}>
+                          {h.status}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Bottom Row: Timestamp & Response Message Preview */}
+                    <div className="flex items-center justify-between gap-2 pl-2 mt-3 text-[10px] text-text-secondary/70">
+                      <div className="flex items-center gap-1.5 font-mono truncate flex-1 min-w-0">
+                        <Clock className="w-3.5 h-3.5 opacity-60 shrink-0 text-accent" />
+                        <span className="shrink-0 font-bold">{h.time}</span>
+                        {responseMsgs.length > 0 && (
+                          <span className="truncate opacity-80 pl-2 border-l border-accent/20 font-sans">
+                            {responseMsgs[0]}
+                          </span>
+                        )}
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-text-secondary/40 group-hover:text-accent group-hover:translate-x-1 transition-all shrink-0" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Centered Footer Link */}
+        {history.length > 0 && (
+          <div className="mt-3 pt-2.5 border-t border-accent/10 flex items-center justify-center relative z-10 select-none">
+            <button
               onClick={() => {
                 setActiveItem(null);
                 setSearchTerm('');
                 setCurrentPage(1);
                 setIsModalOpen(true);
               }}
-              className="text-[11px] font-black text-accent hover:text-accent-warm transition-colors uppercase tracking-widest cursor-pointer underline hover:no-underline"
+              className="btn-reset text-[10px] font-bold text-accent hover:text-accent-warm uppercase tracking-wider cursor-pointer underline hover:no-underline transition-all opacity-80 hover:opacity-100"
             >
-              {`Ver historial completo (${history.length} transacciones)`}
-            </span>
+              {`${t('simFullHistory') || 'Ver historial completo'} (${history.length} ${t('simTransactions') || 'transacciones'})`}
+            </button>
           </div>
         )}
       </div>
@@ -230,8 +269,7 @@ export default function SimulatorHistory({
                 className="btn-reset flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-text-secondary hover:text-accent hover:bg-accent/10 border border-slate-200 dark:border-accent/20 rounded-xl transition-all cursor-pointer shrink-0"
                 title="Volver al historial"
               >
-                <ArrowLeft className="w-4 h-4" />
-                <span>Volver</span>
+                <ArrowLeft className="w-4 h-4 mx-4" />
               </button>
               <div className="flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2">
@@ -278,7 +316,7 @@ export default function SimulatorHistory({
                     setSearchTerm(e.target.value);
                     setCurrentPage(1);
                   }}
-                  placeholder="Buscar por endpoint, estado (200, 400), método..."
+                  placeholder={t('simSearchPlaceholder') || "Buscar por endpoint, estado (200, 400), método..."}
                   className="w-full pl-3.5 pr-8 py-1.5 bg-slate-100/90 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-400 focus:outline-none focus:border-indigo-500 dark:focus:border-indigo-400 transition-all font-medium"
                 />
                 {searchTerm && (
@@ -295,7 +333,7 @@ export default function SimulatorHistory({
                 )}
               </div>
 
-              {/* Icon-Only Sort Button with Cyan Accent Background & White Arrow */}
+              {/* Icon-Only Sort Button */}
               <Tooltip title={sortOrder === 'desc' ? 'Ordenar: Mayor a Menor (#)' : 'Ordenar: Menor a Mayor (#)'} arrow placement="top">
                 <button
                   type="button"
@@ -313,7 +351,7 @@ export default function SimulatorHistory({
             <div className="space-y-2.5 flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar">
               {paginatedHistory.length === 0 ? (
                 <div className="py-12 text-center text-text-secondary/60 text-xs font-bold uppercase tracking-wider">
-                  No se encontraron transacciones
+                  {t('simNoHistory') || 'No se encontraron transacciones'}
                 </div>
               ) : (
                 paginatedHistory.map((h, idx) => {
@@ -325,7 +363,11 @@ export default function SimulatorHistory({
                     <div 
                       key={h.id || idx} 
                       onClick={() => setActiveItem(h)}
-                      className="p-3 rounded-xl border border-slate-200 dark:border-slate-700/90 hover:border-indigo-500 dark:hover:border-indigo-400 bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer group shadow-2xs hover:shadow-xs flex flex-col gap-2"
+                      className={`p-3.5 rounded-2xl border bg-white dark:bg-slate-800/90 hover:bg-slate-50 dark:hover:bg-slate-800 hover:-translate-y-0.5 transition-all cursor-pointer group shadow-sm flex flex-col gap-2.5 ${
+                        isSuccess 
+                          ? 'border-emerald-500/25 hover:border-emerald-500/50 shadow-[0_2px_12px_-2px_rgba(16,185,129,0.15)]' 
+                          : 'border-rose-500/25 hover:border-rose-500/50 shadow-[0_2px_12px_-2px_rgba(244,63,94,0.15)]'
+                      }`}
                     >
                       {/* Top Row: Number, Indicator, Endpoint, Method, Date & Status */}
                       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -336,7 +378,7 @@ export default function SimulatorHistory({
                           </span>
 
                           {/* Status Dot */}
-                          <div className={`w-2 h-2 rounded-full shrink-0 ${isSuccess ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.6)]'}`} />
+                          <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${isSuccess ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]' : 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.7)]'}`} />
 
                           {/* Endpoint Title */}
                           <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors truncate">
@@ -370,7 +412,7 @@ export default function SimulatorHistory({
 
                       {/* Bottom Box: Response Summary Messages */}
                       {responseMsgs.length > 0 && (
-                        <div className="bg-slate-50 dark:bg-slate-900/90 p-2 rounded-lg border border-slate-200/80 dark:border-slate-700/90 text-[11px] font-medium text-slate-800 dark:text-slate-100 flex flex-col gap-0.5">
+                        <div className="bg-slate-50 dark:bg-slate-900/90 p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/90 text-[11px] font-medium text-slate-800 dark:text-slate-100 flex flex-col gap-1">
                           {responseMsgs.map((msg, mIdx) => (
                             <div key={mIdx} className="flex items-start gap-1.5 break-all">
                               <span className="text-indigo-500 dark:text-indigo-400 shrink-0 mt-0.5 text-[10px]">•</span>
@@ -385,16 +427,16 @@ export default function SimulatorHistory({
               )}
             </div>
 
-            {/* Modest Bottom Pagination & Page Size Footer */}
-            <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-400 shrink-0 select-none">
+            {/* Bottom Pagination & Page Size Footer */}
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-slate-200 dark:border-slate-800 text-[10px] font-semibold text-slate-600 dark:text-slate-400 shrink-0 select-none">
               <span>
-                Mostrando {sortedHistory.length > 0 ? ((safeCurrentPage - 1) * pageSize) + 1 : 0}-{Math.min(safeCurrentPage * pageSize, sortedHistory.length)} de {sortedHistory.length}
+                {t('simShowing') || 'Mostrando'} {sortedHistory.length > 0 ? ((safeCurrentPage - 1) * pageSize) + 1 : 0}-{Math.min(safeCurrentPage * pageSize, sortedHistory.length)} {t('simOf') || 'de'} {sortedHistory.length}
               </span>
 
               <div className="flex items-center gap-3 font-mono">
-                {/* Items Per Page Selector (10, 50, 100) */}
+                {/* Items Per Page Selector */}
                 <div className="flex items-center gap-1 font-sans">
-                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">Por pág:</span>
+                  <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">{t('simPerPage') || 'Por pág:'}</span>
                   <select
                     value={pageSize}
                     onChange={(e) => {
@@ -438,6 +480,6 @@ export default function SimulatorHistory({
           </div>
         )}
       </Modal>
-    </div>
+    </>
   );
 }

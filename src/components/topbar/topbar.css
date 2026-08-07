@@ -358,30 +358,6 @@
   font-size: 1.1rem;
 }
 
-/* GitHub button */
-.github-download-btn {
-  background: linear-gradient(135deg, #24292e 0%, #0d1117 100%);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  padding: 0.55rem 1.1rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.github-download-btn:hover {
-  box-shadow: 0 6px 16px rgba(36, 41, 46, 0.4);
-  border-color: rgba(255, 255, 255, 0.25);
-  background: linear-gradient(135deg, #2d333b 0%, #161b22 100%);
-  filter: brightness(1.08);
-}
-
 /* Theme toggle switch container */
 .theme-switch-container {
   display: flex;
@@ -463,11 +439,6 @@
   gap: 1.5rem;
 }
 
-.mobile-menu .github-download-btn {
-  justify-content: center;
-  padding: 0.75rem;
-  font-size: 1rem;
-}
 
 /* Responsive breakdowns */
 @media (max-width: 992px) {

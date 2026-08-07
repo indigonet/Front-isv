@@ -583,7 +583,7 @@ export default function SimulatorView({ onLog }) {
     <div className="min-h-screen w-full pt-32 pb-8 px-4 sm:px-6 lg:px-8 bg-background relative overflow-hidden transition-colors duration-500">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,var(--tw-gradient-stops))] from-accent/10 via-transparent to-transparent pointer-events-none opacity-40" />
       
-      <div className="max-w-425 mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-12 relative z-10">
+      <div className="w-full max-w-[1920px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-12 relative z-10">
 
         {/* Header Content */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 p-10 relative rounded-[2.5rem] shadow-2xl transition-colors duration-500 z-20">
@@ -871,6 +871,15 @@ export default function SimulatorView({ onLog }) {
                 </div>
               </div>
             </div>
+
+            {/* ALWAYS: History Panel in bottom space */}
+            <div id="tour-history">
+              <SimulatorHistory
+                history={history}
+                onSelectHistory={(item) => setSelectedHistoryItem(item)}
+                onClearHistory={handleClearHistory}
+              />
+            </div>
           </div>
 
           {/* SIDEBAR Column: (Desktop Side / Mobile Bottom) */}
@@ -906,15 +915,6 @@ export default function SimulatorView({ onLog }) {
                 setIsAmountStatic={setIsAmountStatic}
                 isTicketStatic={isTicketStatic}
                 setIsTicketStatic={setIsTicketStatic}
-              />
-            </div>
-
-            {/* ALWAYS: History Panel */}
-            <div id="tour-history">
-              <SimulatorHistory
-                history={history}
-                onSelectHistory={(item) => setSelectedHistoryItem(item)}
-                onClearHistory={handleClearHistory}
               />
             </div>
           </div>

@@ -12,6 +12,36 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    target: "esnext",
+    cssCodeSplit: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (
+              id.includes("react") ||
+              id.includes("react-dom") ||
+              id.includes("react-router-dom") ||
+              id.includes("@mui") ||
+              id.includes("@emotion")
+            ) {
+              return "vendor-core";
+            }
+            if (id.includes("lucide-react")) {
+              return "vendor-icons";
+            }
+            if (id.includes("gsap")) {
+              return "vendor-gsap";
+            }
+            if (id.includes("peerjs")) {
+              return "vendor-peerjs";
+            }
+          }
+        },
+      },
+    },
+  },
   server: {
     proxy: {
       '/api/cl/dev':  { target: 'https://api-dev-getnet-posintegrado.ione.cl/api/postxs/', changeOrigin: true, rewrite: (p) => p.replace(/^\/api\/cl\/dev/, '') },
