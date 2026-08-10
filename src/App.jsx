@@ -28,10 +28,12 @@ function LoadingFallback() {
 function AppContent() {
   const location = useLocation();
   const isDrawable = location.pathname === "/drawable";
+  const isSimulator = location.pathname === "/simulator";
+  const hideTopbar = isDrawable || isSimulator;
 
   return (
     <div className="App">
-      {!isDrawable && <Topbar />}
+      {!hideTopbar && <Topbar />}
       <main className="main-content">
         <Suspense fallback={<LoadingFallback />}>
           <Routes>

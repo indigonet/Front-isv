@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronRight, Layers, History, X, Trash2, Play, RefreshCw, Lock, ShieldCheck, Wand2, HelpCircle, XCircle, Save } from 'lucide-react';
+import { ChevronRight, Layers, History, X, Trash2, Play, RefreshCw, Lock, ShieldCheck, Wand2, HelpCircle, XCircle, Save, CheckCircle2 } from 'lucide-react';
 
 import { CONFIG } from './simulator.constants';
 import { useLanguage } from '../context/LanguageContext';
@@ -28,22 +28,16 @@ const validateRut = (rut) => {
   const clean = String(rut).replace(/[^0-9kK]/g, '').toUpperCase();
   if (clean.length < 2) return false;
   const dv = clean.slice(-1);
-  const body = parseInt(clean.slice(0, -1), 10);
-  if (isNaN(body)) return false;
+  const body = clean.slice(0, -1);
   let sum = 0;
   let multiplier = 2;
-  let tempBody = body;
-  while (tempBody > 0) {
-    sum += (tempBody % 10) * multiplier;
-    tempBody = Math.floor(tempBody / 10);
+  for (let i = body.length - 1; i >= 0; i--) {
+    sum += parseInt(body[i], 10) * multiplier;
     multiplier = multiplier === 7 ? 2 : multiplier + 1;
   }
-  const expectedDvVal = 11 - (sum % 11);
-  let expectedDv = '';
-  if (expectedDvVal === 11) expectedDv = '0';
-  else if (expectedDvVal === 10) expectedDv = 'K';
-  else expectedDv = String(expectedDvVal);
-  return dv === expectedDv;
+  const expectedDv = 11 - (sum % 11);
+  const dvChar = expectedDv === 11 ? '0' : expectedDv === 10 ? 'K' : String(expectedDv);
+  return dv === dvChar;
 };
 
 export default function SimulatorSidebar({
@@ -64,6 +58,7 @@ export default function SimulatorSidebar({
   onSend,
   onCancel,
   loading,
+  sendSuccess,
   isFlashRunning,
   isStopping,
   flashCount,
@@ -732,16 +727,28 @@ export default function SimulatorSidebar({
         <div className="mt-4 tour-triads">
           <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
             <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">{t('triad.title')}</h4>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Button
-                  onClick={() => { setTriadErrors({}); setOpenTriadDialog(true); setEditingTriadIndex(-1); setEditingTriad({ name: `Triada ${savedTriads.length + 1}`, idTerminal: '', idSucursal: '', serialNumber: '' }); }}
-                  variant="outlined"
-                  size="small"
-                  sx={{ fontWeight: 800, borderRadius: 2, px: 2.5, py: 1 }}
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Save Written Triad Icon Button (a la izquierda de CREAR TRIADA) */}
+              <Tooltip title={t('triad.saveAction') || "Guardar Tríada Escrita"} arrow placement="top">
+                <button
+                  type="button"
+                  onClick={handleSaveWrittenTriad}
+                  style={{ backgroundColor: 'transparent', boxShadow: 'none' }}
+                  className="btn-reset p-1.5 !bg-transparent hover:!bg-accent/10 text-text-secondary/80 hover:text-accent rounded-xl transition-all cursor-pointer flex items-center justify-center shrink-0 border border-accent/20 hover:border-accent/40 outline-none"
+                  aria-label="Guardar Tríada Escrita"
                 >
-                  {t('triad.createBtn')}
-                </Button>
-              </div>
+                  <Save className="w-4 h-4 text-accent" />
+                </button>
+              </Tooltip>
+              <Button
+                onClick={() => { setTriadErrors({}); setOpenTriadDialog(true); setEditingTriadIndex(-1); setEditingTriad({ name: `Triada ${savedTriads.length + 1}`, idTerminal: '', idSucursal: '', serialNumber: '' }); }}
+                variant="outlined"
+                size="small"
+                sx={{ fontWeight: 800, borderRadius: 2, px: 2.5, py: 1 }}
+              >
+                {t('triad.createBtn')}
+              </Button>
+            </div>
           </div>
 
           {savedTriads.length > 0 ? (
@@ -963,35 +970,24 @@ export default function SimulatorSidebar({
               </p>
             </div>
 
-            {/* Save Written Triad Icon Button (entre comando y parameters) */}
-            <Tooltip title={t('triad.saveAction') || "Guardar Tríada Escrita"}>
-              <button
-                type="button"
-                onClick={handleSaveWrittenTriad}
-                className="btn-reset p-2 hover:bg-white/10 rounded-xl text-text-secondary/80 hover:text-white transition-all cursor-pointer flex items-center justify-center shrink-0"
-              >
-                <Save className={`w-4 h-4 ${selected.color}`} />
-              </button>
-            </Tooltip>
             {(selected.id === 'sale_promo' || selected.id === 'c2c_mode' || selected.id === 'bioauth') && (
-              <div className="relative">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const el = e.currentTarget.nextElementSibling;
-                    if (el) el.classList.toggle('opacity-100');
-                    if (el) el.classList.toggle('pointer-events-none');
-                  }}
-                  className="p-1 transition-colors hover:text-accent text-accent/40 cursor-help"
+              <Tooltip 
+                title={
+                  t('simVersionNotice') && t('simVersionNotice') !== 'simVersionNotice' 
+                    ? t('simVersionNotice') 
+                    : 'Este comando al igual que el de c2cmode son solo para las versiones 1.0.3 de iOnetech'
+                } 
+                arrow 
+                placement="top"
+              >
+                <div
+                  style={{ backgroundColor: 'transparent', boxShadow: 'none' }}
+                  className="p-1.5 bg-transparent text-accent/70 hover:text-accent rounded-lg flex items-center justify-center cursor-help shrink-0"
+                  aria-label="Información de versión"
                 >
                   <HelpCircle className="w-4 h-4" />
-                </button>
-                <div className="absolute right-0 bottom-full mb-2 w-48 p-3 bg-card border border-accent/20 rounded-xl shadow-2xl opacity-0 md:group-hover:opacity-100 pointer-events-none transition-all duration-300 z-50 text-[9px] font-bold text-text-secondary leading-relaxed backdrop-blur-md translate-y-2 group-hover:translate-y-0">
-                  {t('simVersionNotice') && t('simVersionNotice') !== 'simVersionNotice' 
-                    ? t('simVersionNotice') 
-                    : 'Este comando al igual que el de c2cmode son solo para las versiones 1.0.3 de iOnetech'}
                 </div>
-              </div>
+              </Tooltip>
             )}
             {selected.fields.length > 0 && (
               <span className={`text-[9px] font-bold px-2 py-1 rounded-lg bg-white/10 ${selected.color} uppercase tracking-widest shrink-0 hidden md:flex items-center gap-1.5`}>
@@ -1017,71 +1013,46 @@ export default function SimulatorSidebar({
             id="tour-mobile-send-btn"
             onClick={loading ? onCancel : onSend}
             disabled={!loading && !accessToken}
-            className={`w-full py-5 rounded-2xl font-black flex items-center justify-center gap-3 transition-all shadow-xl text-sm uppercase tracking-widest ${
+            style={{ height: '52px' }}
+            className={`w-full rounded-2xl font-normal text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-500 ease-in-out select-none cursor-pointer relative overflow-hidden ${
               loading
-                ? 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/40 cursor-pointer animate-pulse-gentle'
+                ? 'bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 text-white shadow-[0_0_25px_rgba(225,29,72,0.5)] border border-rose-400/50'
                 : !accessToken 
-                  ? 'bg-text-secondary/10 text-text-secondary/40 cursor-not-allowed border border-dashed border-text-secondary/20 grayscale shadow-none' 
-                  : 'bg-accent hover:bg-accent-warm text-white glow shadow-accent/20 cursor-pointer'
+                  ? 'bg-slate-800/60 text-slate-400/60 cursor-not-allowed border border-dashed border-slate-700/60 shadow-none' 
+                  : 'bg-gradient-to-r from-accent via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(14,165,233,0.35)] border border-accent/40'
             }`}
           >
+            {/* Internal sweeping light ray beam */}
+            {(!loading ? accessToken : true) && (
+              <div 
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none"
+                style={{
+                  animation: loading ? 'shimmerSweep 1.5s infinite linear' : 'shimmerSweep 3s infinite linear',
+                }}
+              />
+            )}
+
+            {/* Bottom animated red energy line on Cancel / Loading */}
+            {loading && (
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-rose-400 animate-pulse shadow-[0_0_12px_#f43f5e]" />
+            )}
+
             {loading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>{isStopping ? 'DETENIENDO...' : isFlashRunning ? 'DETENER' : t('simCancelBtn')}</span>
-              </>
+              <div className="flex items-center gap-2.5 animate-in fade-in duration-300 relative z-10">
+                <RefreshCw className="w-4 h-4 animate-spin text-white shrink-0 opacity-90" />
+                <span className="font-normal tracking-wider text-white">{isStopping ? 'DETENIENDO...' : isFlashRunning ? 'DETENER' : t('simCancelBtn')}</span>
+              </div>
             ) : (
-              <>
-                <Play className="w-4 h-4 fill-current outline-none" />
-                <span>{t('simSendBtn')}</span>
-                {!accessToken && <Lock className="w-3.5 h-3.5 opacity-50 ml-1" />}
-              </>
+              <div className="flex items-center gap-2.5 animate-in fade-in duration-300 relative z-10">
+                <Play className="w-4 h-4 fill-current outline-none shrink-0 opacity-90" />
+                <span className="font-normal tracking-widest">{t('simSendBtn')}</span>
+                {!accessToken && <Lock className="w-3.5 h-3.5 opacity-60 ml-1 shrink-0" />}
+              </div>
             )}
           </button>
         </div>
 
-     
-
-        {/* Token status & Actions */}
-        <div className="border-t border-accent/5 pt-6 space-y-3">
-          {accessToken ? (
-            <div 
-              onClick={() => {
-                if (window.confirm(t('confirmClearToken'))) {
-                  onClearToken();
-                }
-              }} 
-              className="group relative overflow-hidden bg-gradient-to-r from-emerald-500/[0.03] to-emerald-500/[0.08] border border-emerald-500/20 rounded-2xl p-4 transition-all duration-500 hover:shadow-lg hover:shadow-emerald-500/5 hover:border-emerald-500/40 cursor-pointer"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_4px_rgba(16,185,129,0.5)]" />
-                  <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">{t('simTokenActive')}</span>
-                </div>
-                <div className="p-1.5 bg-rose-500 group-hover:bg-rose-600 rounded-lg text-white transition-all shadow-lg shadow-rose-500/10">
-                  <Trash2 className="w-3 h-3" />
-                </div>
-              </div>
-            </div>
-          ) : (
-            <button
-              onClick={onOpenAuth}
-              className="w-full p-4 bg-accent/[0.03] border border-accent/20 rounded-2xl flex items-center justify-between hover:bg-accent/[0.08] hover:border-accent transition-all cursor-pointer group shadow-sm"
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-accent/10 text-accent">
-                  <ShieldCheck className="w-4 h-4" />
-                </div>
-                <span className="text-[10px] font-black text-accent uppercase tracking-widest">
-                  {t('simNoToken')}
-                </span>
-              </div>
-              <ChevronRight className="w-4 h-4 text-accent/40" />
-            </button>
-          )}
-
-        </div>
-      </div>
+           </div>
 
     </div>
   );
