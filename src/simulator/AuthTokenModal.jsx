@@ -124,49 +124,46 @@ export default function AuthTokenModal({
             </FormControl>
 
             {/* Client ID */}
-            <FormControl fullWidth variant="outlined">
+            <FormControl fullWidth>
               <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 0.5, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 {t('clientIdLabel')}
               </Typography>
-              <OutlinedInput
-                value={clientId}
-                onChange={(e) => setClientId(e.target.value)}
-                size="small"
-                placeholder="Client ID"
-                startAdornment={
-                  <InputAdornment position="start" sx={{ mr: 1.5 }}>
-                    <UserCheck size={16} style={{ opacity: 0.4 }} />
-                  </InputAdornment>
-                }
-                sx={{ borderRadius: '12px', fontSize: '13px', fontWeight: 600 }}
-              />
+              <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-background border border-accent/20 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20 transition-all shadow-inner group">
+                <UserCheck size={16} className="text-text-secondary/50 group-focus-within:text-accent transition-colors shrink-0" />
+                <input
+                  type="text"
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                  placeholder="Client ID"
+                  style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
+                  className="no-focus-glow w-full bg-transparent border-none outline-none ring-0 focus:outline-none focus:ring-0 focus:border-none shadow-none focus:shadow-none font-mono text-xs sm:text-sm font-semibold text-text-primary placeholder:text-text-secondary/30"
+                />
+              </div>
             </FormControl>
 
             {/* Client Secret */}
-            <FormControl fullWidth variant="outlined">
+            <FormControl fullWidth>
               <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 0.5, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                 {t('clientSecretLabel')}
               </Typography>
-              <OutlinedInput
-                type={showSecret ? 'text' : 'password'}
-                value={clientSecret}
-                onChange={(e) => setClientSecret(e.target.value)}
-                size="small"
-                placeholder="••••••••"
-                startAdornment={
-                  <InputAdornment position="start" sx={{ mr: 1.5 }}>
-                    <Key size={16} style={{ opacity: 0.4 }} />
-                  </InputAdornment>
-                }
-                endAdornment={
-                  <InputAdornment position="end">
-                    <IconButton onClick={() => setShowSecret(!showSecret)} edge="end" size="small" sx={{ p: 1 }}>
-                      {showSecret ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </IconButton>
-                  </InputAdornment>
-                }
-                sx={{ borderRadius: '12px', fontSize: '13px', fontWeight: 600 }}
-              />
+              <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-background border border-accent/20 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20 transition-all shadow-inner group">
+                <Key size={16} className="text-text-secondary/50 group-focus-within:text-accent transition-colors shrink-0" />
+                <input
+                  type={showSecret ? 'text' : 'password'}
+                  value={clientSecret}
+                  onChange={(e) => setClientSecret(e.target.value)}
+                  placeholder="••••••••"
+                  style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
+                  className="no-focus-glow w-full bg-transparent border-none outline-none ring-0 focus:outline-none focus:ring-0 focus:border-none shadow-none focus:shadow-none font-mono text-xs sm:text-sm font-semibold text-text-primary placeholder:text-text-secondary/30"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowSecret(!showSecret)}
+                  className="btn-reset p-1 text-text-secondary/40 hover:text-accent transition-colors cursor-pointer shrink-0"
+                >
+                  {showSecret ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              </div>
             </FormControl>
 
             {/* Google ReCAPTCHA Invisible */}

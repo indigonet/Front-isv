@@ -263,21 +263,35 @@ img {
 }
 
 /* ===== Input & Textarea Focus Glow overrides ===== */
-input[type="text"], input[type="password"], textarea, select {
-  transition: border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-}
-input[type="text"]:focus, input[type="password"]:focus, textarea:focus, select:focus {
+input[type="text"]:not(.no-focus-glow):focus, 
+input[type="password"]:not(.no-focus-glow):focus, 
+textarea:not(.no-focus-glow):focus, 
+select:not(.no-focus-glow):focus {
   border-color: var(--primary) !important;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
 }
 
-/* Disable focus glow and borders for specific textareas (like simulator request JSON editor) */
+/* Disable focus glow, borders, and shadows for specific inputs and textareas */
+.no-focus-glow,
+.no-focus-glow:focus,
+input.no-focus-glow,
+input.no-focus-glow:focus,
 textarea.no-focus-glow,
 textarea.no-focus-glow:focus {
   border: none !important;
   border-color: transparent !important;
   box-shadow: none !important;
   outline: none !important;
+}
+
+/* Chrome Autofill Background Removal */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: var(--text-main) !important;
+  transition: background-color 50000s ease-in-out 0s !important;
 }
 
 /* ===== Professional & Universal Clean Light Scrollbar ===== */

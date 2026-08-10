@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle, ChevronUp, ChevronDown, ChevronLeft, Trash2, HelpCircle, Clock, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle, ChevronUp, ChevronDown, ChevronLeft, Trash2, HelpCircle, Clock, ArrowLeft, CheckCircle2, FileUp, FileDown } from 'lucide-react';
 
 import { CONFIG } from './simulator.constants';
 import { useSimulatorAuth }                from './useSimulatorAuth';
@@ -121,6 +121,7 @@ export default function SimulatorView({ onLog }) {
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [show401Prompt,   setShow401Prompt]   = useState(false);
+  const [isExportSecurityOpen, setIsExportSecurityOpen] = useState(false);
   const [showJumpBtn,     setShowJumpBtn]     = useState(false);
   const [sendSuccess,     setSendSuccess]     = useState(false);
 
@@ -619,6 +620,122 @@ export default function SimulatorView({ onLog }) {
     }
   };
 
+  // ── Export / Import Full Configuration File (JSON) ────────────────
+  const fileInputRef = useRef(null);
+
+  const handleExportConfig = () => {
+    setIsExportSecurityOpen(true);
+  };
+
+  const confirmExportConfig = () => {
+    setIsExportSecurityOpen(false);
+    try {
+      const triadStorageKey = `isv_saved_triads_${country}_${env}`;
+      let savedTriads = [];
+      try {
+        const raw = localStorage.getItem(triadStorageKey);
+        if (raw) savedTriads = JSON.parse(raw);
+      } catch {}
+
+      const configData = {
+        version: '1.0',
+        app: 'ISV_Toolkit_C2C_Simulator',
+        exportedAt: new Date().toISOString(),
+        country,
+        env,
+        credentials: {
+          clientId: localStorage.getItem(`isv_auth_clientId_${country}`) || '',
+          clientSecret: localStorage.getItem(`isv_auth_clientSecret_${country}`) || '',
+        },
+        posTriad: {
+          idTerminal: params?.idTerminal || '',
+          idSucursal: params?.idSucursal || '',
+          serialNumber: params?.serialNumber || '',
+        },
+        savedTriads,
+        simulatorSettings: {
+          isAmountStatic: localStorage.getItem('isv_amount_static') === 'true',
+          isTicketStatic: localStorage.getItem('isv_ticket_static') === 'true',
+        }
+      };
+
+      const jsonString = JSON.stringify(configData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `isv-simulator-config-${country}-${env}-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      triggerSnackbar(t('configExported') || 'Configuración exportada exitosamente', 'success');
+    } catch (error) {
+      console.error('Export Error:', error);
+      triggerSnackbar('Error al exportar la configuración', 'error');
+    }
+  };
+
+  const handleImportConfigClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleImportConfigFile = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result;
+        if (!content) return;
+        const data = JSON.parse(content);
+
+        if (!data || typeof data !== 'object') {
+          throw new Error('Formato JSON inválido');
+        }
+
+        // 1. Credentials
+        if (data.credentials) {
+          if (data.credentials.clientId) {
+            localStorage.setItem(`isv_auth_clientId_${country}`, data.credentials.clientId);
+            if (auth.setClientId) auth.setClientId(data.credentials.clientId);
+          }
+          if (data.credentials.clientSecret) {
+            localStorage.setItem(`isv_auth_clientSecret_${country}`, data.credentials.clientSecret);
+            if (auth.setClientSecret) auth.setClientSecret(data.credentials.clientSecret);
+          }
+        }
+
+        // 2. Saved Triads
+        if (Array.isArray(data.savedTriads)) {
+          const triadStorageKey = `isv_saved_triads_${country}_${env}`;
+          localStorage.setItem(triadStorageKey, JSON.stringify(data.savedTriads));
+        }
+
+        // 3. Current POS Triad
+        if (data.posTriad) {
+          const { idTerminal, idSucursal, serialNumber } = data.posTriad;
+          if (idTerminal) handleSyncParam('idTerminal', idTerminal);
+          if (idSucursal) handleSyncParam('idSucursal', idSucursal);
+          if (serialNumber) handleSyncParam('serialNumber', serialNumber);
+        }
+
+        triggerSnackbar(t('configImported') || '¡Configuración e historial de tríadas importados con éxito!', 'success');
+        window.dispatchEvent(new Event('storage'));
+      } catch (err) {
+        console.error('Import Error:', err);
+        triggerSnackbar('Error al importar archivo. Verifique el formato JSON.', 'error');
+      }
+    };
+
+    reader.readAsText(file);
+  };
+
   return (
     <div className="min-h-screen w-full pt-8 sm:pt-10 pb-8 px-4 sm:px-6 lg:px-8 bg-background relative overflow-hidden transition-colors duration-500">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,var(--tw-gradient-stops))] from-accent/10 via-transparent to-transparent pointer-events-none opacity-40" />
@@ -655,65 +772,136 @@ export default function SimulatorView({ onLog }) {
           </div>
 
           <div className="flex flex-wrap items-center gap-3 relative z-10">
-            {/* Custom Country Selector */}
+            {/* Export and Import Config Buttons (Más grandes y separados a la izquierda del selector de País) */}
+            <div className="flex items-center gap-3 mr-3 z-10">
+              {/* Hidden File Input for Import */}
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleImportConfigFile}
+                accept=".json"
+                className="hidden"
+              />
+
+              {/* Export Config Button */}
+              <Tooltip title={t('exportConfig')} arrow placement="bottom">
+                <button
+                  type="button"
+                  onClick={handleExportConfig}
+                  className="btn-reset p-3 bg-indigo-500/10 hover:bg-indigo-500/25 border border-indigo-500/30 hover:border-indigo-400/70 text-indigo-300 hover:text-white rounded-xl transition-all shadow-[0_4px_15px_rgba(99,102,241,0.15)] hover:shadow-[0_0_20px_rgba(99,102,241,0.35)] cursor-pointer flex items-center justify-center shrink-0 border-none outline-none group"
+                  aria-label="Exportar Configuración"
+                >
+                  <FileUp className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition-transform" />
+                </button>
+              </Tooltip>
+
+              {/* Import Config Button */}
+              <Tooltip title={t('importConfig')} arrow placement="bottom">
+                <button
+                  type="button"
+                  onClick={handleImportConfigClick}
+                  className="btn-reset p-3 bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-400/70 text-emerald-300 hover:text-white rounded-xl transition-all shadow-[0_4px_15px_rgba(16,185,129,0.15)] hover:shadow-[0_0_20px_rgba(16,185,129,0.35)] cursor-pointer flex items-center justify-center shrink-0 border-none outline-none group"
+                  aria-label="Importar Configuración"
+                >
+                  <FileDown className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
+                </button>
+              </Tooltip>
+            </div>
+
+            {/* Ultra-Modern Glassmorphic Country Selector */}
             <div id="tour-country-selector" className="relative mr-2 z-50">
               <button
                 onClick={() => setIsCountryOpen(!isCountryOpen)}
-                className="flex items-center gap-2.5 bg-[#6366f1] hover:bg-[#4f46e5] border border-white/20 rounded-lg py-2.5 px-4 shadow-[0_8px_20px_-4px_rgba(99,102,241,0.4)] cursor-pointer transition-all group"
+                className="flex items-center gap-3 bg-slate-900/90 hover:bg-slate-800/90 border border-slate-700/80 hover:border-indigo-500/80 rounded-2xl py-2.5 px-4 shadow-[0_4px_25px_rgba(0,0,0,0.4)] backdrop-blur-xl cursor-pointer transition-all duration-300 group"
               >
-                <div className="relative">
-                    <img 
+                <div className="relative flex items-center justify-center">
+                  <img 
                     src={`https://flagcdn.com/w20/${country}.png`} 
                     alt={country}
-                    className="w-4 rounded-xs shadow-sm relative z-10"
+                    className="w-5 h-3.5 rounded-xs border border-white/20 shadow-md relative z-10"
                   />
-                  <div className="absolute inset-0 bg-white/20 blur-xs scale-125 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 bg-indigo-500/40 blur-xs rounded-full opacity-60 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <span className="text-[11px] font-black text-white uppercase tracking-[0.15em]">
-                  {country === 'cl' ? 'CL' : 'AR'}
+                
+                <span className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
+                  <span>{country === 'cl' ? 'Chile' : 'Argentina'}</span>
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border shadow-sm ${
+                    country === 'cl' 
+                      ? 'bg-blue-500/30 text-blue-200 border-blue-400/60 shadow-[0_0_10px_rgba(59,130,246,0.3)]' 
+                      : 'bg-sky-500/30 text-sky-200 border-sky-400/60 shadow-[0_0_10px_rgba(56,189,248,0.3)]'
+                  }`}>
+                    {country.toUpperCase()}
+                  </span>
                 </span>
-                <div className={`transition-transform duration-300 ${isCountryOpen ? 'rotate-180' : ''}`}>
-                  <ChevronDown className="w-3.5 h-3.5 text-white/70" />
+                
+                <div className={`transition-transform duration-300 ${isCountryOpen ? 'rotate-180 text-indigo-400' : 'text-slate-400 group-hover:text-indigo-400'}`}>
+                  <ChevronDown className="w-4 h-4" />
                 </div>
               </button>
 
               {isCountryOpen && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setIsCountryOpen(false)} />
-                  <div className="absolute top-full left-0 mt-3 w-56 bg-[#1e1b4b]/95 border border-white/10 rounded-xl shadow-2xl z-50 p-1.5 animate-in fade-in slide-in-from-top-2 backdrop-blur-2xl ring-1 ring-white/5">
-                    <div className="px-3 py-2 mb-1">
-                      <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest opacity-70">{t('simCountrySelectLabel')}</span>
+                  <div className="absolute top-full left-0 mt-3 w-64 bg-slate-950/95 border border-slate-700/80 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_35px_rgba(99,102,241,0.2)] z-50 p-2.5 animate-in fade-in slide-in-from-top-3 backdrop-blur-2xl ring-1 ring-white/10">
+                    <div className="px-3.5 py-2 mb-1.5 border-b border-slate-800/80 flex items-center justify-between">
+                      <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest opacity-90">{t('simCountrySelectLabel')}</span>
                     </div>
-                    <button
-                      onClick={() => { 
-                        setCountry('cl'); 
-                        localStorage.setItem('isv_simulator_country', 'cl');
-                        setIsCountryOpen(false); 
-                      }}
-                      className={`flex w-full items-center gap-3 px-3.5 py-3 rounded-lg transition-all cursor-pointer group ${country === 'cl' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5'}`}
-                    >
-                      <img src="https://flagcdn.com/w20/cl.png" className="w-4 rounded-xs" alt="CL" />
-                      <div className="flex flex-col items-start leading-none">
-                        <span className={`text-[8px] font-black uppercase tracking-widest ${country === 'cl' ? 'text-indigo-200' : 'text-indigo-400/60'}`}>CL</span>
-                        <span className="text-[13px] font-bold mt-1">Chile</span>
-                      </div>
-                      {country === 'cl' && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />}
-                    </button>
-                    <button
-                      onClick={() => { 
-                        setCountry('ar'); 
-                        localStorage.setItem('isv_simulator_country', 'ar');
-                        setIsCountryOpen(false); 
-                      }}
-                      className={`flex w-full items-center gap-3 px-3.5 py-3 rounded-lg transition-all cursor-pointer mt-1 group ${country === 'ar' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : 'text-slate-300 hover:bg-white/5'}`}
-                    >
-                      <img src="https://flagcdn.com/w20/ar.png" className="w-4 rounded-xs" alt="AR" />
-                      <div className="flex flex-col items-start leading-none">
-                        <span className={`text-[8px] font-black uppercase tracking-widest ${country === 'ar' ? 'text-indigo-200' : 'text-indigo-400/60'}`}>AR</span>
-                        <span className="text-[13px] font-bold mt-1">Argentina</span>
-                      </div>
-                      {country === 'ar' && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />}
-                    </button>
+                    
+                    <div className="space-y-2 pt-1">
+                      {/* Chile Option */}
+                      <button
+                        onClick={() => { 
+                          setCountry('cl'); 
+                          localStorage.setItem('isv_simulator_country', 'cl');
+                          setIsCountryOpen(false); 
+                        }}
+                        className={`flex w-full items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-200 cursor-pointer border group ${
+                          country === 'cl' 
+                            ? 'bg-slate-800/90 border-2 border-indigo-500/80 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]' 
+                            : 'bg-slate-900/40 border border-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800/60 hover:border-indigo-500/40'
+                        }`}
+                      >
+                        <img src="https://flagcdn.com/w20/cl.png" className="w-5 h-3.5 rounded-xs border border-white/20 shadow-md" alt="CL" />
+                        <div className="flex flex-col items-start leading-none">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-black">Chile</span>
+                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
+                              country === 'cl' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : 'bg-slate-800 text-slate-400 border-slate-700'
+                            }`}>CL</span>
+                          </div>
+                        </div>
+                        {country === 'cl' && (
+                          <div className="ml-auto w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
+                        )}
+                      </button>
+
+                      {/* Argentina Option */}
+                      <button
+                        onClick={() => { 
+                          setCountry('ar'); 
+                          localStorage.setItem('isv_simulator_country', 'ar');
+                          setIsCountryOpen(false); 
+                        }}
+                        className={`flex w-full items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-200 cursor-pointer border group ${
+                          country === 'ar' 
+                            ? 'bg-slate-800/90 border-2 border-indigo-500/80 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]' 
+                            : 'bg-slate-900/40 border border-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800/60 hover:border-indigo-500/40'
+                        }`}
+                      >
+                        <img src="https://flagcdn.com/w20/ar.png" className="w-5 h-3.5 rounded-xs border border-white/20 shadow-md" alt="AR" />
+                        <div className="flex flex-col items-start leading-none">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-black">Argentina</span>
+                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
+                              country === 'ar' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : 'bg-slate-800 text-slate-400 border-slate-700'
+                            }`}>AR</span>
+                          </div>
+                        </div>
+                        {country === 'ar' && (
+                          <div className="ml-auto w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
@@ -826,7 +1014,7 @@ export default function SimulatorView({ onLog }) {
                   style={{ minWidth: '210px', height: '52px' }}
                   className={`hidden sm:flex px-6 rounded-2xl font-normal text-xs uppercase tracking-widest items-center justify-center gap-3 transition-all duration-500 ease-in-out select-none cursor-pointer relative overflow-hidden ${
                     loading
-                      ? 'bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 text-white shadow-[0_0_25px_rgba(225,29,72,0.5)] border border-rose-400/50'
+                      ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-[0_0_30px_rgba(239,68,68,0.7)] border-2 border-red-400'
                       : !auth.accessToken
                         ? 'bg-slate-800/60 text-slate-400/60 cursor-not-allowed border border-dashed border-slate-700/60 shadow-none'
                         : 'bg-gradient-to-r from-accent via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(14,165,233,0.35)] border border-accent/40'
@@ -1063,6 +1251,54 @@ export default function SimulatorView({ onLog }) {
               className="flex-1 py-3 rounded-xl bg-accent text-white hover:bg-accent-warm transition-all flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest shadow-lg shadow-accent/20 cursor-pointer"
             >
               <Zap className="w-4 h-4 fill-current" /> {t('fetchTokenBtn')}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Export Security Warning Modal */}
+      <Modal 
+        isOpen={isExportSecurityOpen} 
+        onClose={() => setIsExportSecurityOpen(false)} 
+        title={t('exportSecurityTitle')}
+        size="sm"
+      >
+        <div className="space-y-6">
+          <div className="flex gap-4 p-5 bg-amber-500/10 border border-amber-500/30 rounded-2xl">
+            <ShieldAlert className="w-8 h-8 text-amber-500 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <h4 className="text-sm font-black text-amber-500 uppercase tracking-widest">
+                {t('exportSecurityTitle')}
+              </h4>
+              <p className="text-xs font-bold text-text-secondary leading-relaxed">
+                {t('exportSecurityDesc')}
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-2.5 p-4 bg-background border border-accent/10 rounded-2xl">
+            <div className="flex items-center gap-2.5 text-xs font-bold text-text-primary">
+              <Lock className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>{t('exportSecurityCredsNotice')}</span>
+            </div>
+            <div className="flex items-center gap-2.5 text-xs font-bold text-text-primary">
+              <ShieldCheck className="w-4 h-4 text-indigo-400 shrink-0" />
+              <span>{t('exportSecurityTriadsNotice')}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center gap-3 pt-3 border-t border-slate-700/30 w-full">
+            <button 
+              onClick={() => setIsExportSecurityOpen(false)} 
+              className="flex-1 max-w-[130px] py-2.5 rounded-xl border border-slate-700/60 hover:bg-slate-800/60 transition-all text-[10px] font-bold uppercase tracking-wider text-slate-300 cursor-pointer text-center flex justify-center"
+            >
+              {t('cancel')}
+            </button>
+            <button
+              onClick={confirmExportConfig}
+              className="flex-1 max-w-[210px] py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 transition-all flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-wider shadow-[0_0_15px_rgba(245,158,11,0.3)] cursor-pointer text-center"
+            >
+              <FileUp className="w-3.5 h-3.5" /> {t('exportSecurityConfirmBtn')}
             </button>
           </div>
         </div>

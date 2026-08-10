@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronRight, Layers, History, X, Trash2, Play, RefreshCw, Lock, ShieldCheck, Wand2, HelpCircle, XCircle, Save, CheckCircle2 } from 'lucide-react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
+import { ChevronRight, Layers, History, X, Trash2, Play, RefreshCw, Lock, ShieldCheck, Wand2, HelpCircle, XCircle, Save, CheckCircle2, FileUp, FileDown } from 'lucide-react';
 
 import { CONFIG } from './simulator.constants';
 import { useLanguage } from '../context/LanguageContext';
@@ -215,6 +215,121 @@ export default function SimulatorSidebar({
     setSnackOpen(true);
   };
   const [copiedField, setCopiedField] = useState('');
+
+  // ── Export / Import Full Configuration File (JSON) ────────────────
+  const fileInputRef = useRef(null);
+
+  const handleExportConfig = () => {
+    try {
+      const configData = {
+        version: '1.0',
+        app: 'ISV_Toolkit_C2C_Simulator',
+        exportedAt: new Date().toISOString(),
+        country,
+        env,
+        credentials: {
+          clientId: localStorage.getItem(`isv_auth_clientId_${country}`) || '',
+          clientSecret: localStorage.getItem(`isv_auth_clientSecret_${country}`) || '',
+        },
+        posTriad: {
+          idTerminal: params?.idTerminal || '',
+          idSucursal: params?.idSucursal || '',
+          serialNumber: params?.serialNumber || '',
+        },
+        savedTriads: savedTriads || [],
+        simulatorSettings: {
+          flashCount,
+          flashBaseAmount,
+          flashAltAmount,
+          flashAltThreshold,
+          isAmountStatic,
+          isTicketStatic,
+        }
+      };
+
+      const jsonString = JSON.stringify(configData, null, 2);
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `isv-simulator-config-${country}-${env}-${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showSnackbar(t('configExported') || 'Configuración exportada exitosamente', 'success');
+    } catch (error) {
+      console.error('Export Error:', error);
+      showSnackbar('Error al exportar la configuración', 'error');
+    }
+  };
+
+  const handleImportConfigClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleImportConfigFile = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result;
+        if (!content) return;
+        const data = JSON.parse(content);
+
+        if (!data || typeof data !== 'object') {
+          throw new Error('Formato JSON inválido');
+        }
+
+        // 1. Credentials
+        if (data.credentials) {
+          if (data.credentials.clientId) {
+            localStorage.setItem(`isv_auth_clientId_${country}`, data.credentials.clientId);
+          }
+          if (data.credentials.clientSecret) {
+            localStorage.setItem(`isv_auth_clientSecret_${country}`, data.credentials.clientSecret);
+          }
+        }
+
+        // 2. Saved Triads
+        if (Array.isArray(data.savedTriads)) {
+          updateSavedTriads(data.savedTriads);
+        }
+
+        // 3. Current POS Triad
+        if (data.posTriad) {
+          const { idTerminal, idSucursal, serialNumber } = data.posTriad;
+          if (idTerminal) onSyncParam('idTerminal', idTerminal);
+          if (idSucursal) onSyncParam('idSucursal', idSucursal);
+          if (serialNumber) onSyncParam('serialNumber', serialNumber);
+        }
+
+        // 4. Simulator Settings
+        if (data.simulatorSettings) {
+          const s = data.simulatorSettings;
+          if (s.flashCount !== undefined && setFlashCount) setFlashCount(s.flashCount);
+          if (s.flashBaseAmount !== undefined && setFlashBaseAmount) setFlashBaseAmount(s.flashBaseAmount);
+          if (s.flashAltAmount !== undefined && setFlashAltAmount) setFlashAltAmount(s.flashAltAmount);
+          if (s.flashAltThreshold !== undefined && setFlashAltThreshold) setFlashAltThreshold(s.flashAltThreshold);
+          if (s.isAmountStatic !== undefined && setIsAmountStatic) setIsAmountStatic(s.isAmountStatic);
+          if (s.isTicketStatic !== undefined && setIsTicketStatic) setIsTicketStatic(s.isTicketStatic);
+        }
+
+        showSnackbar(t('configImported') || '¡Configuración e historial de tríadas importados con éxito!', 'success');
+      } catch (err) {
+        console.error('Import Error:', err);
+        showSnackbar('Error al importar archivo. Verifique el formato JSON.', 'error');
+      }
+    };
+
+    reader.readAsText(file);
+  };
 
   useEffect(() => {
     if (selectedTriadIndex >= 0 && savedTriads[selectedTriadIndex]) {
@@ -698,23 +813,41 @@ export default function SimulatorSidebar({
                 displayEmpty
                 inputProps={{ 'aria-label': t('simCommand') }}
                 sx={{
-                  borderRadius: 2,
-                  backgroundColor: 'background.paper'
+                  borderRadius: '16px',
+                  backgroundColor: 'background.paper',
+                  fontWeight: 800,
+                  fontSize: '0.95rem',
+                  border: '1px solid rgba(99, 102, 241, 0.25)',
+                  boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    borderColor: 'rgba(99, 102, 241, 0.6)',
+                  },
+                  '&.Mui-focused': {
+                    borderColor: '#6366f1',
+                    boxShadow: '0 0 18px rgba(99, 102, 241, 0.35)',
+                  }
                 }}
                 renderValue={(val) => {
                   const m = COMMAND_METHODS.find((c) => c.id === val);
                   if (!m) return '';
                   const raw = t(m.label);
                   const cleaned = raw.replace(/\s*\(.*?\)/, '').replace(/parametros.*$/i, '').replace(/cmd.*$/i, '').trim();
-                  return <span style={{ fontSize: '0.95rem' }}>{cleaned}</span>;
+                  return (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <span style={{ fontSize: '0.95rem', fontWeight: 800 }}>{cleaned}</span>
+                    </Box>
+                  );
                 }}
               >
                 {COMMAND_METHODS.map((m) => {
                   const raw = t(m.label);
                   const cleaned = raw.replace(/\s*\(.*?\)/, '').replace(/parametros.*$/i, '').replace(/cmd.*$/i, '').trim();
                   return (
-                    <MenuItem key={m.id} value={m.id} sx={{ fontSize: '0.9rem' }}>
-                      {cleaned}
+                    <MenuItem key={m.id} value={m.id} sx={{ fontSize: '0.9rem', fontWeight: 700, borderRadius: '10px', my: 0.5, mx: 0.5 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <span>{cleaned}</span>
+                      </Box>
                     </MenuItem>
                   );
                 })}
@@ -727,24 +860,24 @@ export default function SimulatorSidebar({
         <div className="mt-4 tour-triads">
           <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
             <h4 className="text-[10px] font-black text-text-secondary uppercase tracking-widest">{t('triad.title')}</h4>
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Save Written Triad Icon Button (a la izquierda de CREAR TRIADA) */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {/* Save Written Triad Icon Button */}
               <Tooltip title={t('triad.saveAction') || "Guardar Tríada Escrita"} arrow placement="top">
                 <button
                   type="button"
                   onClick={handleSaveWrittenTriad}
                   style={{ backgroundColor: 'transparent', boxShadow: 'none' }}
-                  className="btn-reset p-1.5 !bg-transparent hover:!bg-accent/10 text-text-secondary/80 hover:text-accent rounded-xl transition-all cursor-pointer flex items-center justify-center shrink-0 border border-accent/20 hover:border-accent/40 outline-none"
+                  className="btn-reset p-1.5 !bg-transparent hover:!bg-indigo-500/10 text-text-secondary/80 hover:text-indigo-500 rounded-xl transition-all cursor-pointer flex items-center justify-center shrink-0 border border-indigo-500/25 hover:border-indigo-500/50 outline-none"
                   aria-label="Guardar Tríada Escrita"
                 >
-                  <Save className="w-4 h-4 text-accent" />
+                  <Save className="w-3.5 h-3.5 text-indigo-500" />
                 </button>
               </Tooltip>
               <Button
                 onClick={() => { setTriadErrors({}); setOpenTriadDialog(true); setEditingTriadIndex(-1); setEditingTriad({ name: `Triada ${savedTriads.length + 1}`, idTerminal: '', idSucursal: '', serialNumber: '' }); }}
                 variant="outlined"
                 size="small"
-                sx={{ fontWeight: 800, borderRadius: 2, px: 2.5, py: 1 }}
+                sx={{ fontWeight: 800, borderRadius: 2, px: 2, py: 0.5, fontSize: '0.75rem' }}
               >
                 {t('triad.createBtn')}
               </Button>
@@ -1016,7 +1149,7 @@ export default function SimulatorSidebar({
             style={{ height: '52px' }}
             className={`w-full rounded-2xl font-normal text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-500 ease-in-out select-none cursor-pointer relative overflow-hidden ${
               loading
-                ? 'bg-gradient-to-r from-rose-600 via-red-600 to-rose-700 text-white shadow-[0_0_25px_rgba(225,29,72,0.5)] border border-rose-400/50'
+                ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-[0_0_30px_rgba(239,68,68,0.7)] border-2 border-red-400'
                 : !accessToken 
                   ? 'bg-slate-800/60 text-slate-400/60 cursor-not-allowed border border-dashed border-slate-700/60 shadow-none' 
                   : 'bg-gradient-to-r from-accent via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(14,165,233,0.35)] border border-accent/40'
