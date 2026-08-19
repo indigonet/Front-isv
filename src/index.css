@@ -263,10 +263,10 @@ img {
 }
 
 /* ===== Input & Textarea Focus Glow overrides ===== */
-input[type="text"]:not(.no-focus-glow):focus, 
-input[type="password"]:not(.no-focus-glow):focus, 
-textarea:not(.no-focus-glow):focus, 
-select:not(.no-focus-glow):focus {
+input[type="text"]:not(.no-focus-glow):not([class*="Mui"]):focus, 
+input[type="password"]:not(.no-focus-glow):not([class*="Mui"]):focus, 
+textarea:not(.no-focus-glow):not([class*="Mui"]):focus, 
+select:not(.no-focus-glow):not([class*="Mui"]):focus {
   border-color: var(--primary) !important;
   box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2) !important;
 }
@@ -274,10 +274,13 @@ select:not(.no-focus-glow):focus {
 /* Disable focus glow, borders, and shadows for specific inputs and textareas */
 .no-focus-glow,
 .no-focus-glow:focus,
+.no-focus-glow:focus-visible,
 input.no-focus-glow,
 input.no-focus-glow:focus,
+input.no-focus-glow:focus-visible,
 textarea.no-focus-glow,
-textarea.no-focus-glow:focus {
+textarea.no-focus-glow:focus,
+textarea.no-focus-glow:focus-visible {
   border: none !important;
   border-color: transparent !important;
   box-shadow: none !important;

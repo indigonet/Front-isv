@@ -3,14 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle, ChevronUp, ChevronDown, ChevronLeft, Trash2, HelpCircle, Clock, ArrowLeft, CheckCircle2, FileUp, FileDown } from 'lucide-react';
 
 import { CONFIG } from './simulator.constants';
-import { useSimulatorAuth }                from './useSimulatorAuth';
-import AuthTokenModal                      from './AuthTokenModal';
-import SimulatorSidebar                    from './SimulatorSidebar';
-import SimulatorHistory, { CodeBlock }      from './SimulatorHistory';
-import Modal                               from '../components/modal/Modal';
-import { useLanguage }                     from '../context/LanguageContext';
-import OnboardingTour                      from '../components/OnboardingTour';
-import { Tooltip }                         from '@mui/material';
+import { useSimulatorAuth } from './useSimulatorAuth';
+import AuthTokenModal from './AuthTokenModal';
+import SimulatorSidebar from './SimulatorSidebar';
+import SimulatorHistory, { CodeBlock } from './SimulatorHistory';
+import Modal from '../components/modal/Modal';
+import { useLanguage } from '../context/LanguageContext';
+import OnboardingTour from '../components/OnboardingTour';
+import { Tooltip } from '@mui/material';
 
 export const playSuccessChime = () => {
   try {
@@ -49,7 +49,7 @@ export const playSuccessChime = () => {
 
 export const cleanParamsForJson = (paramsObj) => {
   if (!paramsObj || typeof paramsObj !== 'object') return paramsObj;
-  
+
   const {
     flashCount,
     flashBaseAmount,
@@ -76,14 +76,14 @@ export const cleanParamsForJson = (paramsObj) => {
 export default function SimulatorView({ onLog }) {
   const { t } = useLanguage();
   const navigate = useNavigate();
-  const [country,         setCountry]         = useState(() => localStorage.getItem('isv_simulator_country') || 'cl'); // cl | ar
-  const [isCountryOpen,   setIsCountryOpen]   = useState(false);
-  
+  const [country, setCountry] = useState(() => localStorage.getItem('isv_simulator_country') || 'cl'); // cl | ar
+  const [isCountryOpen, setIsCountryOpen] = useState(false);
+
   const API_BASE = CONFIG[country].API_BASE;
   const COMMAND_METHODS = CONFIG[country].COMMAND_METHODS;
 
-  const [method,   setMethod]   = useState('POST');
-  const [env,      setEnv]      = useState('uat');
+  const [method, setMethod] = useState('POST');
+  const [env, setEnv] = useState('uat');
   const [selectedId, setSelectedId] = useState(() => {
     const saved = localStorage.getItem(`isv_selected_command_${country}`);
     const methods = CONFIG[country].COMMAND_METHODS;
@@ -92,23 +92,23 @@ export default function SimulatorView({ onLog }) {
     }
     return methods[0].id;
   });
-  const [url,      setUrl]      = useState(() => {
+  const [url, setUrl] = useState(() => {
     const savedCmd = localStorage.getItem(`isv_selected_command_${country}`);
     const methods = CONFIG[country].COMMAND_METHODS;
     const activeMethod = (savedCmd && methods.find(m => m.id === savedCmd)) || methods[0];
     return API_BASE.uat + (activeMethod.endpoint || 'poll');
   });
-  const [body,     setBody]     = useState(() => {
+  const [body, setBody] = useState(() => {
     const savedCmd = localStorage.getItem(`isv_selected_command_${country}`);
     const methods = CONFIG[country].COMMAND_METHODS;
     const activeMethod = (savedCmd && methods.find(m => m.id === savedCmd)) || methods[0];
     return JSON.stringify(cleanParamsForJson(activeMethod.template), null, 2);
   });
-  const [loading,  setLoading]  = useState(false);
+  const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState(null);
   const [abortController, setAbortController] = useState(null);
   const [isFlashRunning, setIsFlashRunning] = useState(false);
-  const [isStopping,     setIsStopping]     = useState(false);
+  const [isStopping, setIsStopping] = useState(false);
   const flashRef = useRef(false);
 
   const [flashCount, setFlashCount] = useState(() => Number(localStorage.getItem('isv_flash_count')) || 10);
@@ -120,10 +120,10 @@ export default function SimulatorView({ onLog }) {
   const [isTicketStatic, setIsTicketStatic] = useState(() => localStorage.getItem('isv_ticket_static') === 'true');
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [show401Prompt,   setShow401Prompt]   = useState(false);
+  const [show401Prompt, setShow401Prompt] = useState(false);
   const [isExportSecurityOpen, setIsExportSecurityOpen] = useState(false);
-  const [showJumpBtn,     setShowJumpBtn]     = useState(false);
-  const [sendSuccess,     setSendSuccess]     = useState(false);
+  const [showJumpBtn, setShowJumpBtn] = useState(false);
+  const [sendSuccess, setSendSuccess] = useState(false);
 
   React.useEffect(() => {
     window.scrollTo(0, 0);
@@ -161,37 +161,72 @@ export default function SimulatorView({ onLog }) {
   };
 
 
-  
-  const [params, setParams] = useState(() => {
-    const savedCmd = localStorage.getItem(`isv_selected_command_${country}`);
-    const methods = CONFIG[country].COMMAND_METHODS;
-    const activeMethod = (savedCmd && methods.find(m => m.id === savedCmd)) || methods[0];
-    const template = { ...activeMethod.template };
-    const keyPrefix = `isv_pos_${country}_${env}`;
+
+  const getInitialParams = React.useCallback((countryCode, envCode) => {
+    const newConfig = CONFIG[countryCode] || CONFIG.cl;
+    const savedCmd = localStorage.getItem(`isv_selected_command_${countryCode}`);
+    const activeMethod = (savedCmd && newConfig.COMMAND_METHODS.find(m => m.id === savedCmd)) || newConfig.COMMAND_METHODS[0];
+
+    const keyPrefix = `isv_pos_${countryCode}_${envCode}`;
+    let savedTerminal = localStorage.getItem(`${keyPrefix}_idTerminal`) || '';
+    let savedSucursal = localStorage.getItem(`${keyPrefix}_idSucursal`) || '';
+    let savedSerial = localStorage.getItem(`${keyPrefix}_idSerialNumber`) || '';
+
+    // Safeguard against cross-country contamination in localStorage
+    if (countryCode === 'cl' && (savedTerminal.toUpperCase().startsWith('AR') || savedSerial.toUpperCase().startsWith('NAC'))) {
+      const clTriadsRaw = localStorage.getItem(`isv_saved_triads_cl_${envCode}`);
+      const clTriads = clTriadsRaw ? JSON.parse(clTriadsRaw) : [];
+      const isActuallyInCl = clTriads.some(t => t.idTerminal === savedTerminal || t.serialNumber === savedSerial);
+      if (!isActuallyInCl) {
+        savedTerminal = '';
+        savedSucursal = '';
+        savedSerial = '';
+        localStorage.removeItem(`${keyPrefix}_idTerminal`);
+        localStorage.removeItem(`${keyPrefix}_idSucursal`);
+        localStorage.removeItem(`${keyPrefix}_idSerialNumber`);
+      }
+    } else if (countryCode === 'ar' && savedTerminal.toUpperCase().startsWith('CL')) {
+      const arTriadsRaw = localStorage.getItem(`isv_saved_triads_ar_${envCode}`);
+      const arTriads = arTriadsRaw ? JSON.parse(arTriadsRaw) : [];
+      const isActuallyInAr = arTriads.some(t => t.idTerminal === savedTerminal || t.serialNumber === savedSerial);
+      if (!isActuallyInAr) {
+        savedTerminal = '';
+        savedSucursal = '';
+        savedSerial = '';
+        localStorage.removeItem(`${keyPrefix}_idTerminal`);
+        localStorage.removeItem(`${keyPrefix}_idSucursal`);
+        localStorage.removeItem(`${keyPrefix}_idSerialNumber`);
+      }
+    }
+
+    let template = { ...activeMethod.template };
+
+    // Auto-generate realistic demo values for sale commands if empty or 0
+    if (activeMethod.id === 'sale_ar' && countryCode === 'ar') {
+      if (!template.amount || template.amount === 0) {
+        template.amount = Math.floor(Math.random() * (85000 - 1500 + 1) + 1500) * 100;
+        template.tip = Math.floor(Math.random() * (2500 - 0 + 1) + 0) * 100;
+      }
+    } else if ((activeMethod.id === 'c2c_sale' || activeMethod.id === 'sale_promo') && countryCode === 'cl') {
+      if (!template.amount || template.amount === 0) {
+        const base = Math.floor(Math.random() * 99) + 1;
+        template.amount = (base * 1000) + 990;
+        template.ticketNumber = String(Math.floor(Math.random() * 89999) + 10000);
+      }
+    }
+
     return {
       ...template,
-      idTerminal:   localStorage.getItem(`${keyPrefix}_idTerminal`)   || template.idTerminal,
-      idSucursal:   localStorage.getItem(`${keyPrefix}_idSucursal`)   || template.idSucursal,
-      serialNumber: localStorage.getItem(`${keyPrefix}_idSerialNumber`) || template.serialNumber,
+      idTerminal: savedTerminal || template.idTerminal || '',
+      idSucursal: savedSucursal || template.idSucursal || '',
+      serialNumber: savedSerial || template.serialNumber || '',
     };
-  });
+  }, []);
 
-  // Reload triad when environment changes
-  React.useEffect(() => {
-    const keyPrefix = `isv_pos_${country}_${env}`;
-    const savedTerminal = localStorage.getItem(`${keyPrefix}_idTerminal`);
-    const savedSucursal = localStorage.getItem(`${keyPrefix}_idSucursal`);
-    const savedSerial   = localStorage.getItem(`${keyPrefix}_idSerialNumber`);
-    
-    if (savedTerminal || savedSucursal || savedSerial) {
-      setParams(prev => ({
-        ...prev,
-        idTerminal:   savedTerminal || prev.idTerminal,
-        idSucursal:   savedSucursal || prev.idSucursal,
-        serialNumber: savedSerial   || prev.serialNumber,
-      }));
-    }
-  }, [env, country]);
+  const [params, setParams] = useState(() => getInitialParams(country, env));
+
+  const activeCountryRef = useRef(country);
+  const activeEnvRef = useRef(env);
 
   // ── Request history ─────────────────────────────────────────────
   const [history, setHistory] = useState(() => {
@@ -229,13 +264,13 @@ export default function SimulatorView({ onLog }) {
       setIsAuthModalOpen(true);
       return;
     }
-    
+
     // 2. Start tour and auto-click beacon
     setIsTourRunning(false);
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       setIsTourRunning(true);
-      
+
       // Auto-click the beacon
       setTimeout(() => {
         const beaconBtn = document.querySelector('button[aria-label="Open the dialog"]') || document.querySelector('.react-joyride__beacon');
@@ -258,43 +293,48 @@ export default function SimulatorView({ onLog }) {
   }, [auth.accessToken, startTour]);
 
   // ── Handlers ───────────────────────────────────────────────────
-  
-  // When country changes, reset command and url
+
+  // When country changes, reset command and url cleanly with country-specific params
   React.useEffect(() => {
-    const newConfig = CONFIG[country];
+    activeCountryRef.current = country;
+    activeEnvRef.current = env;
+
+    const newConfig = CONFIG[country] || CONFIG.cl;
     const savedCmd = localStorage.getItem(`isv_selected_command_${country}`);
     const activeMethod = (savedCmd && newConfig.COMMAND_METHODS.find(m => m.id === savedCmd)) || newConfig.COMMAND_METHODS[0];
-    
+
     setSelectedId(activeMethod.id);
     setUrl(newConfig.API_BASE[env] + (activeMethod.endpoint || ''));
-    setBody(JSON.stringify(activeMethod.template, null, 2));
-    const keyPrefix = `isv_pos_${country}_${env}`;
-    setParams(prev => ({
-      ...activeMethod.template,
-      idTerminal:   localStorage.getItem(`${keyPrefix}_idTerminal`)   || activeMethod.template.idTerminal,
-      idSucursal:   localStorage.getItem(`${keyPrefix}_idSucursal`)   || activeMethod.template.idSucursal,
-      serialNumber: localStorage.getItem(`${keyPrefix}_idSerialNumber`) || activeMethod.template.serialNumber,
-    }));
+
+    const freshParams = getInitialParams(country, env);
+    setParams(freshParams);
+    setBody(JSON.stringify(cleanParamsForJson(freshParams), null, 2));
     setIsTourRunning(false); // Stop onboarding tour if running
-  }, [country]);
+  }, [country, env, getInitialParams]);
 
   const handleEnvChange = React.useCallback((newEnv) => {
     setEnv(newEnv);
+    activeEnvRef.current = newEnv;
     const endpoint = url.split('/').pop() || '';
     setUrl(CONFIG[country].API_BASE[newEnv] + endpoint);
+    const freshParams = getInitialParams(country, newEnv);
+    setParams(freshParams);
     if (onLog) onLog(`${t('envLabel')}: ${newEnv.toUpperCase()}`, 'info');
-  }, [country, url, onLog]);
+  }, [country, url, onLog, t, getInitialParams]);
 
-  // Sync body and persist triad whenever params change
+  // Sync body and persist triad only if params belong to current active country & env
   React.useEffect(() => {
+    if (activeCountryRef.current !== country || activeEnvRef.current !== env) {
+      return;
+    }
     const displayParams = cleanParamsForJson(params);
     setBody(JSON.stringify(displayParams, null, 2));
-    
+
     // Auto-save POS config triad specific to country/env
     const keyPrefix = `isv_pos_${country}_${env}`;
-    if (params.idTerminal)   localStorage.setItem(`${keyPrefix}_idTerminal`,   params.idTerminal);
-    if (params.idSucursal)   localStorage.setItem(`${keyPrefix}_idSucursal`,   params.idSucursal);
-    if (params.serialNumber) localStorage.setItem(`${keyPrefix}_idSerialNumber`, params.serialNumber);
+    if (params.idTerminal !== undefined) localStorage.setItem(`${keyPrefix}_idTerminal`, String(params.idTerminal));
+    if (params.idSucursal !== undefined) localStorage.setItem(`${keyPrefix}_idSucursal`, String(params.idSucursal));
+    if (params.serialNumber !== undefined) localStorage.setItem(`${keyPrefix}_idSerialNumber`, String(params.serialNumber));
   }, [params, country, env]);
 
   const lastScrollYRef = useRef(0);
@@ -302,20 +342,20 @@ export default function SimulatorView({ onLog }) {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       const lastScrollY = lastScrollYRef.current;
-      
+
       // Show only on mobile, after 400px, and ONLY when scrolling DOWN
       if (window.innerWidth < 1024) {
         const isScrollingDown = currentScrollY > lastScrollY;
         const isPastThreshold = currentScrollY > 400;
-        
+
         setShowJumpBtn(isScrollingDown && isPastThreshold);
       } else {
         setShowJumpBtn(false);
       }
-      
+
       lastScrollYRef.current = currentScrollY;
     };
-    
+
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -329,8 +369,6 @@ export default function SimulatorView({ onLog }) {
     }
   };
 
-
-
   // Called by SimulatorSidebar when a command is selected
   const handleLoadTemplate = React.useCallback((bodyStr, endpoint, cmdId) => {
     setSelectedId(cmdId);
@@ -338,32 +376,35 @@ export default function SimulatorView({ onLog }) {
     try {
       let template = JSON.parse(bodyStr);
 
-      // RANDOMIZER: If it's an Argentina Sale, generate random amount and tip
+      // Auto-randomize demo amounts if empty or 0
       if (cmdId === 'sale_ar' && country === 'ar') {
-        // Random amount between $1,500.00 and $85,000.00
-        const randomAmount = Math.floor(Math.random() * (85000 - 1500 + 1) + 1500) * 100;
-        // Random tip between $0.00 and $2,500.00
-        const randomTip = Math.floor(Math.random() * (2500 - 0 + 1) + 0) * 100;
-        
-        template.amount = randomAmount;
-        template.tip = randomTip;
+        if (!template.amount || template.amount === 0) {
+          template.amount = Math.floor(Math.random() * (85000 - 1500 + 1) + 1500) * 100;
+          template.tip = Math.floor(Math.random() * (2500 - 0 + 1) + 0) * 100;
+        }
+      } else if ((cmdId === 'c2c_sale' || cmdId === 'sale_promo') && country === 'cl') {
+        if (!template.amount || template.amount === 0) {
+          const base = Math.floor(Math.random() * 99) + 1;
+          template.amount = (base * 1000) + 990;
+          template.ticketNumber = String(Math.floor(Math.random() * 89999) + 10000);
+        }
       }
 
       // Preserve current triad when switching templates
       const mergedParams = {
         ...template,
-        idTerminal:   params.idTerminal   || template.idTerminal,
-        idSucursal:   params.idSucursal   || template.idSucursal,
-        serialNumber: params.serialNumber || template.serialNumber,
+        idTerminal: params.idTerminal !== undefined && params.idTerminal !== '' ? params.idTerminal : template.idTerminal,
+        idSucursal: params.idSucursal !== undefined && params.idSucursal !== '' ? params.idSucursal : template.idSucursal,
+        serialNumber: params.serialNumber !== undefined && params.serialNumber !== '' ? params.serialNumber : template.serialNumber,
       };
-      setParams(mergedParams); 
+      setParams(mergedParams);
     } catch {
       setBody(bodyStr);
     }
     setUrl(CONFIG[country].API_BASE[env] + endpoint);
     setResponse(null);
     if (onLog) onLog(`${t('templateLoaded')} → /${endpoint}`, 'info');
-  }, [country, env, params.idTerminal, params.idSucursal, params.serialNumber, onLog]);
+  }, [country, env, params.idTerminal, params.idSucursal, params.serialNumber, onLog, t]);
 
   // Called by SimulatorSidebar when a param input changes
   const handleSyncParam = React.useCallback((field, value) => {
@@ -398,7 +439,7 @@ export default function SimulatorView({ onLog }) {
     setResponse(null);
 
     const isFlash = selectedId === 'flash_sale';
-    
+
     // Internal request runner
     const runRequest = async (bodyToUse) => {
       const controller = new AbortController();
@@ -436,12 +477,12 @@ export default function SimulatorView({ onLog }) {
         const proxyMap = {
           'https://api-dev-getnet-posintegrado.ione.cl/api/postxs/': '/api/cl/dev/',
           'https://api-uat-getnet-posintegrado.ione.cl/api/postxs/': '/api/cl/uat/',
-          'https://api-getnet-posintegrado.ione.cl/api/postxs/':     '/api/cl/prod/',
-          'https://api-dev.ione-tech.com/api/postxs/':              '/api/ar/dev/',
-          'https://api-uat.ione-tech.com/api/postxs/':              '/api/ar/uat/',
-          'https://api.ione-tech.com/api/postxs/':                  '/api/ar/prod/',
+          'https://api-getnet-posintegrado.ione.cl/api/postxs/': '/api/cl/prod/',
+          'https://api-dev.ione-tech.com/api/postxs/': '/api/ar/dev/',
+          'https://api-uat.ione-tech.com/api/postxs/': '/api/ar/uat/',
+          'https://api.ione-tech.com/api/postxs/': '/api/ar/prod/',
         };
-        
+
         for (const [real, proxy] of Object.entries(proxyMap)) {
           if (fetchUrl.startsWith(real)) {
             fetchUrl = fetchUrl.replace(real, proxy);
@@ -449,7 +490,7 @@ export default function SimulatorView({ onLog }) {
           }
         }
 
-        const headers = { 
+        const headers = {
           'Content-Type': 'application/json',
           'env': env,
           'country': country,
@@ -457,8 +498,8 @@ export default function SimulatorView({ onLog }) {
         };
         if (auth.accessToken) headers['Authorization'] = `Bearer ${auth.accessToken}`;
 
-        const options = { 
-          method, 
+        const options = {
+          method,
           headers,
           body: method !== 'GET' && method !== 'HEAD' ? bodyToUse : undefined,
           signal: controller.signal
@@ -467,8 +508,8 @@ export default function SimulatorView({ onLog }) {
         if (onLog) onLog(`→ ${method} ${url}`, 'info');
 
         const startTime = Date.now();
-        const res       = await fetch(fetchUrl, options);
-        const endTime   = Date.now();
+        const res = await fetch(fetchUrl, options);
+        const endTime = Date.now();
 
         let data;
         const ct = res.headers.get('content-type');
@@ -482,21 +523,21 @@ export default function SimulatorView({ onLog }) {
         const timeStr = now.toLocaleTimeString('es-CL', { hour12: false });
 
         setHistory((prev) => [{
-          id:       `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           method,
           endpoint: url.split('/').pop() || '/sale',
-          status:   res.status,
-          request:  bodyToUse,
+          status: res.status,
+          request: bodyToUse,
           response: data,
-          time:     `${dateStr} ${timeStr}`,
+          time: `${dateStr} ${timeStr}`,
         }, ...prev].slice(0, 100)); // Cap history to 100 items to prevent memory leaks
 
         if (res.ok) {
-        if (onLog) onLog(`✅ ${res.status} OK (${endTime - startTime}ms)`, 'success');
-        playSuccessChime();
-        setSendSuccess(true);
-        setTimeout(() => setSendSuccess(false), 2500);
-      } else {
+          if (onLog) onLog(`✅ ${res.status} OK (${endTime - startTime}ms)`, 'success');
+          playSuccessChime();
+          setSendSuccess(true);
+          setTimeout(() => setSendSuccess(false), 2500);
+        } else {
           if (onLog) onLog(`❌ ${res.status} — ${JSON.stringify(data).substring(0, 120)}`, 'error');
           if (res.status === 401) setShow401Prompt(true);
         }
@@ -521,7 +562,7 @@ export default function SimulatorView({ onLog }) {
         if (onLog) onLog(t('flashSaleStarting'), 'info');
         flashRef.current = true;
         setIsFlashRunning(true);
-        
+
         let iterParams = { ...params };
         if (iterParams.customId === '') iterParams.customId = '0';
         if (iterParams.employeeId === '' || iterParams.employeeId === null || iterParams.employeeId === undefined) {
@@ -529,34 +570,34 @@ export default function SimulatorView({ onLog }) {
         }
         const totalSales = Number(flashCount) || 1;
         const threshold = Number(flashAltThreshold) || (totalSales + 1);
-        
+
         for (let i = 1; i <= totalSales; i++) {
           if (!flashRef.current) break;
-          
+
           // Determine amount based on threshold, respecting isAmountStatic
           const amountToUse = isAmountStatic ? iterParams.amount : (i >= threshold ? Number(flashAltAmount) : Number(flashBaseAmount));
           iterParams.amount = amountToUse;
-          
+
           // Strip out simulator parameters and clean JSON payload before sending API request
           const apiParams = cleanParamsForJson(iterParams);
           const bodyToUse = JSON.stringify(apiParams, null, 2);
-          setBody(bodyToUse); 
+          setBody(bodyToUse);
           setParams(iterParams);
-          
+
           await runRequest(bodyToUse);
-          
+
           if (i < totalSales && flashRef.current) {
             const nextTicket = isTicketStatic ? iterParams.ticketNumber : String(parseInt(iterParams.ticketNumber || "0") + 1);
             const nextCustomId = String(Math.floor(Math.random() * 9999999));
             const nextEmployeeId = (parseInt(iterParams.employeeId || "1") % 99) + 1;
-            
+
             iterParams = {
               ...iterParams,
               ticketNumber: nextTicket,
               customId: nextCustomId,
               employeeId: nextEmployeeId,
             };
-            
+
             if (flashRef.current) {
               await new Promise(resolve => setTimeout(resolve, 1000));
             }
@@ -610,7 +651,7 @@ export default function SimulatorView({ onLog }) {
   };
 
   const handleClearResponse = React.useCallback(() => setResponse(null), []);
-  
+
   const handleClearHistory = () => {
     setHistory([]);
     try {
@@ -635,7 +676,7 @@ export default function SimulatorView({ onLog }) {
       try {
         const raw = localStorage.getItem(triadStorageKey);
         if (raw) savedTriads = JSON.parse(raw);
-      } catch {}
+      } catch { }
 
       const configData = {
         version: '1.0',
@@ -739,7 +780,7 @@ export default function SimulatorView({ onLog }) {
   return (
     <div className="min-h-screen w-full pt-8 sm:pt-10 pb-8 px-4 sm:px-6 lg:px-8 bg-background relative overflow-hidden transition-colors duration-500">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,var(--tw-gradient-stops))] from-accent/10 via-transparent to-transparent pointer-events-none opacity-40" />
-      
+
       <div className="w-full max-w-[1920px] mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-12 relative z-10">
 
         {/* Header Content */}
@@ -748,7 +789,7 @@ export default function SimulatorView({ onLog }) {
             <div className="absolute inset-0 bg-grid-white/[0.02] dark:bg-grid-white/[0.02] bg-grid-black/[0.02]" />
             <div className="absolute -top-24 -left-24 w-96 h-96 bg-accent/10 rounded-full blur-[80px]" />
           </div>
-          
+
           <div className="relative z-10 space-y-2">
             <div id="tour-welcome" className="flex items-center gap-3">
               <Tooltip title={t('backToMain') || 'Volver al Inicio'} arrow placement="top">
@@ -815,25 +856,24 @@ export default function SimulatorView({ onLog }) {
                 className="flex items-center gap-3 bg-slate-900/90 hover:bg-slate-800/90 border border-slate-700/80 hover:border-indigo-500/80 rounded-2xl py-2.5 px-4 shadow-[0_4px_25px_rgba(0,0,0,0.4)] backdrop-blur-xl cursor-pointer transition-all duration-300 group"
               >
                 <div className="relative flex items-center justify-center">
-                  <img 
-                    src={`https://flagcdn.com/w20/${country}.png`} 
+                  <img
+                    src={`https://flagcdn.com/w20/${country}.png`}
                     alt={country}
                     className="w-5 h-3.5 rounded-xs border border-white/20 shadow-md relative z-10"
                   />
                   <div className="absolute inset-0 bg-indigo-500/40 blur-xs rounded-full opacity-60 group-hover:opacity-100 transition-opacity" />
                 </div>
-                
+
                 <span className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
                   <span>{country === 'cl' ? 'Chile' : 'Argentina'}</span>
-                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border shadow-sm ${
-                    country === 'cl' 
-                      ? 'bg-blue-500/30 text-blue-200 border-blue-400/60 shadow-[0_0_10px_rgba(59,130,246,0.3)]' 
+                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border shadow-sm ${country === 'cl'
+                      ? 'bg-blue-500/30 text-blue-200 border-blue-400/60 shadow-[0_0_10px_rgba(59,130,246,0.3)]'
                       : 'bg-sky-500/30 text-sky-200 border-sky-400/60 shadow-[0_0_10px_rgba(56,189,248,0.3)]'
-                  }`}>
+                    }`}>
                     {country.toUpperCase()}
                   </span>
                 </span>
-                
+
                 <div className={`transition-transform duration-300 ${isCountryOpen ? 'rotate-180 text-indigo-400' : 'text-slate-400 group-hover:text-indigo-400'}`}>
                   <ChevronDown className="w-4 h-4" />
                 </div>
@@ -846,28 +886,26 @@ export default function SimulatorView({ onLog }) {
                     <div className="px-3.5 py-2 mb-1.5 border-b border-slate-800/80 flex items-center justify-between">
                       <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest opacity-90">{t('simCountrySelectLabel')}</span>
                     </div>
-                    
+
                     <div className="space-y-2 pt-1">
                       {/* Chile Option */}
                       <button
-                        onClick={() => { 
-                          setCountry('cl'); 
+                        onClick={() => {
+                          setCountry('cl');
                           localStorage.setItem('isv_simulator_country', 'cl');
-                          setIsCountryOpen(false); 
+                          setIsCountryOpen(false);
                         }}
-                        className={`flex w-full items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-200 cursor-pointer border group ${
-                          country === 'cl' 
-                            ? 'bg-slate-800/90 border-2 border-indigo-500/80 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]' 
+                        className={`flex w-full items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-200 cursor-pointer border group ${country === 'cl'
+                            ? 'bg-slate-800/90 border-2 border-indigo-500/80 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]'
                             : 'bg-slate-900/40 border border-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800/60 hover:border-indigo-500/40'
-                        }`}
+                          }`}
                       >
                         <img src="https://flagcdn.com/w20/cl.png" className="w-5 h-3.5 rounded-xs border border-white/20 shadow-md" alt="CL" />
                         <div className="flex flex-col items-start leading-none">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-black">Chile</span>
-                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
-                              country === 'cl' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : 'bg-slate-800 text-slate-400 border-slate-700'
-                            }`}>CL</span>
+                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${country === 'cl' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : 'bg-slate-800 text-slate-400 border-slate-700'
+                              }`}>CL</span>
                           </div>
                         </div>
                         {country === 'cl' && (
@@ -877,24 +915,22 @@ export default function SimulatorView({ onLog }) {
 
                       {/* Argentina Option */}
                       <button
-                        onClick={() => { 
-                          setCountry('ar'); 
+                        onClick={() => {
+                          setCountry('ar');
                           localStorage.setItem('isv_simulator_country', 'ar');
-                          setIsCountryOpen(false); 
+                          setIsCountryOpen(false);
                         }}
-                        className={`flex w-full items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-200 cursor-pointer border group ${
-                          country === 'ar' 
-                            ? 'bg-slate-800/90 border-2 border-indigo-500/80 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]' 
+                        className={`flex w-full items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-200 cursor-pointer border group ${country === 'ar'
+                            ? 'bg-slate-800/90 border-2 border-indigo-500/80 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]'
                             : 'bg-slate-900/40 border border-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800/60 hover:border-indigo-500/40'
-                        }`}
+                          }`}
                       >
                         <img src="https://flagcdn.com/w20/ar.png" className="w-5 h-3.5 rounded-xs border border-white/20 shadow-md" alt="AR" />
                         <div className="flex flex-col items-start leading-none">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-black">Argentina</span>
-                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${
-                              country === 'ar' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : 'bg-slate-800 text-slate-400 border-slate-700'
-                            }`}>AR</span>
+                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${country === 'ar' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : 'bg-slate-800 text-slate-400 border-slate-700'
+                              }`}>AR</span>
                           </div>
                         </div>
                         {country === 'ar' && (
@@ -926,7 +962,7 @@ export default function SimulatorView({ onLog }) {
 
             {auth.accessToken && (
               <Tooltip title={t('copyToken')} arrow placement="bottom">
-                <div 
+                <div
                   onClick={() => copyToClipboard(auth.accessToken)}
                   className="flex items-center gap-2.5 px-4 py-3 bg-emerald-500/3 border border-emerald-500/20 rounded-2xl group cursor-pointer hover:bg-emerald-500/8 hover:border-emerald-500/40 transition-all duration-300"
                 >
@@ -946,7 +982,7 @@ export default function SimulatorView({ onLog }) {
 
         {/* Main interactive grid */}
         <div id="simulator-main" className={`${(!auth.accessToken && !isTourRunning) ? 'hidden' : 'grid'} grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-top-4 duration-700`}>
-          
+
           {/* MOBILE ONLY: Selector appears first */}
           <div id="mobile-commands-anchor" className="lg:hidden scroll-mt-24">
             <SimulatorSidebar
@@ -984,14 +1020,13 @@ export default function SimulatorView({ onLog }) {
           {/* Builder Section (Middle on mobile, Left on desktop) */}
           <div id="simulator-main-builder" className="lg:col-span-8 space-y-6 scroll-mt-24">
             <div className="bg-card rounded-[1rem] border border-accent/10 shadow-xl overflow-hidden flex flex-col transition-all hover:shadow-2xl hover:border-accent/20">
-              
+
               {/* URL bar */}
               <div className="p-6 bg-accent/2 border-b border-accent/5 flex flex-col sm:flex-row items-center gap-4">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <div className="flex items-center gap-2 p-2 px-3 bg-accent/5 rounded-xl border border-accent/10">
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${
-                      env === 'prod' ? 'text-rose-500' : env === 'uat' ? 'text-accent' : 'text-emerald-500'
-                    }`}>
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${env === 'prod' ? 'text-rose-500' : env === 'uat' ? 'text-accent' : 'text-emerald-500'
+                      }`}>
                       {env}
                     </span>
                   </div>
@@ -1012,17 +1047,16 @@ export default function SimulatorView({ onLog }) {
                   onClick={loading ? handleCancel : handleSend}
                   disabled={!loading && !auth.accessToken}
                   style={{ minWidth: '210px', height: '52px' }}
-                  className={`hidden sm:flex px-6 rounded-2xl font-normal text-xs uppercase tracking-widest items-center justify-center gap-3 transition-all duration-500 ease-in-out select-none cursor-pointer relative overflow-hidden ${
-                    loading
+                  className={`hidden sm:flex px-6 rounded-2xl font-normal text-xs uppercase tracking-widest items-center justify-center gap-3 transition-all duration-500 ease-in-out select-none cursor-pointer relative overflow-hidden ${loading
                       ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-[0_0_30px_rgba(239,68,68,0.7)] border-2 border-red-400'
                       : !auth.accessToken
                         ? 'bg-slate-800/60 text-slate-400/60 cursor-not-allowed border border-dashed border-slate-700/60 shadow-none'
                         : 'bg-gradient-to-r from-accent via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(14,165,233,0.35)] border border-accent/40'
-                  }`}
+                    }`}
                 >
                   {/* Internal sweeping light ray beam */}
                   {(!loading ? auth.accessToken : true) && (
-                    <div 
+                    <div
                       className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none"
                       style={{
                         animation: loading ? 'shimmerSweep 1.5s infinite linear' : 'shimmerSweep 3s infinite linear',
@@ -1058,7 +1092,7 @@ export default function SimulatorView({ onLog }) {
                       <Cpu className="w-3.5 h-3.5 text-accent" /> REQUEST BODY (JSON)
                     </span>
                     <Tooltip title={t('copyRequest')} arrow placement="top">
-                      <button 
+                      <button
                         onClick={() => copyToClipboard(body)}
                         className="p-1.5 hover:bg-accent/5 rounded-lg text-text-secondary hover:text-accent transition-all cursor-pointer"
                       >
@@ -1085,7 +1119,7 @@ export default function SimulatorView({ onLog }) {
                       <div className="flex items-center gap-3">
                         <div className="flex items-center gap-1.5 bg-accent/5 rounded-lg p-0.5 border border-accent/10">
                           <Tooltip title={t('copyResponse') || 'Copiar Respuesta'} arrow placement="top">
-                            <button 
+                            <button
                               onClick={() => copyToClipboard(JSON.stringify(response, null, 2))}
                               className="p-1.5 hover:bg-accent/10 rounded-md text-text-secondary hover:text-accent transition-all cursor-pointer"
                             >
@@ -1094,7 +1128,7 @@ export default function SimulatorView({ onLog }) {
                           </Tooltip>
                           <div className="w-px h-3 bg-accent/10" />
                           <Tooltip title={t('clearResponse') || 'Limpiar'} arrow placement="top">
-                            <button 
+                            <button
                               onClick={handleClearResponse}
                               className="p-1.5 hover:bg-rose-500/10 rounded-md text-text-secondary hover:text-rose-500 transition-all cursor-pointer"
                             >
@@ -1187,28 +1221,27 @@ export default function SimulatorView({ onLog }) {
         env={env}
         country={country}
         onEnvChange={handleEnvChange}
-        clientId={auth.clientId}         setClientId={auth.setClientId}
+        clientId={auth.clientId} setClientId={auth.setClientId}
         clientSecret={auth.clientSecret} setClientSecret={auth.setClientSecret}
         accessToken={auth.accessToken}
-        showSecret={auth.showSecret}     setShowSecret={auth.setShowSecret}
+        showSecret={auth.showSecret} setShowSecret={auth.setShowSecret}
         fetching={auth.fetching}
         fetchToken={auth.fetchToken}
         clearToken={auth.clearToken}
       />
 
-      <Modal 
-        isOpen={!!selectedHistoryItem} 
-        onClose={() => setSelectedHistoryItem(null)} 
+      <Modal
+        isOpen={!!selectedHistoryItem}
+        onClose={() => setSelectedHistoryItem(null)}
         title={`${t('simTransactionDetail')}: ${selectedHistoryItem?.endpoint?.toUpperCase()}`}
       >
         <div className="flex flex-col flex-1 min-h-0 h-full">
           {/* Header metadata */}
           <div className="flex flex-wrap items-center gap-2 pb-3 mb-4 border-b border-slate-200/50 dark:border-accent/10 shrink-0 select-none">
-            <span className={`text-[9px] font-black px-2 py-0.5 rounded border ${
-              selectedHistoryItem?.status < 400 
-                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]' 
+            <span className={`text-[9px] font-black px-2 py-0.5 rounded border ${selectedHistoryItem?.status < 400
+                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]'
                 : 'bg-rose-500/10 text-rose-500 border-rose-500/20 shadow-[0_0_8px_rgba(244,63,94,0.1)]'
-            }`}>
+              }`}>
               {selectedHistoryItem?.status}
             </span>
             <span className="text-[9px] font-black px-2 py-0.5 rounded border border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 text-text-secondary tracking-wider">
@@ -1257,9 +1290,9 @@ export default function SimulatorView({ onLog }) {
       </Modal>
 
       {/* Export Security Warning Modal */}
-      <Modal 
-        isOpen={isExportSecurityOpen} 
-        onClose={() => setIsExportSecurityOpen(false)} 
+      <Modal
+        isOpen={isExportSecurityOpen}
+        onClose={() => setIsExportSecurityOpen(false)}
         title={t('exportSecurityTitle')}
         size="sm"
       >
@@ -1288,8 +1321,8 @@ export default function SimulatorView({ onLog }) {
           </div>
 
           <div className="flex items-center justify-center gap-3 pt-3 border-t border-slate-700/30 w-full">
-            <button 
-              onClick={() => setIsExportSecurityOpen(false)} 
+            <button
+              onClick={() => setIsExportSecurityOpen(false)}
               className="flex-1 max-w-[130px] py-2.5 rounded-xl border border-slate-700/60 hover:bg-slate-800/60 transition-all text-[10px] font-bold uppercase tracking-wider text-slate-300 cursor-pointer text-center flex justify-center"
             >
               {t('cancel')}
@@ -1305,9 +1338,8 @@ export default function SimulatorView({ onLog }) {
       </Modal>
 
       {/* Floating Scroll-to-Top Button (Mobile Only) */}
-      <div className={`fixed bottom-8 right-6 z-100 transition-all duration-500 transform lg:hidden ${
-        showJumpBtn ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-50 pointer-events-none'
-      }`}>
+      <div className={`fixed bottom-8 right-6 z-100 transition-all duration-500 transform lg:hidden ${showJumpBtn ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-12 scale-50 pointer-events-none'
+        }`}>
         <Tooltip title={t('simBackToCommands')} arrow placement="left">
           <button
             onClick={scrollToCommands}
@@ -1317,7 +1349,7 @@ export default function SimulatorView({ onLog }) {
           </button>
         </Tooltip>
       </div>
-      
+
       <OnboardingTour run={isTourRunning} onFinish={handleTourFinish} />
     </div>
   );

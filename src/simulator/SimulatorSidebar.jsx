@@ -1,11 +1,98 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { ChevronRight, Layers, History, X, Trash2, Play, RefreshCw, Lock, ShieldCheck, Wand2, HelpCircle, XCircle, Save, CheckCircle2, FileUp, FileDown } from 'lucide-react';
+import { ChevronRight, Layers, History, X, Trash2, Play, RefreshCw, Lock, ShieldCheck, Wand2, HelpCircle, XCircle, Save, CheckCircle2, FileUp, FileDown, Tag, Monitor, Building2, Hash } from 'lucide-react';
 
 import { CONFIG } from './simulator.constants';
 import { useLanguage } from '../context/LanguageContext';
-import { Box, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, FormControl, OutlinedInput, FormHelperText, Typography, Select, MenuItem, Switch, FormControlLabel, Snackbar, Alert } from '@mui/material';
+import { Box, Button, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, Tooltip, FormControl, FormHelperText, Typography, Select, MenuItem, Switch, FormControlLabel, Snackbar, Alert } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+
+export const parseTriadText = (text) => {
+  if (!text || typeof text !== 'string') return null;
+  const clean = text.trim();
+  if (!clean) return null;
+
+  let name = '';
+  let term = '';
+  let suc = '';
+  let serial = '';
+
+  // 1. JSON format
+  if (clean.startsWith('{') && clean.endsWith('}')) {
+    try {
+      const obj = JSON.parse(clean);
+      const data = obj.posTriad || obj;
+      term = data.idTerminal || data.terminal || data.terminalId || data.tid || '';
+      suc = data.idSucursal || data.sucursal || data.sucursalId || data.mid || data.commerceId || '';
+      serial = data.serialNumber || data.serial || data.sn || data.serie || '';
+      name = data.name || '';
+      if (term || suc || serial) {
+        return {
+          name: name ? String(name).slice(0, 50) : '',
+          idTerminal: String(term).slice(0, 20),
+          idSucursal: String(suc).slice(0, 20),
+          serialNumber: String(serial).toUpperCase().slice(0, 20)
+        };
+      }
+    } catch { }
+  }
+
+  // 2. Labeled / Key-Value Regex Matching (handles arbitrary order, labels with/without colons, dashes, etc.)
+  const serialMatch = clean.match(/(?:serial[\s_-]*number|serial[\s_-]*no\.?|serialnumber|serial|s\/n|s\.n\.?|sn|nro\.?[\s_-]*serie|n[uú]mero[\s_-]*de[\s_-]*serie|serie)\s*[:=\t-]?\s*([a-zA-Z0-9_-]+)/i);
+  const termMatch = clean.match(/(?:id[\s_-]*terminal|terminal[\s_-]*id|terminal|tid|term)\s*[:=\t-]?\s*([a-zA-Z0-9_-]+)/i);
+  const sucMatch = clean.match(/(?:id[\s_-]*sucursal|sucursal[\s_-]*id|sucursal|mid|commerce[\s_-]*id|comercio|suc|branch[\s_-]*id|branch|store[\s_-]*id|store)\s*[:=\t-]?\s*([a-zA-Z0-9_-]+)/i);
+  const nameMatch = clean.match(/(?:nombre|name|alias|titulo|title)\s*[:=\t-]?\s*([a-zA-Z0-9_\-\s]{1,40})/i);
+
+  if (serialMatch || termMatch || sucMatch) {
+    if (termMatch) term = termMatch[1];
+    if (sucMatch) suc = sucMatch[1];
+    if (serialMatch) serial = serialMatch[1];
+    if (nameMatch) name = nameMatch[1].trim();
+
+    return {
+      name: name ? name.slice(0, 50) : '',
+      idTerminal: term ? term.slice(0, 20) : '',
+      idSucursal: suc ? suc.slice(0, 20) : '',
+      serialNumber: serial ? serial.toUpperCase().slice(0, 20) : ''
+    };
+  }
+
+  // 3. Delimited tokens (tabs from sheets, commas, semicolons, pipes, slashes, or whitespace)
+  const lines = clean.split(/[\r\n]+/).map(l => l.trim()).filter(Boolean);
+  let tokens = [];
+  if (lines.length > 1) {
+    tokens = lines;
+  } else {
+    tokens = clean.split(/[\t;,|\/]+|\s+/).map(s => s.trim()).filter(Boolean);
+  }
+
+  if (tokens.length >= 3) {
+    term = tokens[0];
+    suc = tokens[1];
+    serial = tokens[2];
+    return {
+      name: '',
+      idTerminal: term.slice(0, 20),
+      idSucursal: suc.slice(0, 20),
+      serialNumber: serial.toUpperCase().slice(0, 20)
+    };
+  } else if (tokens.length === 1) {
+    const single = tokens[0];
+    if (single.length === 22) {
+      term = single.substring(0, 8);
+      suc = single.substring(8, 12);
+      serial = single.substring(12, 22);
+      return {
+        name: '',
+        idTerminal: term,
+        idSucursal: suc,
+        serialNumber: serial.toUpperCase()
+      };
+    }
+  }
+
+  return null;
+};
 
 const formatRut = (value) => {
   let clean = String(value).replace(/[^0-9kK]/g, '').toUpperCase();
@@ -41,7 +128,7 @@ const validateRut = (rut) => {
 };
 
 export default function SimulatorSidebar({
-  selectedId, 
+  selectedId,
   country = 'cl',
   env,
   onEnvChange,
@@ -93,14 +180,19 @@ export default function SimulatorSidebar({
         const base = Math.floor(Math.random() * 99) + 1;
         const randomAmt = (base * 1000) + 990;
         const randomTk = Math.floor(Math.random() * 89999) + 10000;
-        
+
         finalTemplate.amount = randomAmt;
         finalTemplate.ticketNumber = String(randomTk);
+      } else if (id === 'sale_ar') {
+        const randomAmt = Math.floor(Math.random() * (85000 - 1500 + 1) + 1500) * 100;
+        const randomTip = Math.floor(Math.random() * (2500 - 0 + 1) + 0) * 100;
+        finalTemplate.amount = randomAmt;
+        finalTemplate.tip = randomTip;
       }
 
       onLoadTemplate(JSON.stringify(finalTemplate, null, 2), method.endpoint, id);
     }
-  }, [onLoadTemplate]);
+  }, [COMMAND_METHODS, onLoadTemplate]);
 
   const formatCurrency = (num) => {
     if (!num && num !== 0) return '';
@@ -174,14 +266,14 @@ export default function SimulatorSidebar({
     setSavedTriads(newTriads);
     try {
       localStorage.setItem(triadStorageKey, JSON.stringify(newTriads));
-    } catch {}
+    } catch { }
   };
 
   const updateSelectedTriadIndex = (newIndex) => {
     setSelectedTriadIndex(newIndex);
     try {
       localStorage.setItem(`${triadStorageKey}_selected`, String(newIndex));
-    } catch {}
+    } catch { }
   };
 
   // Sync state when country or environment changes
@@ -355,19 +447,19 @@ export default function SimulatorSidebar({
     } else if (idTerminal.length > 20) {
       errors.idTerminal = t('triad.maxLength') || 'Límite de 20 caracteres';
     }
-    
+
     if (!idSucursal) {
       errors.idSucursal = t('triad.sucursalRequired') || 'ID Sucursal es requerido';
     } else if (idSucursal.length > 20) {
       errors.idSucursal = t('triad.maxLength') || 'Límite de 20 caracteres';
     }
-    
+
     if (!serialNumber) {
       errors.serialNumber = t('triad.serialRequired') || 'Serial Number es requerido';
     } else if (serialNumber.length > 20) {
       errors.serialNumber = t('triad.maxLength') || 'Límite de 20 caracteres';
     }
-    
+
     return {
       ok: Object.keys(errors).length === 0,
       errors
@@ -375,11 +467,11 @@ export default function SimulatorSidebar({
   };
 
   const saveCurrentTriad = () => {
-    const newTriad = { 
-      name: `Triada ${savedTriads.length + 1}`, 
-      idTerminal: String(params.idTerminal || ''), 
-      idSucursal: String(params.idSucursal || ''), 
-      serialNumber: String(params.serialNumber || '') 
+    const newTriad = {
+      name: `Triada ${savedTriads.length + 1}`,
+      idTerminal: String(params.idTerminal || ''),
+      idSucursal: String(params.idSucursal || ''),
+      serialNumber: String(params.serialNumber || '')
     };
     const res = validateTriad(newTriad);
     if (!res.ok) {
@@ -434,51 +526,46 @@ export default function SimulatorSidebar({
     showSnackbar(editingTriadIndex === -1 ? t('triad.created') : t('triad.saved'), 'success');
   };
 
+  const applyParsedTriad = (parsed) => {
+    if (!parsed) return false;
+    setEditingTriad(prev => ({
+      name: parsed.name ? parsed.name : prev.name,
+      idTerminal: parsed.idTerminal !== undefined && parsed.idTerminal !== '' ? parsed.idTerminal : prev.idTerminal,
+      idSucursal: parsed.idSucursal !== undefined && parsed.idSucursal !== '' ? parsed.idSucursal : prev.idSucursal,
+      serialNumber: parsed.serialNumber !== undefined && parsed.serialNumber !== '' ? parsed.serialNumber : prev.serialNumber,
+    }));
+    setTriadErrors(prev => ({
+      ...prev,
+      ...(parsed.idTerminal ? { idTerminal: undefined } : {}),
+      ...(parsed.idSucursal ? { idSucursal: undefined } : {}),
+      ...(parsed.serialNumber ? { serialNumber: undefined } : {}),
+      ...(parsed.name ? { name: undefined } : {}),
+    }));
+    showSnackbar(t('triad.pasteSuccess') || 'Tríada autocompletada con éxito', 'success');
+    return true;
+  };
+
   const handlePasteAutocomplete = (text) => {
-    if (!text) return;
-    const cleanText = text.trim();
-    
-    // 1. Try to split by common separators (tab, semicolon, comma, vertical bar, slash, spaces)
-    let parts = cleanText.split(/[\t;,|\/]+|\s+/).map(s => s.trim()).filter(Boolean);
-    
-    let term = '';
-    let suc = '';
-    let serial = '';
-    
-    if (parts.length >= 3) {
-      term = parts[0];
-      suc = parts[1];
-      serial = parts[2];
-    } else if (parts.length === 1) {
-      const token = parts[0];
-      // Continuous format detection (length 22 is typical: 8 terminal, 4 sucursal, 10 serial)
-      if (token.length === 22) {
-        term = token.substring(0, 8);
-        suc = token.substring(8, 12);
-        serial = token.substring(12, 22);
-      } else {
-        showSnackbar(t('triad.pasteError') || 'Formato de portapapeles no soportado', 'error');
-        return;
-      }
-    } else {
-      showSnackbar(t('triad.pasteError') || 'Formato de portapapeles no soportado', 'error');
+    if (!text) {
+      showSnackbar(t('triad.pasteError') || 'No se encontraron datos en el portapapeles', 'error');
       return;
     }
-    
-    if (term && suc && serial) {
-      setEditingTriad(prev => ({
-        ...prev,
-        idTerminal: term,
-        idSucursal: suc,
-        serialNumber: serial.toUpperCase()
-      }));
-      setTriadErrors(prev => ({
-        ...prev,
-        idTerminal: undefined,
-        idSucursal: undefined,
-        serialNumber: undefined
-      }));
-      showSnackbar(t('triad.pasteSuccess') || 'Tríada cargada con éxito', 'success');
+    const parsed = parseTriadText(text);
+    if (parsed && (parsed.idTerminal || parsed.idSucursal || parsed.serialNumber)) {
+      applyParsedTriad(parsed);
+    } else {
+      showSnackbar(t('triad.pasteError') || 'Formato de portapapeles no reconocido', 'error');
+    }
+  };
+
+  const handleInputPaste = (e) => {
+    const text = e.clipboardData?.getData('text');
+    if (text) {
+      const parsed = parseTriadText(text);
+      if (parsed && (parsed.idTerminal || parsed.idSucursal || parsed.serialNumber)) {
+        e.preventDefault();
+        applyParsedTriad(parsed);
+      }
     }
   };
 
@@ -486,30 +573,30 @@ export default function SimulatorSidebar({
     const term = String(params.idTerminal || '');
     const suc = String(params.idSucursal || '');
     const serial = String(params.serialNumber || '');
-    
+
     const name = window.prompt(t('triad.promptName') || 'Ingrese un nombre para la tríada:', `Triada ${savedTriads.length + 1}`);
     if (name === null) return; // cancelled
     const finalName = name.trim() || `Triada ${savedTriads.length + 1}`;
-    
+
     const newTriad = {
       name: finalName,
       idTerminal: term,
       idSucursal: suc,
       serialNumber: serial
     };
-    
+
     const res = validateTriad(newTriad);
     if (!res.ok) {
       const msg = Object.values(res.errors).join('\n');
       return window.alert(msg);
     }
-    
+
     const exists = savedTriads.findIndex((t) => String(t.idTerminal) === newTriad.idTerminal && String(t.idSucursal) === newTriad.idSucursal && String(t.serialNumber) === newTriad.serialNumber);
     if (exists !== -1) {
       updateSelectedTriadIndex(exists);
       return window.alert(t('triad.exists') || 'La tríada ya existe.');
     }
-    
+
     updateSavedTriads([...savedTriads, newTriad]);
     updateSelectedTriadIndex(savedTriads.length);
     showSnackbar(t('triad.created') || 'Tríada creada', 'success');
@@ -553,12 +640,11 @@ export default function SimulatorSidebar({
             role="switch"
             aria-checked={Boolean(value)}
             onClick={() => handleParamChange(field, !value)}
-            className={`relative w-11 h-6 rounded-full focus:outline-none border-2 ${
-              value 
-                ? 'border-accent/60 shadow-sm' 
-                : 'border-text-secondary/20'
-            }`}
-            style={{ 
+            className={`relative w-11 h-6 rounded-full focus:outline-none border-2 ${value
+              ? 'border-accent/60 shadow-sm'
+              : 'border-text-secondary/20'
+              }`}
+            style={{
               backgroundColor: value ? 'rgb(51, 65, 85)' : 'rgb(229, 231, 235)'
             }}
           >
@@ -634,14 +720,14 @@ export default function SimulatorSidebar({
           value={(field === 'amount' || field === 'tip') ? formatCurrency(value) : value}
           onChange={(e) => handleParamChange(field, e.target.value)}
           maxLength={
-            field === 'serialNumber' ? 20 : 
-            (field === 'ticketNumber' || field === 'customId') ? 24 : 
-            field === 'employeeId' ? 4 : 
-            field === 'authorizationCode' ? 20 :
-            field === 'operationId' ? 8 :
-            field === 'rutToValidate' ? 12 :
-            field === 'idPromo' ? 250 :
-            undefined
+            field === 'serialNumber' ? 20 :
+              (field === 'ticketNumber' || field === 'customId') ? 24 :
+                field === 'employeeId' ? 4 :
+                  field === 'authorizationCode' ? 20 :
+                    field === 'operationId' ? 8 :
+                      field === 'rutToValidate' ? 12 :
+                        field === 'idPromo' ? 250 :
+                          undefined
           }
           className="w-full bg-background border border-accent/10 rounded-xl px-3 py-2.5 outline-none focus:border-accent transition-all font-black text-text-primary text-sm shadow-sm"
         />
@@ -777,7 +863,7 @@ export default function SimulatorSidebar({
 
   const renderDynamicFields = () => {
     const triadKeys = ['idTerminal', 'idSucursal', 'serialNumber'];
-    
+
     if (selectedId === 'flash_sale') {
       const remainingFields = selected.fields.filter(f => !triadKeys.includes(f) && f !== 'amount');
       return (
@@ -788,7 +874,7 @@ export default function SimulatorSidebar({
         </>
       );
     }
-    
+
     return selected.fields.map(renderField);
   };
 
@@ -885,47 +971,47 @@ export default function SimulatorSidebar({
           </div>
 
           {savedTriads.length > 0 ? (
-              <div className="flex gap-2 overflow-x-auto py-2">
-                {savedTriads.map((triad, idx) => (
-                  <Tooltip
-                    key={idx}
-                    title={<div style={{ whiteSpace: 'normal', fontSize: 13 }}>
-                      <div style={{ marginBottom: 4, fontWeight: 800, fontSize: 14, borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 4 }}>{triad.name}</div>
-                      <div><strong>S/N:</strong> {triad.serialNumber}</div>
-                      <div><strong>ID Sucursal:</strong> {triad.idSucursal}</div>
-                      <div><strong>ID Terminal:</strong> {triad.idTerminal}</div>
-                    </div>}
-                    placement="top"
-                    arrow
+            <div className="flex gap-2 overflow-x-auto py-2">
+              {savedTriads.map((triad, idx) => (
+                <Tooltip
+                  key={idx}
+                  title={<div style={{ whiteSpace: 'normal', fontSize: 13 }}>
+                    <div style={{ marginBottom: 4, fontWeight: 800, fontSize: 14, borderBottom: '1px solid rgba(255,255,255,0.2)', paddingBottom: 4 }}>{triad.name}</div>
+                    <div><strong>S/N:</strong> {triad.serialNumber}</div>
+                    <div><strong>ID Sucursal:</strong> {triad.idSucursal}</div>
+                    <div><strong>ID Terminal:</strong> {triad.idTerminal}</div>
+                  </div>}
+                  placement="top"
+                  arrow
+                >
+                  <div
+                    onClick={() => {
+                      updateSelectedTriadIndex(idx);
+                      onSyncParam('idTerminal', triad.idTerminal);
+                      onSyncParam('idSucursal', triad.idSucursal);
+                      onSyncParam('serialNumber', triad.serialNumber);
+                    }}
+                    className={`px-4 py-3 flex items-center gap-3 min-w-[200px] rounded-xl border ${selectedTriadIndex === idx ? 'border-2 border-primary' : 'border-white/5'} cursor-pointer`}
                   >
-                    <div
-                      onClick={() => {
-                        updateSelectedTriadIndex(idx);
-                        onSyncParam('idTerminal', triad.idTerminal);
-                        onSyncParam('idSucursal', triad.idSucursal);
-                        onSyncParam('serialNumber', triad.serialNumber);
-                      }}
-                      className={`px-4 py-3 flex items-center gap-3 min-w-[200px] rounded-xl border ${selectedTriadIndex === idx ? 'border-2 border-primary' : 'border-white/5'} cursor-pointer`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-black truncate">{triad.name}</p>
-                        <p className="text-[9px] text-text-secondary/60 truncate">{triad.serialNumber} · {triad.idSucursal} · {triad.idTerminal}</p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Tooltip title={t('edit')}>
-                          <IconButton size="small" onClick={(e) => { e.stopPropagation(); openEditTriad(idx); }}>
-                            <EditIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title={t('delete')}>
-                          <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleDeleteTriad(idx); }} color="error">
-                            <DeleteOutlineIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-black truncate">{triad.name}</p>
+                      <p className="text-[9px] text-text-secondary/60 truncate">{triad.serialNumber} · {triad.idSucursal} · {triad.idTerminal}</p>
                     </div>
-                  </Tooltip>
-                ))}
+                    <div className="flex items-center gap-1">
+                      <Tooltip title={t('edit')}>
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); openEditTriad(idx); }}>
+                          <EditIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={t('delete')}>
+                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleDeleteTriad(idx); }} color="error">
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </div>
+                  </div>
+                </Tooltip>
+              ))}
             </div>
           ) : (
             <div className="py-4 text-center opacity-60">{t('triad.noTriads')}</div>
@@ -937,105 +1023,178 @@ export default function SimulatorSidebar({
           </Snackbar>
         </div>
 
-        <Dialog open={openTriadDialog} onClose={() => setOpenTriadDialog(false)} maxWidth="sm" fullWidth>
-          <DialogTitle sx={{ px: { xs: 3, sm: 4 }, pt: { xs: 3.5, sm: 4 }, pb: 1, fontWeight: 950, fontSize: { xs: '1.2rem', sm: '1.4rem' }, letterSpacing: '-0.02em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span>{editingTriadIndex === -1 ? t('triad.createTitle') : t('triad.editTitle')}</span>
-            <Tooltip title="Pegado Especial">
-              <IconButton 
-                onClick={async () => {
-                  try {
-                    const text = await navigator.clipboard.readText();
-                    handlePasteAutocomplete(text);
-                  } catch (err) {
-                    showSnackbar('No se pudo acceder al portapapeles', 'error');
-                  }
-                }}
-                color="primary"
+        <Dialog
+          open={openTriadDialog}
+          onClose={() => setOpenTriadDialog(false)}
+          maxWidth="sm"
+          fullWidth
+          PaperProps={{
+            sx: {
+              borderRadius: '16px',
+              backgroundColor: 'background.paper',
+              backgroundImage: 'none',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            }
+          }}
+        >
+          <DialogTitle sx={{ px: { xs: 3, sm: 4 }, pt: { xs: 3, sm: 3.5 }, pb: 2, borderBottom: '1px solid', borderColor: 'divider', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+              <Layers className="w-5 h-5 text-indigo-500" />
+              <Typography sx={{ fontWeight: 950, textTransform: 'uppercase', fontSize: { xs: '1.1rem', sm: '1.25rem' }, letterSpacing: '-0.02em', color: 'text.primary' }}>
+                {editingTriadIndex === -1 ? t('triad.createTitle') : t('triad.editTitle')}
+              </Typography>
+            </Box>
+            <div className="flex items-center gap-1.5">
+              <Tooltip title={t('triad.pasteTooltip') || "Pegado Especial (Autocompletar Tríada)"} arrow>
+                <IconButton
+                  onClick={async () => {
+                    try {
+                      const text = await navigator.clipboard.readText();
+                      handlePasteAutocomplete(text);
+                    } catch {
+                      showSnackbar('No se pudo acceder al portapapeles', 'error');
+                    }
+                  }}
+                  color="primary"
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    borderRadius: '10px',
+                    p: 1,
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      backgroundColor: 'action.hover',
+                      transform: 'scale(1.05)',
+                    }
+                  }}
+                >
+                  <Wand2 className="w-4.5 h-4.5 text-indigo-500" />
+                </IconButton>
+              </Tooltip>
+              <IconButton
+                onClick={() => setOpenTriadDialog(false)}
+                size="small"
                 sx={{
-                  border: '1px solid',
-                  borderColor: 'divider',
-                  borderRadius: '10px',
+                  color: 'text.secondary',
                   p: 1,
+                  transition: 'all 0.2s ease-in-out',
                   '&:hover': {
-                    backgroundColor: 'action.hover'
+                    color: 'error.main',
+                    transform: 'rotate(90deg)',
+                    bgcolor: 'action.hover'
                   }
                 }}
               >
-                <Wand2 className="w-4.5 h-4.5" />
+                <X size={18} />
               </IconButton>
-            </Tooltip>
+            </div>
           </DialogTitle>
-          <DialogContent sx={{ px: { xs: 3, sm: 4 }, py: 2 }}>
-            <Box sx={{ display: 'grid', gap: { xs: 2, sm: 2.5 }, gridTemplateColumns: '1fr', mt: 1.5 }}>
+          <DialogContent sx={{ px: { xs: 3, sm: 4 }, py: 3 }}>
+            <Box sx={{ display: 'grid', gap: { xs: 2, sm: 2.5 }, gridTemplateColumns: '1fr', mt: 1 }}>
 
-              <FormControl fullWidth error={!!triadErrors.name} variant="outlined">
-                <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>{t('triad.nameLabel')}</Typography>
-                <OutlinedInput
-                  value={editingTriad.name}
-                  onChange={(e) => { setEditingTriad({ ...editingTriad, name: e.target.value }); setTriadErrors({ ...triadErrors, name: undefined }); }}
-                  size="small"
-                  fullWidth
-                  inputProps={{ maxLength: 50 }}
-                  sx={{ borderRadius: '12px' }}
-                />
-                {triadErrors.name && <FormHelperText>{triadErrors.name}</FormHelperText>}
+              {/* Nombre */}
+              <FormControl fullWidth error={!!triadErrors.name}>
+                <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 0.5, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  {t('triad.nameLabel')}
+                </Typography>
+                <div className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-background border ${triadErrors.name ? 'border-rose-500 ring-1 ring-rose-500/20' : 'border-accent/20 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20'} transition-all shadow-inner group`}>
+                  <Tag size={16} className={`shrink-0 transition-colors ${triadErrors.name ? 'text-rose-500' : 'text-text-secondary/50 group-focus-within:text-accent'}`} />
+                  <input
+                    type="text"
+                    value={editingTriad.name}
+                    onChange={(e) => { setEditingTriad({ ...editingTriad, name: e.target.value }); setTriadErrors({ ...triadErrors, name: undefined }); }}
+                    placeholder="Ej. Triada Principal"
+                    maxLength={50}
+                    style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
+                    className="no-focus-glow w-full bg-transparent border-none outline-none ring-0 focus:outline-none focus:ring-0 focus:border-none shadow-none focus:shadow-none text-xs sm:text-sm font-semibold text-text-primary placeholder:text-text-secondary/30"
+                  />
+                </div>
+                {triadErrors.name && (
+                  <Typography variant="caption" sx={{ color: 'error.main', fontSize: '11px', fontWeight: 500, mt: 0.5, px: 0.5 }}>
+                    {triadErrors.name}
+                  </Typography>
+                )}
               </FormControl>
 
-              <FormControl fullWidth error={!!triadErrors.idTerminal} variant="outlined">
-                <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>ID Terminal</Typography>
-                <OutlinedInput
-                  value={editingTriad.idTerminal}
-                  onChange={(e) => { setEditingTriad({ ...editingTriad, idTerminal: e.target.value.slice(0,20) }); setTriadErrors({ ...triadErrors, idTerminal: undefined }); }}
-                  size="small"
-                  fullWidth
-                  inputProps={{ maxLength: 20 }}
-                  sx={{ borderRadius: '12px' }}
-                />
+              {/* ID Terminal */}
+              <FormControl fullWidth error={!!triadErrors.idTerminal}>
+                <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 0.5, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  ID Terminal
+                </Typography>
+                <div className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-background border ${triadErrors.idTerminal ? 'border-rose-500 ring-1 ring-rose-500/20' : 'border-accent/20 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20'} transition-all shadow-inner group`}>
+                  <Monitor size={16} className={`shrink-0 transition-colors ${triadErrors.idTerminal ? 'text-rose-500' : 'text-text-secondary/50 group-focus-within:text-accent'}`} />
+                  <input
+                    type="text"
+                    value={editingTriad.idTerminal}
+                    onPaste={handleInputPaste}
+                    onChange={(e) => { setEditingTriad({ ...editingTriad, idTerminal: e.target.value.slice(0, 20) }); setTriadErrors({ ...triadErrors, idTerminal: undefined }); }}
+                    placeholder=""
+                    maxLength={20}
+                    style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
+                    className="no-focus-glow w-full bg-transparent border-none outline-none ring-0 focus:outline-none focus:ring-0 focus:border-none shadow-none focus:shadow-none font-mono text-xs sm:text-sm font-semibold text-text-primary placeholder:text-text-secondary/30"
+                  />
+                </div>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5, px: 0.5 }}>
-                  <Typography variant="caption" color={triadErrors.idTerminal ? 'error' : 'text.secondary'} sx={{ fontSize: '11px', fontWeight: 500 }}>
+                  <Typography variant="caption" sx={{ color: 'error.main', fontSize: '11px', fontWeight: 500 }}>
                     {triadErrors.idTerminal || ''}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '11px', fontWeight: 500, ml: 'auto' }}>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '11px', fontWeight: 500, ml: 'auto' }}>
                     {(editingTriad.idTerminal || '').length}/20
                   </Typography>
                 </Box>
               </FormControl>
 
-              <FormControl fullWidth error={!!triadErrors.idSucursal} variant="outlined">
-                <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>ID Sucursal</Typography>
-                <OutlinedInput
-                  value={editingTriad.idSucursal}
-                  onChange={(e) => { setEditingTriad({ ...editingTriad, idSucursal: e.target.value.slice(0,20) }); setTriadErrors({ ...triadErrors, idSucursal: undefined }); }}
-                  size="small"
-                  fullWidth
-                  inputProps={{ maxLength: 20 }}
-                  sx={{ borderRadius: '12px' }}
-                />
+              {/* ID Sucursal */}
+              <FormControl fullWidth error={!!triadErrors.idSucursal}>
+                <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 0.5, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  ID Sucursal
+                </Typography>
+                <div className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-background border ${triadErrors.idSucursal ? 'border-rose-500 ring-1 ring-rose-500/20' : 'border-accent/20 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20'} transition-all shadow-inner group`}>
+                  <Building2 size={16} className={`shrink-0 transition-colors ${triadErrors.idSucursal ? 'text-rose-500' : 'text-text-secondary/50 group-focus-within:text-accent'}`} />
+                  <input
+                    type="text"
+                    value={editingTriad.idSucursal}
+                    onPaste={handleInputPaste}
+                    onChange={(e) => { setEditingTriad({ ...editingTriad, idSucursal: e.target.value.slice(0, 20) }); setTriadErrors({ ...triadErrors, idSucursal: undefined }); }}
+                    placeholder=""
+                    maxLength={20}
+                    style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
+                    className="no-focus-glow w-full bg-transparent border-none outline-none ring-0 focus:outline-none focus:ring-0 focus:border-none shadow-none focus:shadow-none font-mono text-xs sm:text-sm font-semibold text-text-primary placeholder:text-text-secondary/30"
+                  />
+                </div>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5, px: 0.5 }}>
-                  <Typography variant="caption" color={triadErrors.idSucursal ? 'error' : 'text.secondary'} sx={{ fontSize: '11px', fontWeight: 500 }}>
+                  <Typography variant="caption" sx={{ color: 'error.main', fontSize: '11px', fontWeight: 500 }}>
                     {triadErrors.idSucursal || ''}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '11px', fontWeight: 500, ml: 'auto' }}>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '11px', fontWeight: 500, ml: 'auto' }}>
                     {(editingTriad.idSucursal || '').length}/20
                   </Typography>
                 </Box>
               </FormControl>
 
-              <FormControl fullWidth error={!!triadErrors.serialNumber} variant="outlined">
-                <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 1, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Serial Number</Typography>
-                <OutlinedInput
-                  value={editingTriad.serialNumber}
-                  onChange={(e) => { setEditingTriad({ ...editingTriad, serialNumber: e.target.value.toUpperCase().slice(0,20) }); setTriadErrors({ ...triadErrors, serialNumber: undefined }); }}
-                  size="small"
-                  fullWidth
-                  inputProps={{ maxLength: 20 }}
-                  sx={{ borderRadius: '12px', textTransform: 'uppercase' }}
-                />
+              {/* Serial Number */}
+              <FormControl fullWidth error={!!triadErrors.serialNumber}>
+                <Typography sx={{ fontSize: '10px', fontWeight: 800, mb: 0.5, color: 'text.secondary', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                  Serial Number
+                </Typography>
+                <div className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl bg-background border ${triadErrors.serialNumber ? 'border-rose-500 ring-1 ring-rose-500/20' : 'border-accent/20 focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20'} transition-all shadow-inner group`}>
+                  <Hash size={16} className={`shrink-0 transition-colors ${triadErrors.serialNumber ? 'text-rose-500' : 'text-text-secondary/50 group-focus-within:text-accent'}`} />
+                  <input
+                    type="text"
+                    value={editingTriad.serialNumber}
+                    onPaste={handleInputPaste}
+                    onChange={(e) => { setEditingTriad({ ...editingTriad, serialNumber: e.target.value.toUpperCase().slice(0, 20) }); setTriadErrors({ ...triadErrors, serialNumber: undefined }); }}
+                    placeholder=""
+                    maxLength={20}
+                    style={{ outline: 'none', border: 'none', boxShadow: 'none' }}
+                    className="no-focus-glow w-full bg-transparent border-none outline-none ring-0 focus:outline-none focus:ring-0 focus:border-none shadow-none focus:shadow-none font-mono text-xs sm:text-sm font-semibold uppercase text-text-primary placeholder:text-text-secondary/30"
+                  />
+                </div>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 0.5, px: 0.5 }}>
-                  <Typography variant="caption" color={triadErrors.serialNumber ? 'error' : 'text.secondary'} sx={{ fontSize: '11px', fontWeight: 500 }}>
+                  <Typography variant="caption" sx={{ color: 'error.main', fontSize: '11px', fontWeight: 500 }}>
                     {triadErrors.serialNumber || ''}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ fontSize: '11px', fontWeight: 500, ml: 'auto' }}>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', fontSize: '11px', fontWeight: 500, ml: 'auto' }}>
                     {(editingTriad.serialNumber || '').length}/20
                   </Typography>
                 </Box>
@@ -1043,14 +1202,14 @@ export default function SimulatorSidebar({
             </Box>
           </DialogContent>
           <DialogActions sx={{ px: { xs: 3, sm: 4 }, pb: { xs: 3.5, sm: 4 }, pt: 2, gap: 1.5 }}>
-            <Button 
-              onClick={() => setOpenTriadDialog(false)} 
+            <Button
+              onClick={() => setOpenTriadDialog(false)}
               variant="outlined"
               color="inherit"
-              sx={{ 
-                px: 3.5, 
-                py: 1.25, 
-                borderRadius: '12px', 
+              sx={{
+                px: 3.5,
+                py: 1.25,
+                borderRadius: '12px',
                 fontWeight: 800,
                 fontSize: '0.85rem',
                 textTransform: 'none',
@@ -1063,19 +1222,19 @@ export default function SimulatorSidebar({
             >
               {t('triad.cancelBtn')}
             </Button>
-            <Button 
-              variant="contained" 
-              onClick={() => { saveEditedTriad(); }} 
-              sx={{ 
-                px: 4.5, 
-                py: 1.25, 
-                borderRadius: '12px', 
+            <Button
+              variant="contained"
+              onClick={() => { saveEditedTriad(); }}
+              sx={{
+                px: 4.5,
+                py: 1.25,
+                borderRadius: '12px',
                 fontWeight: 900,
                 fontSize: '0.85rem',
                 textTransform: 'none',
                 boxShadow: (theme) => `0 8px 20px -4px ${theme.palette.mode === 'dark' ? 'rgba(99,102,241,0.4)' : 'rgba(79,70,229,0.3)'}`,
-                background: (theme) => theme.palette.mode === 'dark' 
-                  ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)' 
+                background: (theme) => theme.palette.mode === 'dark'
+                  ? 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)'
                   : 'linear-gradient(135deg, #4f46e5 0%, #3730a3 100%)',
                 color: '#ffffff',
                 '&:hover': {
@@ -1089,75 +1248,74 @@ export default function SimulatorSidebar({
           </DialogActions>
         </Dialog>
 
-          {/* Command card */}
-          <div className={`p-2 rounded-2xl ${selected.bg} border border-white/5 flex items-center gap-4 animate-in fade-in duration-200 tour-command-card`}>
-            <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur-sm shrink-0">
-              <Icon className={`w-5 h-5 ${selected.color}`} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className={`text-sm font-black tracking-tight ${selected.color} uppercase leading-tight`}>
-                {t(selected.label)}
-              </p>
-              <p className="text-[9px] text-text-secondary/60 font-bold mt-0.5">
-                /{selected.endpoint?.toUpperCase() || 'UNKNOWN'} · CMD {selected.template?.command ?? '—'}
-              </p>
-            </div>
-
-            {(selected.id === 'sale_promo' || selected.id === 'c2c_mode' || selected.id === 'bioauth') && (
-              <Tooltip 
-                title={
-                  t('simVersionNotice') && t('simVersionNotice') !== 'simVersionNotice' 
-                    ? t('simVersionNotice') 
-                    : 'Este comando al igual que el de c2cmode son solo para las versiones 1.0.3 de iOnetech'
-                } 
-                arrow 
-                placement="top"
-              >
-                <div
-                  style={{ backgroundColor: 'transparent', boxShadow: 'none' }}
-                  className="p-1.5 bg-transparent text-accent/70 hover:text-accent rounded-lg flex items-center justify-center cursor-help shrink-0"
-                  aria-label="Información de versión"
-                >
-                  <HelpCircle className="w-4 h-4" />
-                </div>
-              </Tooltip>
-            )}
-            {selected.fields.length > 0 && (
-              <span className={`text-[9px] font-bold px-2 py-1 rounded-lg bg-white/10 ${selected.color} uppercase tracking-widest shrink-0 hidden md:flex items-center gap-1.5`}>
-                <span className="opacity-50">{selected.fields.length}</span>
-                <span>{t('simParamsCount')}</span>
-              </span>
-            )}
+        {/* Command card */}
+        <div className={`p-2 rounded-2xl ${selected.bg} border border-white/5 flex items-center gap-4 animate-in fade-in duration-200 tour-command-card`}>
+          <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur-sm shrink-0">
+            <Icon className={`w-5 h-5 ${selected.color}`} />
           </div>
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-black tracking-tight ${selected.color} uppercase leading-tight`}>
+              {t(selected.label)}
+            </p>
+            <p className="text-[9px] text-text-secondary/60 font-bold mt-0.5">
+              /{selected.endpoint?.toUpperCase() || 'UNKNOWN'} · CMD {selected.template?.command ?? '—'}
+            </p>
+          </div>
+
+          {(selected.id === 'sale_promo' || selected.id === 'c2c_mode' || selected.id === 'bioauth') && (
+            <Tooltip
+              title={
+                t('simVersionNotice') && t('simVersionNotice') !== 'simVersionNotice'
+                  ? t('simVersionNotice')
+                  : 'Este comando al igual que el de c2cmode son solo para las versiones 1.0.3 de iOnetech'
+              }
+              arrow
+              placement="top"
+            >
+              <div
+                style={{ backgroundColor: 'transparent', boxShadow: 'none' }}
+                className="p-1.5 bg-transparent text-accent/70 hover:text-accent rounded-lg flex items-center justify-center cursor-help shrink-0"
+                aria-label="Información de versión"
+              >
+                <HelpCircle className="w-4 h-4" />
+              </div>
+            </Tooltip>
+          )}
+          {selected.fields.length > 0 && (
+            <span className={`text-[9px] font-bold px-2 py-1 rounded-lg bg-white/10 ${selected.color} uppercase tracking-widest shrink-0 hidden md:flex items-center gap-1.5`}>
+              <span className="opacity-50">{selected.fields.length}</span>
+              <span>{t('simParamsCount')}</span>
+            </span>
+          )}
+        </div>
 
         {/* Dynamic params */}
         {selected.fields.length > 0 && (
           <div className="tour-params">
             <div className="border-t border-accent/5" />
-              <div className="grid grid-cols-2 gap-2 mt-4">
-                {renderDynamicFields()}
-              </div>
+            <div className="grid grid-cols-2 gap-2 mt-4">
+              {renderDynamicFields()}
+            </div>
           </div>
         )}
 
         {/* Send Button (Visible ONLY on small screens for mobile UX) */}
-          <div className="sm:hidden pt-2">
-           <button
+        <div className="sm:hidden pt-2">
+          <button
             id="tour-mobile-send-btn"
             onClick={loading ? onCancel : onSend}
             disabled={!loading && !accessToken}
             style={{ height: '52px' }}
-            className={`w-full rounded-2xl font-normal text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-500 ease-in-out select-none cursor-pointer relative overflow-hidden ${
-              loading
-                ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-[0_0_30px_rgba(239,68,68,0.7)] border-2 border-red-400'
-                : !accessToken 
-                  ? 'bg-slate-800/60 text-slate-400/60 cursor-not-allowed border border-dashed border-slate-700/60 shadow-none' 
-                  : 'bg-gradient-to-r from-accent via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(14,165,233,0.35)] border border-accent/40'
-            }`}
+            className={`w-full rounded-2xl font-normal text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-500 ease-in-out select-none cursor-pointer relative overflow-hidden ${loading
+              ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-[0_0_30px_rgba(239,68,68,0.7)] border-2 border-red-400'
+              : !accessToken
+                ? 'bg-slate-800/60 text-slate-400/60 cursor-not-allowed border border-dashed border-slate-700/60 shadow-none'
+                : 'bg-gradient-to-r from-accent via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(14,165,233,0.35)] border border-accent/40'
+              }`}
           >
             {/* Internal sweeping light ray beam */}
             {(!loading ? accessToken : true) && (
-              <div 
+              <div
                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none"
                 style={{
                   animation: loading ? 'shimmerSweep 1.5s infinite linear' : 'shimmerSweep 3s infinite linear',
@@ -1185,7 +1343,7 @@ export default function SimulatorSidebar({
           </button>
         </div>
 
-           </div>
+      </div>
 
     </div>
   );

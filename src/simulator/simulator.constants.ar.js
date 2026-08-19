@@ -1,6 +1,7 @@
 import {
   Cloud, Zap, RefreshCw, Send, History, Tag, Undo2,
-  XCircle, FileText, RotateCcw, Copy, Fingerprint, Printer, ToggleRight
+  XCircle, FileText, RotateCcw, Copy, Fingerprint, Printer, ToggleRight,
+  Clock, FileBarChart, Ban, Sliders
 } from 'lucide-react';
 
 export const API_BASE = {
@@ -43,7 +44,10 @@ export const FIELD_CONFIG = {
   interest: { label: 'field.interest', type: 'number', span: 1 },
   operationMode: { label: 'field.operationMode', type: 'number', span: 1 },
   skipConfirmation: { label: 'field.skipConfirmation', type: 'toggle', span: 2 },
+  skiptConfirmation: { label: 'field.skiptConfirmation', type: 'toggle', span: 2 },
   skipReceipt: { label: 'field.skipReceipt', type: 'toggle', span: 2 },
+  shiftOperation: { label: 'field.shiftOperation', type: 'number', span: 1 },
+  numberOfShift: { label: 'field.numberOfShift', type: 'number', span: 1 },
   authorizationCode: { label: 'field.authCode', type: 'text', span: 1 },
   originalTransDate: { label: 'field.originalDate', type: 'date', span: 2 },
 };
@@ -83,6 +87,14 @@ const BODY_SALE_AR = {
   customId: "1234"
 };
 
+const BODY_CANCELSALE_AR = {
+  idTerminal: '',
+  idSucursal: '',
+  serialNumber: '',
+  command: 116,
+  customId: '1234',
+};
+
 const BODY_RETURN_AR = {
   idTerminal: '',
   idSucursal: '',
@@ -95,6 +107,35 @@ const BODY_RETURN_AR = {
   printOnPos: true,
   amount: 0,
   customId: "1234"
+};
+
+const BODY_SHIFTREPORT_AR = {
+  idTerminal: '',
+  idSucursal: '',
+  serialNumber: '',
+  command: 136,
+  printOnPos: false,
+  customId: '1234',
+};
+
+const BODY_SHIFT_AR = {
+  idTerminal: '',
+  idSucursal: '',
+  serialNumber: '',
+  command: 135,
+  shiftOperation: 0,
+  numberOfShift: 1,
+  printOnPos: false,
+  skiptConfirmation: false,
+  customId: '1234',
+};
+
+const BODY_NORMALMODE_AR = {
+  idTerminal: '',
+  idSucursal: '',
+  serialNumber: '',
+  command: 107,
+  customId: '1234',
 };
 
 const BODY_LASTVOUCHER_AR = {
@@ -145,13 +186,37 @@ export const COMMAND_METHODS = [
     template: BODY_SALE_AR,
   },
   {
+    id: 'cancelsale_ar', label: 'cmd.cancelsale_ar', icon: XCircle, color: 'text-red-500', bg: 'bg-red-500/10',
+    endpoint: 'cancelsale',
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'customId'],
+    template: BODY_CANCELSALE_AR,
+  },
+  {
     id: 'return_ar', label: 'cmd.return_ar', icon: Undo2, color: 'text-orange-500', bg: 'bg-orange-500/10',
     endpoint: 'return',
     fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'authorizationCode', 'originalTransDate', 'printOnPos', 'customId'],
     template: BODY_RETURN_AR,
   },
   {
-    id: 'lastvoucher_ar', label: 'cmd.lastvoucher_ar', icon: Printer, color: 'text-emerald-500', bg: 'bg-emerald-500/10',
+    id: 'shift_ar', label: 'cmd.shift_ar', icon: Clock, color: 'text-indigo-500', bg: 'bg-indigo-500/10',
+    endpoint: 'shift',
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'shiftOperation', 'numberOfShift', 'printOnPos', 'skiptConfirmation', 'customId'],
+    template: BODY_SHIFT_AR,
+  },
+  {
+    id: 'shiftreport_ar', label: 'cmd.shiftreport_ar', icon: FileBarChart, color: 'text-teal-500', bg: 'bg-teal-500/10',
+    endpoint: 'shiftReport',
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'printOnPos', 'customId'],
+    template: BODY_SHIFTREPORT_AR,
+  },
+  {
+    id: 'normalmode_ar', label: 'cmd.normalmode_ar', icon: ToggleRight, color: 'text-emerald-500', bg: 'bg-emerald-500/10',
+    endpoint: 'normalmode',
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'customId'],
+    template: BODY_NORMALMODE_AR,
+  },
+  {
+    id: 'lastvoucher_ar', label: 'cmd.lastvoucher_ar', icon: Printer, color: 'text-lime-500', bg: 'bg-lime-500/10',
     endpoint: 'lastvoucher',
     fields: ['idTerminal', 'idSucursal', 'serialNumber', 'printOnPos', 'customId'],
     template: BODY_LASTVOUCHER_AR,
