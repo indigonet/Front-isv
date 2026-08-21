@@ -8,7 +8,6 @@ import img2 from '../../../../assets/firma.png'
 import img3 from '../../../../assets/logcat.png'
 import img4 from '../../../../assets/comandos.png'
 import img6 from '../../../../assets/settings.png'
-import imgSim from '../../../../assets/simuladores.png'
 
 export default function AboutSection() {
   const sectionRef = useRef(null)
@@ -40,8 +39,7 @@ export default function AboutSection() {
     { src: img2, title: t('signingTitle') },
     { src: img3, title: t('logcatTitle') },
     { src: img4, title: t('adbTitle') },
-    { src: img6, title: t('managementTitle') },
-    { src: imgSim, title: t('integrationSimTitle') }
+    { src: img6, title: t('managementTitle') }
   ]
 
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -353,32 +351,6 @@ export default function AboutSection() {
                 <li>{t('management3')}</li>
                 <li>{t('management4')}</li>
               </ul>
-            </div>
-          </div>
-
-          {/* Section 6 */}
-          <div className="image-section-v2 right-image" ref={addImageSectionToRefs}>
-            <div className="text-container-v2">
-              <span className="section-number">06</span>
-              <h3>{t('integrationSimTitle')}</h3>
-              <p>{t('integrationSimDesc')}</p>
-              <ul className="feature-list-v2">
-                <li>{t('integrationSim1')}</li>
-                <li>{t('integrationSim2')}</li>
-                <li>{t('integrationSim3')}</li>
-                <li>{t('integrationSim4')}</li>
-              </ul>
-            </div>
-            <div className="image-container-v2">
-              <div className="image-glow-bg"></div>
-              <img 
-                src={imgSim}
-                alt={t('integrationSimTitle')} 
-                className="feature-image-v2"
-                loading="lazy"
-                decoding="async"
-                onClick={() => openImageModal(imgSim, t('integrationSimTitle'))}
-              />
             </div>
           </div>
         </div>

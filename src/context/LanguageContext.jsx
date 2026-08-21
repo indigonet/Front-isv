@@ -3,6 +3,16 @@ import React, { createContext, useState, useContext, useEffect } from "react";
 export const releaseNotes = {
   es: [
     {
+      version: "v1.0.6",
+      changes: [
+        "Mejoras de diseño y experiencia de usuario (UI/UX)",
+        "Herramientas JDK y Platform Tools integradas de forma nativa",
+        "Mejoras en el módulo y proceso de firmas de APK",
+        "Logcat con coloreado de sintaxis y formato estilo Android Studio",
+        "Firma digital y protección contra falsos positivos de antivirus",
+      ],
+    },
+    {
       version: "v1.0.5",
       changes: [
         "Nuevo diseño UI/UX totalmente renovado",
@@ -37,6 +47,16 @@ export const releaseNotes = {
 
   en: [
     {
+      version: "v1.0.6",
+      changes: [
+        "UI/UX design and user experience improvements",
+        "Natively integrated JDK and Platform Tools",
+        "Enhancements in APK signing process and module",
+        "Logcat with Android Studio style syntax coloring",
+        "Digital signature and antivirus false-positive protection",
+      ],
+    },
+    {
       version: "v1.0.5",
       changes: [
         "Brand new UI/UX design experience",
@@ -70,6 +90,16 @@ export const releaseNotes = {
   ],
 
   pt: [
+    {
+      version: "v1.0.6",
+      changes: [
+        "Melhorias de design e experiência do usuário (UI/UX)",
+        "Ferramentas JDK e Platform Tools integradas nativamente",
+        "Melhorias no módulo e processo de assinatura de APK",
+        "Logcat com cores e estilo Android Studio",
+        "Assinatura digital e proteção contra falsos positivos de antivírus",
+      ],
+    },
     {
       version: "v1.0.5",
       changes: [

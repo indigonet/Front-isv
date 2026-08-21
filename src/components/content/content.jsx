@@ -16,7 +16,7 @@ export default function Content() {
   const [downloading, setDownloading] = useState(false);
 
   const DOWNLOAD_URL =
-    "https://github.com/indigonet/ISV_Toolkit_Flutter/releases/download/ISVTOOLKIT/ISV_Toolkit_1.0.5_Setup.exe";
+    "https://github.com/indigonet/Front-isv/releases/download/1.0.6/ISV_Toolkit_v1.0.6_Setup.exe";
 
   const handleDownload = () => {
     if (downloading) return;
@@ -25,7 +25,7 @@ export default function Content() {
 
     const link = document.createElement("a");
     link.href = DOWNLOAD_URL;
-    link.download = "ISV_Toolkit_Setup.exe";
+    link.download = "ISV_Toolkit_v1.0.6_Setup.exe";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -59,7 +59,7 @@ export default function Content() {
         <div>
           <strong>¡Descarga iniciada!</strong>
           <div style="font-size: 0.9em; margin-top: 5px;">
-            <strong>ISV_Toolkit_Setup.exe</strong> (14 MB)
+            <strong>ISV_Toolkit_v1.0.6_Setup.exe</strong> (122 MB)
           </div>
           <div style="font-size: 0.8em; margin-top: 8px; opacity: 0.9;">
             Si no se descarga automáticamente,<br>
@@ -105,7 +105,7 @@ export default function Content() {
           {/* Left Column: Information */}
           <div className="hero-text-content">
             <div className="hero-badge">
-              <span>ISV Toolkit v1.0.5</span>
+              <span>ISV Toolkit v1.0.6</span>
             </div>
             <h1 className="hero-title-v2">
               <span className="hero-title-gradient">{t("heroTitle")}</span>
