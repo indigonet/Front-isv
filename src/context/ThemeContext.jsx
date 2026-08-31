@@ -14,10 +14,12 @@ export const ThemeProvider = ({ children }) => {
   useEffect(() => {
     if (darkMode) {
       document.documentElement.setAttribute('data-theme', 'dark');
+      document.documentElement.classList.add('dark');
       document.body.classList.add('dark-mode');
       document.body.classList.remove('light-mode');
     } else {
       document.documentElement.setAttribute('data-theme', 'light');
+      document.documentElement.classList.remove('dark');
       document.body.classList.add('light-mode');
       document.body.classList.remove('dark-mode');
     }

@@ -6,7 +6,6 @@ import {
 export const API_BASE = {
   dev: 'https://api-dev-getnet-posintegrado.ione.cl/api/postxs/',
   uat: 'https://api-uat-getnet-posintegrado.ione.cl/api/postxs/',
-  prod: 'https://api-getnet-posintegrado.ione.cl/api/postxs/',
 };
 
 export const DEFAULT_CREDENTIALS = {
@@ -49,6 +48,7 @@ export const FIELD_CONFIG = {
   employeeId: { label: 'field.employeeId', type: 'number', span: 1 },
   saleType: { label: 'field.saleType', type: 'number', span: 1 },
   paymentCategory: { label: 'field.paymentCategory', type: 'text', span: 1 },
+  webhook: { label: 'field.webhook', type: 'text', span: 2 },
 };
 
 // ─── Templates ─────────────────────────────────────────────────────────────────
@@ -68,7 +68,7 @@ const BODY_C2C_SALE = {
 const BODY_SALE_PROMO = {
   idTerminal: '', idSucursal: '', serialNumber: '',
   command: 126, amount: 0, ticketNumber: '',
-  printOnPos: true, saleType: 1, employeeId: 1, idPromo: '',
+  printOnPos: true, saleType: 1, employeeId: 1, idPromo: '', customId: '1234',
 };
 
 const BODY_REFUND_V2 = {
@@ -135,61 +135,61 @@ export const COMMAND_METHODS = [
   {
     id: 'poll', label: 'cmd.poll', icon: Zap, color: 'text-rose-500', bg: 'bg-rose-500/10',
     endpoint: 'poll',
-    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'customId'],
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'customId', 'webhook'],
     template: BODY_POLL,
   },
   {
     id: 'c2c_sale', label: 'cmd.c2c_sale', icon: Cloud, color: 'text-accent', bg: 'bg-accent/10',
     endpoint: 'sale',
-    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'ticketNumber', 'customId', 'saleType', 'employeeId', 'paymentCategory', 'printOnPos'],
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'ticketNumber', 'customId', 'saleType', 'employeeId', 'paymentCategory', 'printOnPos', 'webhook'],
     template: BODY_C2C_SALE,
   },
   {
     id: 'sale_promo', label: 'cmd.sale_promo', icon: Tag, color: 'text-sky-500', bg: 'bg-sky-500/10',
     endpoint: 'salepromo',
-    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'ticketNumber', 'idPromo', 'printOnPos'],
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'ticketNumber', 'customId', 'idPromo', 'printOnPos', 'webhook'],
     template: BODY_SALE_PROMO,
   },
   {
     id: 'refund_v2', label: 'cmd.refund', icon: Undo2, color: 'text-orange-500', bg: 'bg-orange-500/10',
     endpoint: 'refund',
-    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'operationId', 'customId', 'printOnPos'],
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'operationId', 'customId', 'printOnPos', 'webhook'],
     template: BODY_REFUND_V2,
   },
   {
     id: 'close', label: 'cmd.close', icon: XCircle, color: 'text-red-400', bg: 'bg-red-400/10',
     endpoint: 'close',
-    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'customId', 'printOnPos'],
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'customId', 'printOnPos', 'webhook'],
     template: BODY_CLOSE,
   },
   {
     id: 'details', label: 'cmd.details', icon: FileText, color: 'text-sky-500', bg: 'bg-sky-500/10',
     endpoint: 'details',
-    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'customId', 'printOnPos'],
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'customId', 'printOnPos', 'webhook'],
     template: BODY_DETAILS,
   },
   {
     id: 'return', label: 'cmd.return', icon: RotateCcw, color: 'text-amber-500', bg: 'bg-amber-500/10',
     endpoint: 'return',
-    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'authorizationCode', 'amount', 'customId', 'printOnPos'],
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'authorizationCode', 'amount', 'customId', 'printOnPos', 'webhook'],
     template: BODY_RETURN,
   },
   {
     id: 'duplicate', label: 'cmd.duplicate', icon: Copy, color: 'text-teal-500', bg: 'bg-teal-500/10',
     endpoint: 'duplicate',
-    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'operationId', 'customId', 'printOnPos'],
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'operationId', 'customId', 'printOnPos', 'webhook'],
     template: BODY_DUPLICATE,
   },
   {
     id: 'bioauth', label: 'cmd.bioauth', icon: Fingerprint, color: 'text-emerald-500', bg: 'bg-emerald-500/10',
     endpoint: 'bioauth',
-    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'rutToValidate', 'authType', 'customId'],
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'rutToValidate', 'authType', 'customId', 'webhook'],
     template: BODY_BIOAUTH,
   },
   {
     id: 'print_service', label: 'cmd.print', icon: Printer, color: 'text-blue-500', bg: 'bg-blue-500/10',
     endpoint: 'printservice',
-    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'customId'],
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'customId', 'webhook'],
     template: BODY_PRINT_SERVICE,
   },
   {
@@ -201,7 +201,7 @@ export const COMMAND_METHODS = [
   {
     id: 'flash_sale', label: 'cmd.flash_sale', icon: Zap, color: 'text-yellow-400', bg: 'bg-yellow-400/10',
     endpoint: 'sale',
-    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'ticketNumber', 'customId', 'saleType', 'employeeId', 'paymentCategory', 'printOnPos'],
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'ticketNumber', 'customId', 'saleType', 'employeeId', 'paymentCategory', 'printOnPos', 'webhook'],
     template: BODY_C2C_SALE,
     isIterative: true,
   },

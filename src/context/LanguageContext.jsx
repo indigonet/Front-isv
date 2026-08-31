@@ -156,6 +156,7 @@ const translations = {
     heroTitle: "ISV Toolkit",
     heroDescription:
       "Herramientas especializadas para desarrolladores Android y QA. Optimiza tu flujo de diferentes actividades de análisis en una sola plataforma.",
+    downloadForWindows: "Descargar para Windows",
     feature1: "Sencillo",
     feature1Desc: "No necesitas escribir comandos y mover archivos manualmente",
     feature2: "Información",
@@ -358,6 +359,7 @@ const translations = {
     "field.paymentCategory": "Categoría de Pago",
     "paymentCategory.none": "Ninguna",
     "field.employeeId": "ID Empleado",
+    "field.webhook": "Webhook URL (Opcional)",
     "field.flashCount": "Cantidad de Ventas",
     "field.flashAltThreshold": "Cambiar monto desde venta #",
     "field.flashBaseAmount": "Monto Base ($)",
@@ -481,6 +483,7 @@ const translations = {
     heroTitle: "ISV Toolkit",
     heroDescription:
       "Specialized tools for Android developers and QA. Optimize your workflow of different analysis activities in a single platform.",
+    downloadForWindows: "Download for Windows",
     feature1: "Simple",
     feature1Desc: "No need to write commands and move files manually",
     feature2: "Information",
@@ -687,6 +690,7 @@ const translations = {
     "field.paymentCategory": "Payment Category",
     "paymentCategory.none": "None",
     "field.employeeId": "Employee ID",
+    "field.webhook": "Webhook URL (Optional)",
     "field.flashCount": "Number of Sales",
     "field.flashAltThreshold": "Change amount from sale #",
     "field.flashBaseAmount": "Base Amount ($)",
@@ -808,6 +812,7 @@ const translations = {
     heroTitle: "ISV Toolkit",
     heroDescription:
       "Ferramentas especializadas para desenvolvedores Android e QA. Otimize seu fluxo de diferentes atividades de análise em uma única plataforma.",
+    downloadForWindows: "Baixar para Windows",
     feature1: "Simples",
     feature1Desc: "Não precisa escrever comandos e mover arquivos manualmente",
     feature2: "Informação",
@@ -1010,6 +1015,7 @@ const translations = {
     "field.paymentCategory": "Categoria de Pagamento",
     "paymentCategory.none": "Nenhuma",
     "field.employeeId": "ID do Empregado",
+    "field.webhook": "Webhook URL (Opcional)",
     "field.flashCount": "Quantidade de Vendas",
     "field.flashAltThreshold": "Mudar valor a partir da venda #",
     "field.flashBaseAmount": "Valor Base ($)",

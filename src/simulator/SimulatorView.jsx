@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, ShieldCheck, Copy, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle, ChevronUp, ChevronDown, ChevronLeft, Trash2, HelpCircle, Clock, ArrowLeft, CheckCircle2, FileUp, FileDown } from 'lucide-react';
+import { Play, Sparkles, ShieldCheck, Copy, Check, Code2, Cpu, RefreshCw, Cloud, Terminal, Activity, ShieldAlert, Zap, Lock, XCircle, ChevronUp, ChevronDown, ChevronLeft, Trash2, HelpCircle, Clock, ArrowLeft, CheckCircle2, FileUp, FileDown } from 'lucide-react';
 
 import { CONFIG } from './simulator.constants';
 import { useSimulatorAuth } from './useSimulatorAuth';
@@ -11,6 +11,7 @@ import Modal from '../components/modal/Modal';
 import { useLanguage } from '../context/LanguageContext';
 import OnboardingTour from '../components/OnboardingTour';
 import { Tooltip } from '@mui/material';
+import Button from '../components/ui/Button';
 
 export const playSuccessChime = () => {
   try {
@@ -58,9 +59,20 @@ export const cleanParamsForJson = (paramsObj) => {
     ...cleaned
   } = paramsObj;
 
-  if (cleaned.customId === '' || cleaned.customId === undefined) {
-    cleaned.customId = '0';
+  // customId: if empty or undefined, send empty string "" (max length 25)
+  if (cleaned.customId === undefined || cleaned.customId === null) {
+    cleaned.customId = '';
+  } else {
+    cleaned.customId = String(cleaned.customId).slice(0, 25);
   }
+
+  // webhook: optional field, delete if empty, whitespace, null, or undefined
+  if (!cleaned.webhook || (typeof cleaned.webhook === 'string' && cleaned.webhook.trim() === '')) {
+    delete cleaned.webhook;
+  } else if (typeof cleaned.webhook === 'string') {
+    cleaned.webhook = cleaned.webhook.trim();
+  }
+
   if (cleaned.employeeId === '' || cleaned.employeeId === null || cleaned.employeeId === undefined) {
     cleaned.employeeId = 0;
   }
@@ -564,7 +576,7 @@ export default function SimulatorView({ onLog }) {
         setIsFlashRunning(true);
 
         let iterParams = { ...params };
-        if (iterParams.customId === '') iterParams.customId = '0';
+        if (iterParams.customId === undefined || iterParams.customId === null) iterParams.customId = '';
         if (iterParams.employeeId === '' || iterParams.employeeId === null || iterParams.employeeId === undefined) {
           iterParams.employeeId = 0;
         }
@@ -612,12 +624,12 @@ export default function SimulatorView({ onLog }) {
       setLoading(false);
       flashRef.current = false;
 
-      // Auto-scroll to response layout on mobile for visibility
+      // Auto-scroll to request/response layout on mobile for visibility
       if (window.innerWidth < 1024) {
         setTimeout(() => {
-          const respView = document.getElementById('response-view');
-          if (respView) {
-            respView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const reqRespView = document.getElementById('tour-request-response') || document.getElementById('response-view');
+          if (reqRespView) {
+            reqRespView.scrollIntoView({ behavior: 'smooth', block: 'start' });
           }
         }, 150);
       }
@@ -645,9 +657,19 @@ export default function SimulatorView({ onLog }) {
     }
   };
 
-  const copyToClipboard = (text) => {
+  const [copiedRequest, setCopiedRequest] = useState(false);
+  const [copiedResponse, setCopiedResponse] = useState(false);
+
+  const copyToClipboard = (text, type = 'generic') => {
     navigator.clipboard.writeText(text);
     if (onLog) onLog(t('simCopied'), 'success');
+    if (type === 'request') {
+      setCopiedRequest(true);
+      setTimeout(() => setCopiedRequest(false), 2000);
+    } else if (type === 'response') {
+      setCopiedResponse(true);
+      setTimeout(() => setCopiedResponse(false), 2000);
+    }
   };
 
   const handleClearResponse = React.useCallback(() => setResponse(null), []);
@@ -711,10 +733,14 @@ export default function SimulatorView({ onLog }) {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      triggerSnackbar(t('configExported') || 'Configuración exportada exitosamente', 'success');
+      if (onLog) {
+        onLog(t('configExported') || 'Configuración exportada exitosamente', 'success');
+      }
     } catch (error) {
       console.error('Export Error:', error);
-      triggerSnackbar('Error al exportar la configuración', 'error');
+      if (onLog) {
+        onLog('Error al exportar la configuración', 'error');
+      }
     }
   };
 
@@ -766,11 +792,15 @@ export default function SimulatorView({ onLog }) {
           if (serialNumber) handleSyncParam('serialNumber', serialNumber);
         }
 
-        triggerSnackbar(t('configImported') || '¡Configuración e historial de tríadas importados con éxito!', 'success');
+        if (onLog) {
+          onLog(t('configImported') || '¡Configuración e historial de tríadas importados con éxito!', 'success');
+        }
         window.dispatchEvent(new Event('storage'));
       } catch (err) {
         console.error('Import Error:', err);
-        triggerSnackbar('Error al importar archivo. Verifique el formato JSON.', 'error');
+        if (onLog) {
+          onLog('Error al importar archivo. Verifique el formato JSON.', 'error');
+        }
       }
     };
 
@@ -812,171 +842,275 @@ export default function SimulatorView({ onLog }) {
             <p className="text-text-secondary font-medium pl-1 text-sm sm:text-base transition-colors">{t('simulatorDesc')}</p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 relative z-10">
-            {/* Export and Import Config Buttons (Más grandes y separados a la izquierda del selector de País) */}
-            <div className="flex items-center gap-3 mr-3 z-10">
-              {/* Hidden File Input for Import */}
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleImportConfigFile}
-                accept=".json"
-                className="hidden"
-              />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:flex-wrap gap-2.5 sm:gap-3 relative z-10 w-full sm:w-auto">
+            {/* Row 1 in mobile / inline in desktop: [Export, Import, Tour] + [Country Selector] */}
+            <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3 w-full sm:w-auto">
+              {/* Circular Action Buttons: Export, Import, Tour */}
+              <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+                {/* Hidden File Input for Import */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImportConfigFile}
+                  accept=".json"
+                  className="hidden"
+                />
 
-              {/* Export Config Button */}
-              <Tooltip title={t('exportConfig')} arrow placement="bottom">
+                {/* Export Config Button */}
+                <Tooltip title={t('exportConfig')} arrow placement="bottom">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={handleExportConfig}
+                    aria-label="Exportar Configuración"
+                  >
+                    <FileUp className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                  </Button>
+                </Tooltip>
+
+                {/* Import Config Button */}
+                <Tooltip title={t('importConfig')} arrow placement="bottom">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={handleImportConfigClick}
+                    aria-label="Importar Configuración"
+                  >
+                    <FileDown className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                  </Button>
+                </Tooltip>
+
+                {/* Tour Guide Button (Placed right next to Import) */}
+                <Tooltip title={t('simTourTooltip')} arrow placement="bottom">
+                  <Button
+                    variant="secondary"
+                    size="icon"
+                    onClick={startTour}
+                    aria-label={t('simTourTooltip')}
+                  >
+                    <HelpCircle className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+                  </Button>
+                </Tooltip>
+              </div>
+
+              {/* Ultra-Modern Glassmorphic Country Selector */}
+              <div id="tour-country-selector" className="relative shrink-0 z-50">
                 <button
                   type="button"
-                  onClick={handleExportConfig}
-                  className="btn-reset p-3 bg-indigo-500/10 hover:bg-indigo-500/25 border border-indigo-500/30 hover:border-indigo-400/70 text-indigo-300 hover:text-white rounded-xl transition-all shadow-[0_4px_15px_rgba(99,102,241,0.15)] hover:shadow-[0_0_20px_rgba(99,102,241,0.35)] cursor-pointer flex items-center justify-center shrink-0 border-none outline-none group"
-                  aria-label="Exportar Configuración"
+                  onClick={() => setIsCountryOpen(!isCountryOpen)}
+                  className={`btn-reset flex items-center gap-2.5 h-9.5 px-4 rounded-full cursor-pointer transition-all duration-200 group border border-slate-300 dark:border-slate-700 outline-none select-none font-bold text-xs bg-[var(--bg-surface)] text-text-primary shadow-xs hover:border-indigo-400 dark:hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-slate-100 dark:hover:bg-slate-800 ${isCountryOpen
+                    ? 'border-indigo-500 text-indigo-500'
+                    : ''
+                    }`}
+                  aria-haspopup="listbox"
+                  aria-expanded={isCountryOpen}
                 >
-                  <FileUp className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition-transform" />
-                </button>
-              </Tooltip>
+                  {/* Flag with clean border - No purple glow */}
+                  <div className="relative flex items-center justify-center shrink-0">
+                    <img
+                      src={`https://flagcdn.com/w40/${country}.png`}
+                      alt={country === 'cl' ? 'Bandera de Chile' : 'Bandera de Argentina'}
+                      className="w-5 h-3.5 object-cover rounded-xs border border-slate-300 dark:border-white/20 shadow-xs relative z-10 transition-transform duration-200 group-hover:scale-105"
+                    />
+                  </div>
 
-              {/* Import Config Button */}
-              <Tooltip title={t('importConfig')} arrow placement="bottom">
-                <button
-                  type="button"
-                  onClick={handleImportConfigClick}
-                  className="btn-reset p-3 bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 hover:border-emerald-400/70 text-emerald-300 hover:text-white rounded-xl transition-all shadow-[0_4px_15px_rgba(16,185,129,0.15)] hover:shadow-[0_0_20px_rgba(16,185,129,0.35)] cursor-pointer flex items-center justify-center shrink-0 border-none outline-none group"
-                  aria-label="Importar Configuración"
-                >
-                  <FileDown className="w-5 h-5 text-emerald-400 group-hover:scale-110 transition-transform" />
+                  {/* Country label & code badge */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100 tracking-tight">
+                      {country === 'cl' ? 'Chile' : 'Argentina'}
+                    </span>
+                    <span
+                      className={`text-[10px] font-black tracking-wider px-1.5 py-0.5 rounded-md border ${country === 'cl'
+                        ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/80'
+                        : 'bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800/80'
+                        }`}
+                    >
+                      {country.toUpperCase()}
+                    </span>
+                  </div>
+
+                  {/* Dropdown Chevron */}
+                  <div
+                    className={`transition-transform duration-200 ease-out ml-0.5 ${isCountryOpen
+                      ? 'rotate-180 text-slate-700 dark:text-slate-200'
+                      : 'text-slate-400 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200'
+                      }`}
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
                 </button>
-              </Tooltip>
+
+                {isCountryOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40"
+                      onClick={() => setIsCountryOpen(false)}
+                      aria-hidden="true"
+                    />
+                    <div className="absolute top-full right-0 sm:left-0 sm:right-auto mt-2 w-72 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700/80 rounded-2xl shadow-xl dark:shadow-[0_20px_50px_rgba(0,0,0,0.6)] z-50 p-2 animate-in fade-in zoom-in-95 duration-150 ring-1 ring-black/5 dark:ring-white/10">
+                      {/* Header Label */}
+                      <div className="px-3 py-2 mb-1.5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800">
+                        <span className="text-[10px] font-black text-slate-600 dark:text-slate-300 tracking-wider uppercase">
+                          {t('simCountrySelectLabel')}
+                        </span>
+                      </div>
+
+                      {/* Options List */}
+                      <div className="space-y-1.5 pt-0.5" role="listbox">
+                        {/* Chile Option */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCountry('cl');
+                            localStorage.setItem('isv_simulator_country', 'cl');
+                            setIsCountryOpen(false);
+                          }}
+                          className={`btn-reset flex w-full items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 cursor-pointer text-left border relative overflow-hidden group ${country === 'cl'
+                            ? 'bg-slate-100 dark:bg-slate-800/90 border-slate-300 dark:border-slate-700 shadow-xs'
+                            : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:border-slate-200/80 dark:hover:border-slate-700/60'
+                            }`}
+                          role="option"
+                          aria-selected={country === 'cl'}
+                        >
+                          <div className="relative shrink-0 flex items-center justify-center">
+                            <img
+                              src="https://flagcdn.com/w40/cl.png"
+                              className="w-5 h-3.5 object-cover rounded-xs border border-slate-300 dark:border-white/20 shadow-xs"
+                              alt="Chile"
+                            />
+                          </div>
+
+                          <div className="flex flex-col flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-bold transition-colors ${country === 'cl'
+                                ? 'text-slate-900 dark:text-white'
+                                : 'text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white'
+                                }`}>
+                                Chile
+                              </span>
+                              <span
+                                className={`text-[9px] font-black px-1.5 py-0.2 rounded border ${country === 'cl'
+                                  ? 'bg-blue-100 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                                  }`}
+                              >
+                                CLP
+                              </span>
+                            </div>
+                          </div>
+
+                          {country === 'cl' ? (
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 shrink-0">
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                              </span>
+                              <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400">
+                                Activo
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors font-bold px-1.5 py-0.5 rounded">
+                              Elegir
+                            </span>
+                          )}
+                        </button>
+
+                        {/* Argentina Option */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCountry('ar');
+                            localStorage.setItem('isv_simulator_country', 'ar');
+                            setIsCountryOpen(false);
+                          }}
+                          className={`btn-reset flex w-full items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 cursor-pointer text-left border relative overflow-hidden group ${country === 'ar'
+                            ? 'bg-slate-100 dark:bg-slate-800/90 border-slate-300 dark:border-slate-700 shadow-xs'
+                            : 'bg-transparent border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:border-slate-200/80 dark:hover:border-slate-700/60'
+                            }`}
+                          role="option"
+                          aria-selected={country === 'ar'}
+                        >
+                          <div className="relative shrink-0 flex items-center justify-center">
+                            <img
+                              src="https://flagcdn.com/w40/ar.png"
+                              className="w-5 h-3.5 object-cover rounded-xs border border-slate-300 dark:border-white/20 shadow-xs"
+                              alt="Argentina"
+                            />
+                          </div>
+
+                          <div className="flex flex-col flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-xs font-bold transition-colors ${country === 'ar'
+                                ? 'text-slate-900 dark:text-white'
+                                : 'text-slate-700 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white'
+                                }`}>
+                                Argentina
+                              </span>
+                              <span
+                                className={`text-[9px] font-black px-1.5 py-0.2 rounded border ${country === 'ar'
+                                  ? 'bg-sky-100 dark:bg-sky-950/80 text-sky-700 dark:text-sky-300 border-sky-200 dark:border-sky-800'
+                                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700'
+                                  }`}
+                              >
+                                ARS
+                              </span>
+                            </div>
+                          </div>
+
+                          {country === 'ar' ? (
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 shrink-0">
+                              <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                              </span>
+                              <span className="text-[9px] font-bold text-emerald-700 dark:text-emerald-400">
+                                Activo
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-slate-400 dark:text-slate-500 group-hover:text-slate-700 dark:group-hover:text-slate-300 transition-colors font-bold px-1.5 py-0.5 rounded">
+                              Elegir
+                            </span>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
 
-            {/* Ultra-Modern Glassmorphic Country Selector */}
-            <div id="tour-country-selector" className="relative mr-2 z-50">
-              <button
-                onClick={() => setIsCountryOpen(!isCountryOpen)}
-                className="flex items-center gap-3 bg-slate-900/90 hover:bg-slate-800/90 border border-slate-700/80 hover:border-indigo-500/80 rounded-2xl py-2.5 px-4 shadow-[0_4px_25px_rgba(0,0,0,0.4)] backdrop-blur-xl cursor-pointer transition-all duration-300 group"
+            {/* Row 2 in mobile / inline in desktop: TOKEN Button and Active Token Status Badge */}
+            <div className="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+              <Button
+                id="tour-auth-btn"
+                variant="primary"
+                onClick={() => setIsAuthModalOpen(true)}
+                icon={<ShieldCheck className="w-4 h-4" />}
+                className="tracking-wider uppercase flex-1 sm:flex-initial"
               >
-                <div className="relative flex items-center justify-center">
-                  <img
-                    src={`https://flagcdn.com/w20/${country}.png`}
-                    alt={country}
-                    className="w-5 h-3.5 rounded-xs border border-white/20 shadow-md relative z-10"
-                  />
-                  <div className="absolute inset-0 bg-indigo-500/40 blur-xs rounded-full opacity-60 group-hover:opacity-100 transition-opacity" />
-                </div>
+                TOKEN
+              </Button>
 
-                <span className="text-xs font-black text-white uppercase tracking-widest flex items-center gap-2">
-                  <span>{country === 'cl' ? 'Chile' : 'Argentina'}</span>
-                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-md border shadow-sm ${country === 'cl'
-                      ? 'bg-blue-500/30 text-blue-200 border-blue-400/60 shadow-[0_0_10px_rgba(59,130,246,0.3)]'
-                      : 'bg-sky-500/30 text-sky-200 border-sky-400/60 shadow-[0_0_10px_rgba(56,189,248,0.3)]'
-                    }`}>
-                    {country.toUpperCase()}
-                  </span>
-                </span>
-
-                <div className={`transition-transform duration-300 ${isCountryOpen ? 'rotate-180 text-indigo-400' : 'text-slate-400 group-hover:text-indigo-400'}`}>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </button>
-
-              {isCountryOpen && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setIsCountryOpen(false)} />
-                  <div className="absolute top-full left-0 mt-3 w-64 bg-slate-950/95 border border-slate-700/80 rounded-3xl shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_35px_rgba(99,102,241,0.2)] z-50 p-2.5 animate-in fade-in slide-in-from-top-3 backdrop-blur-2xl ring-1 ring-white/10">
-                    <div className="px-3.5 py-2 mb-1.5 border-b border-slate-800/80 flex items-center justify-between">
-                      <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest opacity-90">{t('simCountrySelectLabel')}</span>
+              {auth.accessToken && (
+                <Tooltip title={t('copyToken')} arrow placement="bottom">
+                  <div
+                    onClick={() => copyToClipboard(auth.accessToken)}
+                    className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-3 bg-emerald-500/3 border border-emerald-500/20 rounded-2xl group cursor-pointer hover:bg-emerald-500/8 hover:border-emerald-500/40 transition-all duration-300 shrink-0"
+                  >
+                    <div className="relative flex items-center justify-center">
+                      <div className="absolute inset-0 bg-emerald-500 blur-md opacity-20 animate-pulse" />
+                      <Lock className="w-3.5 h-3.5 text-emerald-500 relative z-10" />
                     </div>
-
-                    <div className="space-y-2 pt-1">
-                      {/* Chile Option */}
-                      <button
-                        onClick={() => {
-                          setCountry('cl');
-                          localStorage.setItem('isv_simulator_country', 'cl');
-                          setIsCountryOpen(false);
-                        }}
-                        className={`flex w-full items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-200 cursor-pointer border group ${country === 'cl'
-                            ? 'bg-slate-800/90 border-2 border-indigo-500/80 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]'
-                            : 'bg-slate-900/40 border border-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800/60 hover:border-indigo-500/40'
-                          }`}
-                      >
-                        <img src="https://flagcdn.com/w20/cl.png" className="w-5 h-3.5 rounded-xs border border-white/20 shadow-md" alt="CL" />
-                        <div className="flex flex-col items-start leading-none">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-black">Chile</span>
-                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${country === 'cl' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : 'bg-slate-800 text-slate-400 border-slate-700'
-                              }`}>CL</span>
-                          </div>
-                        </div>
-                        {country === 'cl' && (
-                          <div className="ml-auto w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
-                        )}
-                      </button>
-
-                      {/* Argentina Option */}
-                      <button
-                        onClick={() => {
-                          setCountry('ar');
-                          localStorage.setItem('isv_simulator_country', 'ar');
-                          setIsCountryOpen(false);
-                        }}
-                        className={`flex w-full items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-200 cursor-pointer border group ${country === 'ar'
-                            ? 'bg-slate-800/90 border-2 border-indigo-500/80 text-white shadow-[0_0_20px_rgba(99,102,241,0.3)]'
-                            : 'bg-slate-900/40 border border-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-800/60 hover:border-indigo-500/40'
-                          }`}
-                      >
-                        <img src="https://flagcdn.com/w20/ar.png" className="w-5 h-3.5 rounded-xs border border-white/20 shadow-md" alt="AR" />
-                        <div className="flex flex-col items-start leading-none">
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-black">Argentina</span>
-                            <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border ${country === 'ar' ? 'bg-indigo-500/20 text-indigo-300 border-indigo-500/40' : 'bg-slate-800 text-slate-400 border-slate-700'
-                              }`}>AR</span>
-                          </div>
-                        </div>
-                        {country === 'ar' && (
-                          <div className="ml-auto w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399]" />
-                        )}
-                      </button>
+                    <div className="flex flex-col">
+                      <span className="text-[7px] font-black text-emerald-500/60 uppercase tracking-[0.25em] leading-none">{t('simStatus')}</span>
+                      <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-none mt-1">{t('simTokenActive')}</span>
                     </div>
                   </div>
-                </>
+                </Tooltip>
               )}
             </div>
-
-            <Tooltip title={t('simTourTooltip')} arrow placement="bottom">
-              <button
-                onClick={startTour}
-                className="p-2.5 bg-transparent hover:bg-white/10 border border-transparent hover:border-white/20 text-white/80 hover:text-white rounded-lg transition-all shadow-none cursor-pointer flex items-center justify-center"
-              >
-                <HelpCircle className="w-4 h-4" />
-              </button>
-            </Tooltip>
-
-            <button
-              id="tour-auth-btn"
-              onClick={() => setIsAuthModalOpen(true)}
-              className="px-6 py-3 bg-accent hover:bg-accent-warm text-white rounded-lg transition-all font-black uppercase tracking-widest text-[11px] flex items-center gap-2.5 shadow-[0_8px_20px_-4px_rgba(14,165,233,0.4)] cursor-pointer ring-1 ring-white/10"
-            >
-              <ShieldCheck className="w-4 h-4" /> TOKEN
-            </button>
-
-            {auth.accessToken && (
-              <Tooltip title={t('copyToken')} arrow placement="bottom">
-                <div
-                  onClick={() => copyToClipboard(auth.accessToken)}
-                  className="flex items-center gap-2.5 px-4 py-3 bg-emerald-500/3 border border-emerald-500/20 rounded-2xl group cursor-pointer hover:bg-emerald-500/8 hover:border-emerald-500/40 transition-all duration-300"
-                >
-                  <div className="relative flex items-center justify-center">
-                    <div className="absolute inset-0 bg-emerald-500 blur-md opacity-20 animate-pulse" />
-                    <Lock className="w-3.5 h-3.5 text-emerald-500 relative z-10" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[7px] font-black text-emerald-500/60 uppercase tracking-[0.25em] leading-none">{t('simStatus')}</span>
-                    <span className="text-[9px] font-black text-emerald-500 uppercase tracking-widest leading-none mt-1">{t('simTokenActive')}</span>
-                  </div>
-                </div>
-              </Tooltip>
-            )}
           </div>
         </div>
 
@@ -1042,61 +1176,132 @@ export default function SimulatorView({ onLog }) {
                     className="w-full bg-background border border-accent/10 rounded-xl px-12 py-3 text-[11px] font-black tracking-wider text-text-primary outline-none focus:border-accent transition-all shadow-sm"
                   />
                 </div>
-                <button
-                  id="tour-send-btn"
-                  onClick={loading ? handleCancel : handleSend}
-                  disabled={!loading && !auth.accessToken}
-                  style={{ minWidth: '210px', height: '52px' }}
-                  className={`hidden sm:flex px-6 rounded-2xl font-normal text-xs uppercase tracking-widest items-center justify-center gap-3 transition-all duration-500 ease-in-out select-none cursor-pointer relative overflow-hidden ${loading
-                      ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-[0_0_30px_rgba(239,68,68,0.7)] border-2 border-red-400'
+                <div className="relative flex items-center justify-center">
+                  {/* Subtle soft ambient aura */}
+                  {(!loading && auth.accessToken) && (
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500/20 via-blue-600/30 to-indigo-600/20 rounded-full blur-xs opacity-40 group-hover:opacity-70 transition-opacity duration-300 pointer-events-none" />
+                  )}
+
+                  <button
+                    id="tour-send-btn"
+                    onClick={loading ? handleCancel : handleSend}
+                    disabled={!loading && !auth.accessToken}
+                    style={{ minWidth: '210px', height: '48px' }}
+                    className={`btn-reset hidden sm:flex p-[2px] rounded-full transition-all duration-300 select-none relative overflow-hidden group ${loading
+                      ? 'shadow-sm cursor-pointer'
                       : !auth.accessToken
-                        ? 'bg-slate-800/60 text-slate-400/60 cursor-not-allowed border border-dashed border-slate-700/60 shadow-none'
-                        : 'bg-gradient-to-r from-accent via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(14,165,233,0.35)] border border-accent/40'
-                    }`}
-                >
-                  {/* Internal sweeping light ray beam */}
-                  {(!loading ? auth.accessToken : true) && (
+                        ? 'opacity-60 cursor-not-allowed'
+                        : 'shadow-xs cursor-pointer'
+                      }`}
+                  >
+                    {/* Animated non-linear organic fluid contours (layered, slow abstract motion) */}
+                    {loading ? (
+                      <div
+                        className="absolute -inset-[200%] pointer-events-none"
+                        style={{
+                          background: 'conic-gradient(from 0deg, #f43f5e, #fda4af, #f43f5e, #9f1239, #f43f5e)',
+                          animation: 'spinBorder 2s linear infinite',
+                        }}
+                      />
+                    ) : !auth.accessToken ? (
+                      <div className="absolute inset-0 bg-slate-700/60 pointer-events-none" />
+                    ) : (
+                      <>
+                        {/* Primary slow fluid stream (intensifies opacity & glow on hover without moving) */}
+                        <div
+                          className="absolute -inset-[180%] pointer-events-none opacity-85 group-hover:opacity-100 transition-opacity duration-700 blur-[0.5px] will-change-transform"
+                          style={{
+                            background: 'conic-gradient(from 45deg, #0284c7 0deg, #38bdf8 55deg, transparent 125deg, #60a5fa 190deg, #818cf8 230deg, #38bdf8 290deg, transparent 330deg, #0284c7 360deg)',
+                            animation: 'abstractContourA 8s ease-in-out infinite alternate',
+                            transform: 'translateZ(0)',
+                          }}
+                        />
+
+                        {/* Secondary slow intersecting counter-stream */}
+                        <div
+                          className="absolute -inset-[180%] pointer-events-none opacity-75 group-hover:opacity-100 transition-opacity duration-700 will-change-transform"
+                          style={{
+                            background: 'conic-gradient(from 220deg, #38bdf8 0deg, #67e8f9 60deg, transparent 135deg, #06b6d4 210deg, #3b82f6 280deg, transparent 340deg, #38bdf8 360deg)',
+                            animation: 'abstractContourB 10.5s ease-in-out infinite alternate',
+                            transform: 'translateZ(0)',
+                          }}
+                        />
+                      </>
+                    )}
+
+                    {/* Inner core button container */}
                     <div
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none"
-                      style={{
-                        animation: loading ? 'shimmerSweep 1.5s infinite linear' : 'shimmerSweep 3s infinite linear',
-                      }}
-                    />
-                  )}
+                      className={`w-full h-full px-6 rounded-full flex items-center justify-center gap-2.5 relative overflow-hidden z-10 ${loading
+                        ? 'bg-gradient-to-b from-rose-600 to-red-700 text-white'
+                        : !auth.accessToken
+                          ? 'bg-slate-800 text-slate-400'
+                          : 'bg-gradient-to-b from-[#1d4ed8] via-[#2563eb] to-[#1e40af] text-white shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.4),inset_0_-2px_4px_rgba(0,0,0,0.3)] border-t border-white/30 border-b border-blue-950/60'
+                        }`}
+                    >
+                      {/* Secondary Elegant Hover Gradient (smooth 700ms cross-fade) */}
+                      {!loading && auth.accessToken && (
+                        <div className="absolute inset-0 bg-gradient-to-b from-[#2563eb] via-[#1d4ed8] to-[#1e3a8a] opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-out pointer-events-none" />
+                      )}
 
-                  {/* Bottom animated red energy line on Cancel / Loading */}
-                  {loading && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-rose-400 animate-pulse shadow-[0_0_12px_#f43f5e]" />
-                  )}
+                      {/* Micro-highlight glint on top edge in hover */}
+                      <div className="absolute top-0 inset-x-4 h-[1px] bg-gradient-to-r from-transparent via-cyan-300/60 to-transparent opacity-60 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-                  {loading ? (
-                    <div className="flex items-center gap-2.5 animate-in fade-in duration-300 relative z-10">
-                      <RefreshCw className="w-4 h-4 animate-spin text-white shrink-0 opacity-90" />
-                      <span className="font-normal tracking-wider text-white">{isStopping ? 'DETENIENDO...' : isFlashRunning ? 'DETENER' : t('simCancelBtn')}</span>
+                      {/* State 1: Loading / Cancel Content */}
+                      <div
+                        className={`absolute inset-0 flex items-center justify-center gap-2 transition-opacity duration-300 pointer-events-none z-10 ${
+                          loading ? 'opacity-100' : 'opacity-0'
+                        }`}
+                      >
+                        <RefreshCw className={`w-4 h-4 text-white shrink-0 opacity-90 ${loading ? 'animate-spin' : ''}`} />
+                        <span className="font-semibold text-[13px] tracking-wide text-white whitespace-nowrap">
+                          {isStopping ? 'Deteniendo...' : isFlashRunning ? 'Detener' : t('simCancelBtn')}
+                        </span>
+                      </div>
+
+                      {/* State 2: Ready / Send Content */}
+                      <div
+                        className={`absolute inset-0 flex items-center justify-center gap-2.5 transition-opacity duration-300 pointer-events-none z-10 ${
+                          !loading ? 'opacity-100' : 'opacity-0'
+                        }`}
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current text-white shrink-0 drop-shadow-xs transition-opacity duration-300 group-hover:drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]" />
+                        <span className="font-semibold text-[13px] tracking-wide text-white transition-opacity duration-300 whitespace-nowrap">
+                          {t('simSendBtn')}
+                        </span>
+                        {!auth.accessToken && <Lock className="w-3.5 h-3.5 opacity-60 ml-1 shrink-0" />}
+                      </div>
                     </div>
-                  ) : (
-                    <div className="flex items-center gap-2.5 animate-in fade-in duration-300 relative z-10">
-                      <Play className="w-4 h-4 fill-current outline-none shrink-0 opacity-90" />
-                      <span className="font-normal tracking-widest">{t('simSendBtn')}</span>
-                      {!auth.accessToken && <Lock className="w-3.5 h-3.5 opacity-60 ml-1 shrink-0" />}
-                    </div>
-                  )}
-                </button>
+                  </button>
+                </div>
               </div>
 
               {/* Editor + Response view */}
-              <div id="tour-request-response" className="grid grid-cols-1 xl:grid-cols-2 divide-y xl:divide-y-0 xl:divide-x divide-accent/5 flex-1 min-h-[580px] h-[580px] max-h-[580px]">
+              <div id="tour-request-response" className="grid grid-cols-1 xl:grid-cols-2 divide-y xl:divide-y-0 xl:divide-x divide-accent/5 flex-1 min-h-[580px] h-[580px] max-h-[580px] scroll-mt-24">
                 <div className="flex flex-col bg-accent/1 h-full min-h-0">
                   <div className="px-6 h-14 bg-white/5 border-b border-white/5 flex items-center justify-between shrink-0">
                     <span className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em] flex items-center gap-2">
                       <Cpu className="w-3.5 h-3.5 text-accent" /> REQUEST BODY (JSON)
                     </span>
-                    <Tooltip title={t('copyRequest')} arrow placement="top">
+                    <Tooltip title={copiedRequest ? (t('copied') || '¡Copiado!') : t('copyRequest')} arrow placement="top">
                       <button
-                        onClick={() => copyToClipboard(body)}
-                        className="p-1.5 hover:bg-accent/5 rounded-lg text-text-secondary hover:text-accent transition-all cursor-pointer"
+                        onClick={() => copyToClipboard(body, 'request')}
+                        aria-label={t('copyRequest')}
+                        className={`btn-reset px-3 py-1.5 rounded-xl border transition-all duration-200 cursor-pointer flex items-center gap-1.5 text-xs font-bold ${copiedRequest
+                          ? 'border-emerald-500/50 bg-emerald-500/15 text-emerald-400 shadow-xs'
+                          : 'border-slate-300 dark:border-slate-700 bg-[var(--bg-surface)] hover:bg-slate-100 dark:hover:bg-[#253552] text-slate-700 dark:text-slate-200 hover:text-sky-500 dark:hover:text-sky-400 hover:border-sky-400/60 dark:hover:border-sky-500/50 shadow-xs hover:shadow-sm'
+                          }`}
                       >
-                        <Copy className="w-3.5 h-3.5" />
+                        {copiedRequest ? (
+                          <>
+                            <Check className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">{t('copied') || 'Copiado'}</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />
+                            <span className="text-[10px] font-extrabold uppercase tracking-wider text-sky-600 dark:text-sky-400">{t('copy') || 'Copiar'}</span>
+                          </>
+                        )}
                       </button>
                     </Tooltip>
                   </div>
@@ -1117,28 +1322,33 @@ export default function SimulatorView({ onLog }) {
                     </span>
                     {response && (
                       <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1.5 bg-accent/5 rounded-lg p-0.5 border border-accent/10">
-                          <Tooltip title={t('copyResponse') || 'Copiar Respuesta'} arrow placement="top">
+                        <div className="flex items-center gap-1.5 bg-[var(--bg-surface)] rounded-xl p-1 border border-slate-300 dark:border-slate-700 shadow-xs">
+                          <Tooltip title={copiedResponse ? (t('copied') || '¡Copiado!') : (t('copyResponse') || 'Copiar Respuesta')} arrow placement="top">
                             <button
-                              onClick={() => copyToClipboard(JSON.stringify(response, null, 2))}
-                              className="p-1.5 hover:bg-accent/10 rounded-md text-text-secondary hover:text-accent transition-all cursor-pointer"
+                              onClick={() => copyToClipboard(JSON.stringify(response, null, 2), 'response')}
+                              aria-label="Copiar Respuesta"
+                              className={`btn-reset p-1.5 rounded-lg transition-all cursor-pointer flex items-center justify-center ${copiedResponse
+                                ? 'bg-emerald-500/15 text-emerald-400'
+                                : 'text-slate-600 dark:text-slate-300 hover:text-sky-500 dark:hover:text-sky-400 hover:bg-slate-100 dark:hover:bg-[#253552]'
+                                }`}
                             >
-                              <Copy className="w-3 h-3" />
+                              {copiedResponse ? <Check className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-sky-500 dark:text-sky-400" />}
                             </button>
                           </Tooltip>
-                          <div className="w-px h-3 bg-accent/10" />
+                          <div className="w-px h-3.5 bg-slate-300 dark:bg-slate-700" />
                           <Tooltip title={t('clearResponse') || 'Limpiar'} arrow placement="top">
                             <button
                               onClick={handleClearResponse}
-                              className="p-1.5 hover:bg-rose-500/10 rounded-md text-text-secondary hover:text-rose-500 transition-all cursor-pointer"
+                              aria-label="Limpiar Respuesta"
+                              className="btn-reset p-1.5 hover:bg-rose-500/10 rounded-lg text-slate-600 dark:text-slate-300 hover:text-rose-500 dark:hover:text-rose-400 transition-all cursor-pointer flex items-center justify-center"
                             >
-                              <Trash2 className="w-3 h-3" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </Tooltip>
                         </div>
-                        <div className="flex items-center gap-2 px-2 py-1 bg-emerald-500/5 rounded-lg border border-emerald-500/10">
+                        <div className="flex items-center gap-2 px-2.5 py-1 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                          <span className="text-[9px] font-black text-emerald-500">OK</span>
+                          <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">OK</span>
                         </div>
                       </div>
                     )}
@@ -1239,8 +1449,8 @@ export default function SimulatorView({ onLog }) {
           {/* Header metadata */}
           <div className="flex flex-wrap items-center gap-2 pb-3 mb-4 border-b border-slate-200/50 dark:border-accent/10 shrink-0 select-none">
             <span className={`text-[9px] font-black px-2 py-0.5 rounded border ${selectedHistoryItem?.status < 400
-                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]'
-                : 'bg-rose-500/10 text-rose-500 border-rose-500/20 shadow-[0_0_8px_rgba(244,63,94,0.1)]'
+              ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.1)]'
+              : 'bg-rose-500/10 text-rose-500 border-rose-500/20 shadow-[0_0_8px_rgba(244,63,94,0.1)]'
               }`}>
               {selectedHistoryItem?.status}
             </span>
@@ -1273,7 +1483,7 @@ export default function SimulatorView({ onLog }) {
             </div>
           </div>
           <div className="flex gap-3 pt-2">
-            <button onClick={() => setShow401Prompt(false)} className="flex-1 py-3 rounded-xl border border-accent/10 hover:bg-accent/5 transition-all text-[11px] font-black uppercase tracking-widest text-text-secondary cursor-pointer">
+            <button onClick={() => setShow401Prompt(false)} className="btn-reset flex-1 py-3 rounded-xl border border-accent/10 hover:bg-accent/5 transition-all text-[11px] font-black uppercase tracking-widest text-text-secondary cursor-pointer text-center">
               {t('ignoreBtn')}
             </button>
             <button
@@ -1281,7 +1491,7 @@ export default function SimulatorView({ onLog }) {
                 setShow401Prompt(false);
                 setIsAuthModalOpen(true);
               }}
-              className="flex-1 py-3 rounded-xl bg-accent text-white hover:bg-accent-warm transition-all flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest shadow-lg shadow-accent/20 cursor-pointer"
+              className="btn-reset flex-1 py-3 rounded-xl bg-accent text-white hover:bg-accent-warm transition-all flex items-center justify-center gap-2 text-[11px] font-black uppercase tracking-widest shadow-lg shadow-accent/20 cursor-pointer text-center"
             >
               <Zap className="w-4 h-4 fill-current" /> {t('fetchTokenBtn')}
             </button>
@@ -1323,13 +1533,13 @@ export default function SimulatorView({ onLog }) {
           <div className="flex items-center justify-center gap-3 pt-3 border-t border-slate-700/30 w-full">
             <button
               onClick={() => setIsExportSecurityOpen(false)}
-              className="flex-1 max-w-[130px] py-2.5 rounded-xl border border-slate-700/60 hover:bg-slate-800/60 transition-all text-[10px] font-bold uppercase tracking-wider text-slate-300 cursor-pointer text-center flex justify-center"
+              className="btn-reset flex-1 max-w-[130px] py-2.5 rounded-xl border border-slate-700/60 hover:bg-slate-800/60 transition-all text-[10px] font-bold uppercase tracking-wider text-slate-300 cursor-pointer text-center flex justify-center"
             >
               {t('cancel')}
             </button>
             <button
               onClick={confirmExportConfig}
-              className="flex-1 max-w-[210px] py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 transition-all flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-wider shadow-[0_0_15px_rgba(245,158,11,0.3)] cursor-pointer text-center"
+              className="btn-reset flex-1 max-w-[210px] py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 transition-all flex items-center justify-center gap-1.5 text-[10px] font-black uppercase tracking-wider shadow-[0_0_15px_rgba(245,158,11,0.3)] cursor-pointer text-center"
             >
               <FileUp className="w-3.5 h-3.5" /> {t('exportSecurityConfirmBtn')}
             </button>
@@ -1343,7 +1553,7 @@ export default function SimulatorView({ onLog }) {
         <Tooltip title={t('simBackToCommands')} arrow placement="left">
           <button
             onClick={scrollToCommands}
-            className="flex items-center justify-center w-12 h-12 bg-accent text-white rounded-full shadow-[0_10px_25px_-5px_rgba(14,165,233,0.5)] active:scale-90 transition-all border border-white/20 backdrop-blur-sm group"
+            className="btn-reset flex items-center justify-center w-12 h-12 bg-accent text-white rounded-full shadow-[0_10px_25px_-5px_rgba(14,165,233,0.5)] active:scale-90 transition-all border border-white/20 backdrop-blur-sm group"
           >
             <ChevronUp className="w-5 h-5 group-hover:-translate-y-1 transition-transform" />
           </button>

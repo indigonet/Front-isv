@@ -7,7 +7,6 @@ import {
 export const API_BASE = {
   dev: 'https://api-dev.ione-tech.com/api/postxs/',
   uat: 'https://api-uat.ione-tech.com/api/postxs/',
-  prod: 'https://api.ione-tech.com/api/postxs/',
 };
 
 export const DEFAULT_CREDENTIALS = {
@@ -50,6 +49,7 @@ export const FIELD_CONFIG = {
   numberOfShift: { label: 'field.numberOfShift', type: 'number', span: 1 },
   authorizationCode: { label: 'field.authCode', type: 'text', span: 1 },
   originalTransDate: { label: 'field.originalDate', type: 'date', span: 2 },
+  webhook: { label: 'field.webhook', type: 'text', span: 2 },
 };
 
 const BODY_POLL_AR = {
@@ -182,7 +182,7 @@ export const COMMAND_METHODS = [
   {
     id: 'sale_ar', label: 'cmd.sale_ar', icon: Cloud, color: 'text-accent', bg: 'bg-accent/10',
     endpoint: 'sale',
-    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'tip', 'installments', 'planId', 'printOnPos', 'customId'],
+    fields: ['idTerminal', 'idSucursal', 'serialNumber', 'amount', 'tip', 'installments', 'planId', 'printOnPos', 'customId', 'webhook'],
     template: BODY_SALE_AR,
   },
   {

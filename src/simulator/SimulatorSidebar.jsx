@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { ChevronRight, Layers, History, X, Trash2, Play, RefreshCw, Lock, ShieldCheck, Wand2, HelpCircle, XCircle, Save, CheckCircle2, FileUp, FileDown, Tag, Monitor, Building2, Hash } from 'lucide-react';
+import { ChevronRight, Layers, History, X, Trash2, Play, Sparkles, RefreshCw, Lock, ShieldCheck, Wand2, HelpCircle, XCircle, Save, CheckCircle2, FileUp, FileDown, Tag, Monitor, Building2, Hash } from 'lucide-react';
 
 import { CONFIG } from './simulator.constants';
 import { useLanguage } from '../context/LanguageContext';
@@ -222,8 +222,12 @@ export default function SimulatorSidebar({
       finalValue = field === 'amount' ? Math.min(parsed, 999999999) : parsed;
     } else if (field === 'serialNumber') {
       finalValue = String(rawValue).toUpperCase().slice(0, 20);
-    } else if (field === 'ticketNumber' || field === 'customId') {
+    } else if (field === 'ticketNumber') {
       finalValue = String(rawValue).slice(0, 24);
+    } else if (field === 'customId') {
+      finalValue = String(rawValue).slice(0, 25);
+    } else if (field === 'webhook') {
+      finalValue = String(rawValue);
     } else if (field === 'employeeId') {
       const digitsOnly = String(rawValue).replace(/[^0-9]/g, '').slice(0, 4);
       finalValue = digitsOnly === '' ? '' : Number(digitsOnly);
@@ -640,7 +644,7 @@ export default function SimulatorSidebar({
             role="switch"
             aria-checked={Boolean(value)}
             onClick={() => handleParamChange(field, !value)}
-            className={`relative w-11 h-6 rounded-full focus:outline-none border-2 ${value
+            className={`btn-reset relative w-11 h-6 rounded-full focus:outline-none border-2 ${value
               ? 'border-accent/60 shadow-sm'
               : 'border-text-secondary/20'
               }`}
@@ -721,13 +725,14 @@ export default function SimulatorSidebar({
           onChange={(e) => handleParamChange(field, e.target.value)}
           maxLength={
             field === 'serialNumber' ? 20 :
-              (field === 'ticketNumber' || field === 'customId') ? 24 :
-                field === 'employeeId' ? 4 :
-                  field === 'authorizationCode' ? 20 :
-                    field === 'operationId' ? 8 :
-                      field === 'rutToValidate' ? 12 :
-                        field === 'idPromo' ? 250 :
-                          undefined
+              field === 'customId' ? 25 :
+                field === 'ticketNumber' ? 24 :
+                  field === 'employeeId' ? 4 :
+                    field === 'authorizationCode' ? 20 :
+                      field === 'operationId' ? 8 :
+                        field === 'rutToValidate' ? 12 :
+                          field === 'idPromo' ? 250 :
+                            undefined
           }
           className="w-full bg-background border border-accent/10 rounded-xl px-3 py-2.5 outline-none focus:border-accent transition-all font-black text-text-primary text-sm shadow-sm"
         />
@@ -757,9 +762,14 @@ export default function SimulatorSidebar({
             </span>
           </label>
         )}
-        {(field === 'ticketNumber' || field === 'customId') && (
+        {field === 'ticketNumber' && (
           <div className="flex justify-end text-[10px] font-bold text-text-secondary/60 px-1 mt-0.5">
             {String(value ?? '').length}/24
+          </div>
+        )}
+        {field === 'customId' && (
+          <div className="flex justify-end text-[10px] font-bold text-text-secondary/60 px-1 mt-0.5">
+            {String(value ?? '').length}/25
           </div>
         )}
         {field === 'rutToValidate' && value && !validateRut(value) && (
@@ -994,8 +1004,12 @@ export default function SimulatorSidebar({
                     className={`px-4 py-3 flex items-center gap-3 min-w-[200px] rounded-xl border ${selectedTriadIndex === idx ? 'border-2 border-primary' : 'border-white/5'} cursor-pointer`}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-black truncate">{triad.name}</p>
-                      <p className="text-[9px] text-text-secondary/60 truncate">{triad.serialNumber} · {triad.idSucursal} · {triad.idTerminal}</p>
+                      <p className={`text-sm font-black truncate ${selectedTriadIndex === idx ? '!text-black dark:!text-white' : 'text-text-primary'}`}>
+                        {triad.name}
+                      </p>
+                      <p className={`text-[9px] truncate ${selectedTriadIndex === idx ? '!text-black/90 font-bold dark:!text-white/80' : 'text-text-secondary/60'}`}>
+                        {triad.serialNumber} · {triad.idSucursal} · {triad.idTerminal}
+                      </p>
                     </div>
                     <div className="flex items-center gap-1">
                       <Tooltip title={t('edit')}>
@@ -1301,46 +1315,103 @@ export default function SimulatorSidebar({
 
         {/* Send Button (Visible ONLY on small screens for mobile UX) */}
         <div className="sm:hidden pt-2">
-          <button
-            id="tour-mobile-send-btn"
-            onClick={loading ? onCancel : onSend}
-            disabled={!loading && !accessToken}
-            style={{ height: '52px' }}
-            className={`w-full rounded-2xl font-normal text-xs uppercase tracking-widest flex items-center justify-center gap-3 transition-all duration-500 ease-in-out select-none cursor-pointer relative overflow-hidden ${loading
-              ? 'bg-gradient-to-r from-red-600 via-rose-600 to-red-700 text-white shadow-[0_0_30px_rgba(239,68,68,0.7)] border-2 border-red-400'
-              : !accessToken
-                ? 'bg-slate-800/60 text-slate-400/60 cursor-not-allowed border border-dashed border-slate-700/60 shadow-none'
-                : 'bg-gradient-to-r from-accent via-blue-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white shadow-[0_0_20px_rgba(14,165,233,0.35)] border border-accent/40'
-              }`}
-          >
-            {/* Internal sweeping light ray beam */}
-            {(!loading ? accessToken : true) && (
+          <div className="relative flex items-center justify-center w-full">
+            {/* Subtle soft ambient aura */}
+            {(!loading && accessToken) && (
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-cyan-500/20 via-blue-600/30 to-indigo-600/20 rounded-full blur-xs opacity-40 group-hover:opacity-70 transition-opacity duration-300 pointer-events-none" />
+            )}
+
+            <button
+              id="tour-mobile-send-btn"
+              onClick={loading ? onCancel : onSend}
+              disabled={!loading && !accessToken}
+              style={{ height: '48px' }}
+              className={`btn-reset w-full p-[2px] rounded-full transition-all duration-300 select-none relative overflow-hidden group ${loading
+                ? 'shadow-sm cursor-pointer'
+                : !accessToken
+                  ? 'opacity-60 cursor-not-allowed'
+                  : 'shadow-xs cursor-pointer'
+                }`}
+            >
+              {/* Animated non-linear organic fluid contours (layered, slow abstract motion) */}
+              {loading ? (
+                <div
+                  className="absolute -inset-[200%] pointer-events-none"
+                  style={{
+                    background: 'conic-gradient(from 0deg, #f43f5e, #fda4af, #f43f5e, #9f1239, #f43f5e)',
+                    animation: 'spinBorder 2s linear infinite',
+                  }}
+                />
+              ) : !accessToken ? (
+                <div className="absolute inset-0 bg-slate-700/60 pointer-events-none" />
+              ) : (
+                <>
+                  {/* Primary slow fluid stream */}
+                  <div
+                    className="absolute -inset-[180%] pointer-events-none opacity-85 group-hover:opacity-100 transition-opacity duration-700 blur-[0.5px] will-change-transform"
+                    style={{
+                      background: 'conic-gradient(from 45deg, #0284c7 0deg, #38bdf8 55deg, transparent 125deg, #60a5fa 190deg, #818cf8 230deg, #38bdf8 290deg, transparent 330deg, #0284c7 360deg)',
+                      animation: 'abstractContourA 8s ease-in-out infinite alternate',
+                      transform: 'translateZ(0)',
+                    }}
+                  />
+
+                  {/* Secondary slow intersecting counter-stream */}
+                  <div
+                    className="absolute -inset-[180%] pointer-events-none opacity-75 group-hover:opacity-100 transition-opacity duration-700 will-change-transform"
+                    style={{
+                      background: 'conic-gradient(from 220deg, #38bdf8 0deg, #67e8f9 60deg, transparent 135deg, #06b6d4 210deg, #3b82f6 280deg, transparent 340deg, #38bdf8 360deg)',
+                      animation: 'abstractContourB 10.5s ease-in-out infinite alternate',
+                      transform: 'translateZ(0)',
+                    }}
+                  />
+                </>
+              )}
+
+              {/* Inner core button container */}
               <div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none"
-                style={{
-                  animation: loading ? 'shimmerSweep 1.5s infinite linear' : 'shimmerSweep 3s infinite linear',
-                }}
-              />
-            )}
+                className={`w-full h-full px-6 rounded-full flex items-center justify-center gap-2.5 relative overflow-hidden z-10 ${loading
+                  ? 'bg-gradient-to-b from-rose-600 to-red-700 text-white'
+                  : !accessToken
+                    ? 'bg-slate-800 text-slate-400'
+                    : 'bg-gradient-to-b from-[#1d4ed8] via-[#2563eb] to-[#1e40af] text-white shadow-[inset_0_1px_1.5px_rgba(255,255,255,0.4),inset_0_-2px_4px_rgba(0,0,0,0.3)] border-t border-white/30 border-b border-blue-950/60'
+                  }`}
+              >
+                {/* Secondary Elegant Hover Gradient (smooth 700ms cross-fade) */}
+                {!loading && accessToken && (
+                  <div className="absolute inset-0 bg-gradient-to-b from-[#2563eb] via-[#1d4ed8] to-[#1e3a8a] opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-out pointer-events-none" />
+                )}
 
-            {/* Bottom animated red energy line on Cancel / Loading */}
-            {loading && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-rose-400 animate-pulse shadow-[0_0_12px_#f43f5e]" />
-            )}
+                {/* Micro-highlight glint on top edge in hover */}
+                <div className="absolute top-0 inset-x-4 h-[1px] bg-gradient-to-r from-transparent via-cyan-300/60 to-transparent opacity-60 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-            {loading ? (
-              <div className="flex items-center gap-2.5 animate-in fade-in duration-300 relative z-10">
-                <RefreshCw className="w-4 h-4 animate-spin text-white shrink-0 opacity-90" />
-                <span className="font-normal tracking-wider text-white">{isStopping ? 'DETENIENDO...' : isFlashRunning ? 'DETENER' : t('simCancelBtn')}</span>
+                {/* State 1: Loading / Cancel Content */}
+                <div
+                  className={`absolute inset-0 flex items-center justify-center gap-2 transition-opacity duration-300 pointer-events-none z-10 ${
+                    loading ? 'opacity-100' : 'opacity-0'
+                  }`}
+                >
+                  <RefreshCw className={`w-4 h-4 text-white shrink-0 opacity-90 ${loading ? 'animate-spin' : ''}`} />
+                  <span className="font-semibold text-[13px] tracking-wide text-white whitespace-nowrap">
+                    {isStopping ? 'Deteniendo...' : isFlashRunning ? 'Detener' : t('simCancelBtn')}
+                  </span>
+                </div>
+
+                {/* State 2: Ready / Send Content */}
+                <div
+                  className={`absolute inset-0 flex items-center justify-center gap-2.5 transition-opacity duration-300 pointer-events-none z-10 ${
+                    !loading ? 'opacity-100' : 'opacity-0'
+                  }`}
+                >
+                  <Play className="w-3.5 h-3.5 fill-current text-white shrink-0 drop-shadow-xs transition-opacity duration-300 group-hover:drop-shadow-[0_0_6px_rgba(255,255,255,0.8)]" />
+                  <span className="font-semibold text-[13px] tracking-wide text-white transition-opacity duration-300 whitespace-nowrap">
+                    {t('simSendBtn')}
+                  </span>
+                  {!accessToken && <Lock className="w-3.5 h-3.5 opacity-60 ml-1 shrink-0" />}
+                </div>
               </div>
-            ) : (
-              <div className="flex items-center gap-2.5 animate-in fade-in duration-300 relative z-10">
-                <Play className="w-4 h-4 fill-current outline-none shrink-0 opacity-90" />
-                <span className="font-normal tracking-widest">{t('simSendBtn')}</span>
-                {!accessToken && <Lock className="w-3.5 h-3.5 opacity-60 ml-1 shrink-0" />}
-              </div>
-            )}
-          </button>
+            </button>
+          </div>
         </div>
 
       </div>

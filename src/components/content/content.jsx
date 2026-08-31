@@ -118,7 +118,7 @@ export default function Content() {
                 onClick={handleDownload}
               >
                 <Download size={20} className="cta-icon-animate" />
-                {downloading ? t("downloading") : t("topbar.download") + " Toolkit"}
+                {downloading ? t("downloading") : t("downloadForWindows")}
               </button>
               <button 
                 className="cta-button secondary btn-reset"
