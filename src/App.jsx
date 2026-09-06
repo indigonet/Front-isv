@@ -7,6 +7,11 @@ import { LanguageProvider } from "./context/LanguageContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import "./index.css";
 
+import OutOfService from "./components/OutOfService";
+
+// Cambiar a 'false' si se desea reactivar la aplicación normalmente
+const IS_OUT_OF_SERVICE = true;
+
 const Notes = lazy(() => import("./components/release/notes"));
 const SimulatorView = lazy(() => import("./simulator/SimulatorView"));
 const DrawableView = lazy(() => import("./drawable/DrawableView"));
@@ -27,6 +32,11 @@ function LoadingFallback() {
 
 function AppContent() {
   const location = useLocation();
+
+  if (IS_OUT_OF_SERVICE) {
+    return <OutOfService />;
+  }
+
   const isDrawable = location.pathname === "/drawable";
   const isSimulator = location.pathname === "/simulator";
   const hideTopbar = isDrawable || isSimulator;
@@ -41,6 +51,7 @@ function AppContent() {
             <Route path="/simulator" element={<SimulatorView />} />
             <Route path="/release-notes" element={<Notes />} />
             <Route path="/drawable" element={<DrawableView />} />
+            <Route path="*" element={<OutOfService />} />
           </Routes>
         </Suspense>
       </main>
